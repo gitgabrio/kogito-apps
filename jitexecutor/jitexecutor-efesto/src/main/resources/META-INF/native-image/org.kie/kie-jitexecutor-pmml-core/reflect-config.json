@@ -1,0 +1,29 @@
+[
+  {
+    "name" : "org.kie.kogito.jitexecutor.efesto.pmml.model.EfestoOutputPMML",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.kie.kogito.jitexecutor.efesto.pmml.compiler.service.KieCompilerServicePMMLInputStream",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.kie.kogito.jitexecutor.efesto.pmml.runtime.service.KieRuntimeServicePMMLMapInput",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  }
+]

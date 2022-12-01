@@ -1,0 +1,29 @@
+[
+  {
+    "name" : "org.kie.kogito.jitexecutor.efesto.dmn.model.EfestoOutputDMN",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.kie.kogito.jitexecutor.efesto.dmn.compiler.service.KieCompilerServiceDMNInputStream",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.kie.kogito.jitexecutor.efesto.dmn.runtime.service.KieRuntimeServiceDMNMapInput",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  }
+]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.kie.kogito.jitexecutor.efesto.responses;
 
-package org.kie.kogito.jitexecutor.efesto;
+import java.io.Serializable;
+import java.util.Collection;
 
-import java.util.Map;
+public class JITEfestoValidation implements Serializable {
 
-import org.kie.kogito.jitexecutor.efesto.requests.MultipleResourcesPayload;
-import org.kie.kogito.jitexecutor.efesto.responses.JITEfestoResult;
-import org.kie.kogito.jitexecutor.efesto.responses.JITEfestoValidation;
+    private final Collection<String> errors;
 
-public interface JITEfestoService {
+    public JITEfestoValidation(Collection<String> errors) {
+        this.errors = errors;
+    }
 
-    JITEfestoResult evaluateModel(MultipleResourcesPayload modelsPayload, Map<String, Object> inputData);
-
-    JITEfestoValidation validatePayload(MultipleResourcesPayload payload);
+    public Collection<String> getErrors() {
+        return errors;
+    }
 }

@@ -29,14 +29,14 @@ import org.kie.efesto.runtimemanager.api.model.EfestoInput;
 import org.kie.efesto.runtimemanager.api.model.EfestoRuntimeContext;
 import org.kie.efesto.runtimemanager.api.service.KieRuntimeService;
 import org.kie.kogito.jitexecutor.efesto.dmn.model.EfestoOutputDMN;
+import org.kie.kogito.jitexecutor.efesto.dmn.model.JITDMNResult;
 import org.kie.kogito.jitexecutor.efesto.model.JitExecutorRuntimeContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.kie.efesto.runtimemanager.api.utils.GeneratedResourceUtils.isPresentExecutableOrRedirect;
 
-public class KieRuntimeServiceDMNMapInput implements KieRuntimeService<Map<String, Object>, DMNResult,
-        EfestoInput<Map<String, Object>>, EfestoOutputDMN, EfestoRuntimeContext> {
+public class KieRuntimeServiceDMNMapInput implements KieRuntimeService<Map<String, Object>, JITDMNResult, EfestoInput<Map<String, Object>>, EfestoOutputDMN, EfestoRuntimeContext> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KieRuntimeServiceDMNMapInput.class);
 
@@ -54,11 +54,11 @@ public class KieRuntimeServiceDMNMapInput implements KieRuntimeService<Map<Strin
 
     @Override
     public Optional<EfestoOutputDMN> evaluateInput(EfestoInput<Map<String, Object>> toEvaluate,
-                                                    EfestoRuntimeContext context) {
+            EfestoRuntimeContext context) {
         if (!canManageInput(toEvaluate, context)) {
             throw new KieRuntimeServiceException("Wrong parameters " + toEvaluate + " " + context);
         }
-        String modelSource = ((JitExecutorRuntimeContext)context).getModelSource();
+        String modelSource = ((JitExecutorRuntimeContext) context).getModelSource();
         return Optional.ofNullable(evaluateInput(modelSource, toEvaluate.getModelLocalUriId(), toEvaluate.getInputData()));
     }
 
@@ -68,14 +68,15 @@ public class KieRuntimeServiceDMNMapInput implements KieRuntimeService<Map<Strin
     }
 
     private boolean canManageEfestoInput(EfestoInput toEvaluate, EfestoRuntimeContext runtimeContext) {
-        return  isPresentExecutableOrRedirect(toEvaluate.getModelLocalUriId(), runtimeContext);
+        return isPresentExecutableOrRedirect(toEvaluate.getModelLocalUriId(), runtimeContext);
     }
 
     private EfestoOutputDMN evaluateInput(String modelSource, ModelLocalUriId modelLocalUriId, Map<String, Object> inputData) {
         try {
             DMNEvaluator dmnEvaluator = DMNEvaluator.fromXML(modelSource);
             DMNResult dmnResult = dmnEvaluator.evaluate(inputData);
-            return new EfestoOutputDMN(modelLocalUriId, dmnResult);
+            JITDMNResult toReturn = new JITDMNResult(dmnResult.getMessages(), dmnResult.getDecisionResults());
+            return new EfestoOutputDMN(modelLocalUriId, toReturn);
         } catch (Exception e) {
             LOGGER.error("Failed to evaluate {}", inputData, e);
             return null;

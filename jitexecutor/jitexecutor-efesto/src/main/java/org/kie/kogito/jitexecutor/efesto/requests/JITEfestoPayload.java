@@ -13,14 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.kie.kogito.jitexecutor.efesto.dmn.model;
+package org.kie.kogito.jitexecutor.efesto.requests;
 
-import org.kie.efesto.common.api.identifiers.ModelLocalUriId;
-import org.kie.efesto.runtimemanager.api.model.AbstractEfestoOutput;
+import java.util.Map;
 
-public class EfestoOutputDMN extends AbstractEfestoOutput<JITDMNResult> {
+public class JITEfestoPayload {
 
-    public EfestoOutputDMN(ModelLocalUriId modelLocalUriId, JITDMNResult outputData) {
-        super(modelLocalUriId, outputData);
+    private MultipleResourcesPayload modelsPayload;
+    private Map<String, Object> inputData;
+
+    public JITEfestoPayload() {
+        // reflection
+    }
+
+    public JITEfestoPayload(MultipleResourcesPayload modelsPayload, Map<String, Object> inputData) {
+        this.modelsPayload = modelsPayload;
+        this.inputData = inputData;
+    }
+
+    public MultipleResourcesPayload getModelsPayload() {
+        return modelsPayload;
+    }
+
+    public Map<String, Object> getInputData() {
+        return inputData;
     }
 }

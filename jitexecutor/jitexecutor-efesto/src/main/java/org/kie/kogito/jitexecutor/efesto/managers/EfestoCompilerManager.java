@@ -50,7 +50,7 @@ public class EfestoCompilerManager {
 
     public static ModelLocalUriId compileModel(String toCompile, String fileName) {
         EfestoInputStreamResource efestoResource = new EfestoInputStreamResource(new ByteArrayInputStream(toCompile.getBytes(StandardCharsets.UTF_8)),
-                                                                      fileName);
+                fileName);
         JitExecutorCompilationContext compilationContext = new JitExecutorCompilationContext(Thread.currentThread().getContextClassLoader(), toCompile);
         try {
             compilationManager.processResource(compilationContext, efestoResource);
@@ -68,10 +68,10 @@ public class EfestoCompilerManager {
         List<GeneratedResource> generatedResources =
                 generatedResourcesMap.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         GeneratedExecutableResource generatedExecutableResource = findAtMostOne(generatedResources,
-                                                                                generatedResource -> generatedResource instanceof GeneratedExecutableResource,
-                                                                                (s1, s2) -> new KieCompilerServiceException("Found more than one GeneratedExecutableResource: " + s1 + " and " + s2))
-                .map(GeneratedExecutableResource.class::cast)
-                .orElseThrow(() -> new KieCompilerServiceException("Failed to retrieve a GeneratedExecutableResource"));
+                generatedResource -> generatedResource instanceof GeneratedExecutableResource,
+                (s1, s2) -> new KieCompilerServiceException("Found more than one GeneratedExecutableResource: " + s1 + " and " + s2))
+                        .map(GeneratedExecutableResource.class::cast)
+                        .orElseThrow(() -> new KieCompilerServiceException("Failed to retrieve a GeneratedExecutableResource"));
         return generatedExecutableResource.getModelLocalUriId();
     }
 

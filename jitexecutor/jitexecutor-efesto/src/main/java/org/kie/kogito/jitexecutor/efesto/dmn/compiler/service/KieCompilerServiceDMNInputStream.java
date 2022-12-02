@@ -39,9 +39,7 @@ import org.kie.kogito.jitexecutor.efesto.dmn.identifiers.KieDmnComponentRoot;
 /**
  * For the moment being, use this for DMN "validation", since DMN does not have a code-generation phase
  */
-public class KieCompilerServiceDMNInputStream implements KieCompilerService<EfestoCompilationOutput,
-        EfestoCompilationContext> {
-
+public class KieCompilerServiceDMNInputStream implements KieCompilerService<EfestoCompilationOutput, EfestoCompilationContext> {
 
     static final DMNValidator validator = DMNValidatorFactory.newValidator(Arrays.asList(new ExtendedDMNProfile()));
 
@@ -54,11 +52,12 @@ public class KieCompilerServiceDMNInputStream implements KieCompilerService<Efes
     public List<EfestoCompilationOutput> processResource(EfestoResource toProcess, EfestoCompilationContext context) {
         if (!canManageResource(toProcess)) {
             throw new KieCompilerServiceException(String.format("%s can not process %s",
-                                                                this.getClass().getName(),
-                                                                toProcess.getClass().getName()));
+                    this.getClass().getName(),
+                    toProcess.getClass().getName()));
         }
-        EfestoInputStreamResource inputStreamResource = (EfestoInputStreamResource)toProcess;
-        List<DMNMessage> messages = validator.validate(new InputStreamReader(inputStreamResource.getContent()), DMNValidator.Validation.VALIDATE_SCHEMA, DMNValidator.Validation.VALIDATE_MODEL, DMNValidator.Validation.VALIDATE_COMPILATION, DMNValidator.Validation.ANALYZE_DECISION_TABLE);
+        EfestoInputStreamResource inputStreamResource = (EfestoInputStreamResource) toProcess;
+        List<DMNMessage> messages = validator.validate(new InputStreamReader(inputStreamResource.getContent()), DMNValidator.Validation.VALIDATE_SCHEMA, DMNValidator.Validation.VALIDATE_MODEL,
+                DMNValidator.Validation.VALIDATE_COMPILATION, DMNValidator.Validation.ANALYZE_DECISION_TABLE);
         return Collections.singletonList(getDefaultEfestoCompilationOutput(inputStreamResource.getFileName(), inputStreamResource.getModelType()));
     }
 
@@ -71,9 +70,9 @@ public class KieCompilerServiceDMNInputStream implements KieCompilerService<Efes
         return new EfestoCallableOutput() {
 
             private final ModelLocalUriId modelLocalUriId = new EfestoAppRoot()
-                        .get(KieDmnComponentRoot.class)
-                        .get(DmnIdFactory.class)
-                        .get(fileName, modelName);
+                    .get(KieDmnComponentRoot.class)
+                    .get(DmnIdFactory.class)
+                    .get(fileName, modelName);
 
             @Override
             public ModelLocalUriId getModelLocalUriId() {

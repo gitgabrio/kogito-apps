@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.kie.efesto.common.api.identifiers.ModelLocalUriId;
-import org.kie.efesto.compilationmanager.core.model.EfestoCompilationContextImpl;
-import org.kie.efesto.runtimemanager.core.model.EfestoRuntimeContextImpl;
 import org.kie.kogito.jitexecutor.efesto.model.JitExecutorCompilationContext;
 import org.kie.kogito.jitexecutor.efesto.model.JitExecutorRuntimeContext;
 
@@ -30,13 +28,12 @@ public class ContextStorage {
     private static final Map<ModelLocalUriId, JitExecutorCompilationContext> COMPILATION_CONTEXT_MAP = new HashMap<>();
     private static final Map<ModelLocalUriId, JitExecutorRuntimeContext> RUNTIME_CONTEXT_MAP = new HashMap<>();
 
-
     public static void putEfestoCompilationContext(ModelLocalUriId modelLocalUriId, JitExecutorCompilationContext compilationContext) {
         COMPILATION_CONTEXT_MAP.put(modelLocalUriId, compilationContext);
     }
 
     public static JitExecutorCompilationContext getEfestoCompilationContext(ModelLocalUriId modelLocalUriId) {
-       return  COMPILATION_CONTEXT_MAP.get(modelLocalUriId);
+        return COMPILATION_CONTEXT_MAP.get(modelLocalUriId);
     }
 
     public static Collection<ModelLocalUriId> getAllModelLocalUriId() {

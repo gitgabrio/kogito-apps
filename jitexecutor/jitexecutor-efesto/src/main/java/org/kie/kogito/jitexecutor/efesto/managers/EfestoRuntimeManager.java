@@ -17,27 +17,23 @@ package org.kie.kogito.jitexecutor.efesto.managers;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.kie.efesto.common.api.exceptions.KieEfestoCommonException;
 import org.kie.efesto.common.api.identifiers.ModelLocalUriId;
 import org.kie.efesto.common.api.identifiers.NamedLocalUriId;
 import org.kie.efesto.common.api.model.GeneratedResources;
-import org.kie.efesto.compilationmanager.core.model.EfestoCompilationContextImpl;
 import org.kie.efesto.runtimemanager.api.exceptions.KieRuntimeServiceException;
 import org.kie.efesto.runtimemanager.api.model.BaseEfestoInput;
 import org.kie.efesto.runtimemanager.api.model.EfestoOutput;
-import org.kie.efesto.runtimemanager.api.model.EfestoRuntimeContext;
 import org.kie.efesto.runtimemanager.api.service.RuntimeManager;
 import org.kie.efesto.runtimemanager.api.utils.SPIUtils;
-import org.kie.efesto.runtimemanager.core.model.EfestoRuntimeContextImpl;
-import org.kie.efesto.runtimemanager.core.model.EfestoRuntimeContextUtils;
 import org.kie.kogito.jitexecutor.efesto.model.JitExecutorCompilationContext;
 import org.kie.kogito.jitexecutor.efesto.model.JitExecutorRuntimeContext;
 import org.kie.kogito.jitexecutor.efesto.storage.ContextStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class EfestoRuntimeManager {
 
@@ -49,11 +45,13 @@ public class EfestoRuntimeManager {
 
     static {
         runtimeManager = SPIUtils.getRuntimeManager(false).orElseThrow(() -> new RuntimeException("Failed to retrieve" +
-                                                                                                          " RuntimeManager"));
+                " RuntimeManager"));
     }
 
     public static EfestoOutput evaluateModel(NamedLocalUriId namedLocalUriId, Map<String, Object> inputData) {
-        BaseEfestoInput<Map<String, Object>> efestoInput = new BaseEfestoInput<>(namedLocalUriId, inputData);
+        Map<String, Object> toUse = new HashMap<>(); //Workaround because rest endpoint returns a linkedhashmap
+        toUse.putAll(inputData);
+        BaseEfestoInput<Map<String, Object>> efestoInput = new BaseEfestoInput<>(namedLocalUriId, toUse);
 
         JitExecutorRuntimeContext runtimeContext = getEfestoRuntimeContext(namedLocalUriId);
         try {
@@ -65,11 +63,11 @@ public class EfestoRuntimeManager {
             }
         } catch (Exception t) {
             String errorMessage = String.format("Evaluation error for %s@%s using %s due to %s: please %s",
-                                                efestoInput.getModelLocalUriId(),
-                                                efestoInput.getInputData(),
-                                                efestoInput,
-                                                t.getMessage(),
-                                                CHECK_CLASSPATH);
+                    efestoInput.getModelLocalUriId(),
+                    efestoInput.getInputData(),
+                    efestoInput,
+                    t.getMessage(),
+                    CHECK_CLASSPATH);
             logger.error(errorMessage);
             throw new KieRuntimeServiceException(errorMessage, t);
         }
@@ -78,7 +76,7 @@ public class EfestoRuntimeManager {
     private EfestoRuntimeManager() {
     }
 
-    private static JitExecutorRuntimeContext getEfestoRuntimeContext(ModelLocalUriId modelLocalUriId) {
+    public static JitExecutorRuntimeContext getEfestoRuntimeContext(ModelLocalUriId modelLocalUriId) {
         JitExecutorRuntimeContext toReturn = ContextStorage.getEfestoRuntimeContext(modelLocalUriId);
         if (toReturn == null) {
             toReturn = instantiateRuntimeContextFromCompilationContext(modelLocalUriId);
@@ -114,37 +112,42 @@ public class EfestoRuntimeManager {
         return toReturn;
     }
 
-/*    private static BaseEfestoInput<EfestoMapInputDTO> getMapInput(ModelLocalUriId modelLocalUriId,
-                                                                  Map<String, Object> inputData) {
-        EfestoMapInputDTO efestoMapInputDTO = modelLocalUriId.model().equals("drl") ? getDrlMapInput(inputData) : getSimpleMapInput(inputData);
-        return new BaseEfestoInput<>(modelLocalUriId, efestoMapInputDTO);
-    }*/
+    /*
+     * private static BaseEfestoInput<EfestoMapInputDTO> getMapInput(ModelLocalUriId modelLocalUriId,
+     * Map<String, Object> inputData) {
+     * EfestoMapInputDTO efestoMapInputDTO = modelLocalUriId.model().equals("drl") ? getDrlMapInput(inputData) : getSimpleMapInput(inputData);
+     * return new BaseEfestoInput<>(modelLocalUriId, efestoMapInputDTO);
+     * }
+     */
 
-/*    private static EfestoMapInputDTO getSimpleMapInput(Map<String, Object> inputData) {
-        return new EfestoMapInputDTO(null, null, inputData, null, null, null);
-    }*/
+    /*
+     * private static EfestoMapInputDTO getSimpleMapInput(Map<String, Object> inputData) {
+     * return new EfestoMapInputDTO(null, null, inputData, null, null, null);
+     * }
+     */
 
-/*    private static EfestoMapInputDTO getDrlMapInput(Map<String, Object> inputData) {
-        List<Object> inserts = new ArrayList<>();
-        if (inputData.containsKey("inserts")) {
-            inserts = (List<Object>) inputData.get("inserts");
-            inputData.remove("inserts");
-        }
-        Map<String, Object> globals = new HashMap<>();
-        if (inputData.containsKey("globals")) {
-            globals = (Map<String, Object>) inputData.get("globals");
-            inputData.remove("globals");
-        }
-        String packageName = (String) inputData.get("package");
-        inputData.remove("package");
-        final Map<String, EfestoOriginalTypeGeneratedType> fieldTypeMap = new HashMap<>();
-        inputData.forEach((s, o) -> {
-            String objectType = o.getClass().getCanonicalName();
-            EfestoOriginalTypeGeneratedType toPut = new EfestoOriginalTypeGeneratedType(objectType, objectType);
-            fieldTypeMap.put(s, toPut);
-        });
-        return new EfestoMapInputDTO(inserts, globals, inputData, fieldTypeMap, "modl", packageName);
-    }*/
-
+    /*
+     * private static EfestoMapInputDTO getDrlMapInput(Map<String, Object> inputData) {
+     * List<Object> inserts = new ArrayList<>();
+     * if (inputData.containsKey("inserts")) {
+     * inserts = (List<Object>) inputData.get("inserts");
+     * inputData.remove("inserts");
+     * }
+     * Map<String, Object> globals = new HashMap<>();
+     * if (inputData.containsKey("globals")) {
+     * globals = (Map<String, Object>) inputData.get("globals");
+     * inputData.remove("globals");
+     * }
+     * String packageName = (String) inputData.get("package");
+     * inputData.remove("package");
+     * final Map<String, EfestoOriginalTypeGeneratedType> fieldTypeMap = new HashMap<>();
+     * inputData.forEach((s, o) -> {
+     * String objectType = o.getClass().getCanonicalName();
+     * EfestoOriginalTypeGeneratedType toPut = new EfestoOriginalTypeGeneratedType(objectType, objectType);
+     * fieldTypeMap.put(s, toPut);
+     * });
+     * return new EfestoMapInputDTO(inserts, globals, inputData, fieldTypeMap, "modl", packageName);
+     * }
+     */
 
 }

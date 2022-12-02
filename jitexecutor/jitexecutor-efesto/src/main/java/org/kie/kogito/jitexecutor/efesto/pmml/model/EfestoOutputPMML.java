@@ -16,7 +16,6 @@
 package org.kie.kogito.jitexecutor.efesto.pmml.model;
 
 import org.kie.api.pmml.PMML4Result;
-import org.kie.dmn.api.core.DMNResult;
 import org.kie.efesto.common.api.identifiers.ModelLocalUriId;
 import org.kie.efesto.runtimemanager.api.model.AbstractEfestoOutput;
 

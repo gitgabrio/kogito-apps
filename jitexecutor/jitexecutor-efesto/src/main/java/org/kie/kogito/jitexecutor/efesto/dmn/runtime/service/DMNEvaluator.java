@@ -69,5 +69,4 @@ public class DMNEvaluator {
         return dmnRuntime.evaluateAll(dmnModel, dmnContext);
     }
 
-
 }

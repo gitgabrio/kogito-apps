@@ -1,11 +1,11 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.kie.kogito.jitexecutor.efesto.pmml.compiler.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,12 +27,12 @@ import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
 
 import org.dmg.pmml.FieldName;
-import org.drools.util.ResourceHelper;
-import org.jpmml.evaluator.Evaluator;
+import org.dmg.pmml.PMML;
 import org.jpmml.evaluator.EvaluatorUtil;
 import org.jpmml.evaluator.FieldValue;
 import org.jpmml.evaluator.InputField;
 import org.jpmml.evaluator.LoadingModelEvaluatorBuilder;
+import org.jpmml.evaluator.ModelEvaluator;
 import org.jpmml.evaluator.OutputField;
 import org.jpmml.evaluator.TargetField;
 import org.jpmml.model.visitors.VisitorBattery;
@@ -46,40 +45,29 @@ public class PMMLValidator {
     private PMMLValidator() {
     }
 
-    public static void validateFiles(Collection<File> pmmlFiles) {
-        pmmlFiles.forEach(toLoad -> {
-            try {
-                logger.info("Loading  " + toLoad.getName());
-                validateFile(toLoad);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    public static void validateInputStream(InputStream toLoad) throws JAXBException, SAXException {
+    public static PMML validateInputStream(InputStream toLoad) throws JAXBException, SAXException {
         // Building a model evaluator from a PMML file
-        Evaluator evaluator = new LoadingModelEvaluatorBuilder()
+        ModelEvaluator<?> evaluator = new LoadingModelEvaluatorBuilder()
                 .setLocatable(false)
                 .setVisitors(new VisitorBattery())
                 //.setOutputFilter(OutputFilters.KEEP_FINAL_RESULTS)
                 .load(toLoad)
                 .build();
-        commonValidate(evaluator);
+        return commonValidate(evaluator);
     }
 
-    public static void validateFile(File toLoad) throws JAXBException, SAXException, IOException {
+    public static PMML validateFile(File toLoad) throws JAXBException, SAXException, IOException {
         // Building a model evaluator from a PMML file
-        Evaluator evaluator = new LoadingModelEvaluatorBuilder()
+        ModelEvaluator<?> evaluator = new LoadingModelEvaluatorBuilder()
                 .setLocatable(false)
                 .setVisitors(new VisitorBattery())
                 //.setOutputFilter(OutputFilters.KEEP_FINAL_RESULTS)
                 .load(toLoad)
                 .build();
-        commonValidate(evaluator);
+        return commonValidate(evaluator);
     }
 
-    public static void commonValidate(Evaluator evaluator)  {
+    public static PMML commonValidate(ModelEvaluator<?> evaluator) {
         // Perforing the self-check
         evaluator.verify();
         // Printing input (x1, x2, .., xn) fields
@@ -127,7 +115,9 @@ public class PMMLValidator {
             break;
         }
 
+        PMML toReturn = evaluator.getPMML();
         // Making the model evaluator eligible for garbage collection
         evaluator = null;
+        return toReturn;
     }
 }

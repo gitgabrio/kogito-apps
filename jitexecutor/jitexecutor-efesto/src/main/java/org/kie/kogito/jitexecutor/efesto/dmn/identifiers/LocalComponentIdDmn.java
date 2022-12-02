@@ -26,11 +26,9 @@ public class LocalComponentIdDmn extends NamedLocalUriId {
     public static final String PREFIX = "dmn";
     private static final long serialVersionUID = 8621199867598971641L;
 
-
     public LocalComponentIdDmn(String fileName, String name) {
         super(LocalUri.Root.append(PREFIX).append(fileName).append(name), fileName, name);
     }
-
 
     @Override
     public LocalId toLocalId() {

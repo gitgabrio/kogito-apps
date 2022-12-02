@@ -28,8 +28,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.kie.kogito.jitexecutor.efesto.JITEfestoService;
+import org.kie.kogito.jitexecutor.efesto.requests.JITEfestoPayload;
 import org.kie.kogito.jitexecutor.efesto.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.efesto.responses.JITEfestoResult;
+import org.kie.kogito.jitexecutor.efesto.responses.JITEfestoValidation;
 
 @Path("/jitefesto")
 public class JITEfestoResource {
@@ -38,13 +40,23 @@ public class JITEfestoResource {
     JITEfestoService jitEfestoService;
 
     @POST
+    @Path("/evaluate")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response jitefesto(MultipleResourcesPayload modelsPayload, Map<String, Object> inputData) {
-        JITEfestoResult evaluateAll =  jitEfestoService.evaluateModel(modelsPayload, inputData);
+    public Response jitefesto(JITEfestoPayload payload) {
+        JITEfestoResult evaluateAll = jitEfestoService.evaluateModel(payload.getModelsPayload(), payload.getInputData());
         Map<String, Object> restResulk = new HashMap<>();
-        restResulk.put(modelsPayload.getMainURI().fullPath(), evaluateAll.getEfestoResult());
+        restResulk.put(payload.getModelsPayload().getMainURI().fullPath(), evaluateAll.getEfestoResult().getOutputData());
         return Response.ok(restResulk).build();
+    }
+
+    @POST
+    @Path("/validate")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response schema(MultipleResourcesPayload payload) {
+        JITEfestoValidation result = jitEfestoService.validatePayload(payload);
+        return Response.ok(result.getErrors()).build();
     }
 
 }

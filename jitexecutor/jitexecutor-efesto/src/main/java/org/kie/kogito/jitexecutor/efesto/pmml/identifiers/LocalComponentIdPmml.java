@@ -26,11 +26,9 @@ public class LocalComponentIdPmml extends NamedLocalUriId {
     public static final String PREFIX = "pmml";
     private static final long serialVersionUID = 8621199867598971641L;
 
-
     public LocalComponentIdPmml(String fileName, String name) {
         super(LocalUri.Root.append(PREFIX).append(fileName).append(name), fileName, name);
     }
-
 
     @Override
     public LocalId toLocalId() {

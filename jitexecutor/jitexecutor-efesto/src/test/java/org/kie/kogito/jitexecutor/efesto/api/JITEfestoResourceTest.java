@@ -47,8 +47,10 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.DMN_FILE;
+import static org.kie.kogito.jitexecutor.efesto.TestingUtils.DMN_FILE_INVALID;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.DMN_PMML_FILE;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.PMML_FILE;
+import static org.kie.kogito.jitexecutor.efesto.TestingUtils.PMML_FILE_INVALID;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.PMML_MODEL_NAME;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.getResourceWithURI;
 
@@ -58,7 +60,9 @@ class JITEfestoResourceTest {
     private static final Logger LOG = LoggerFactory.getLogger(JITEfestoResourceTest.class);
 
     private static String pmmlModel;
+    private static String pmmlModelInvalid;
     private static String dmnModel;
+    private static String dmnModelInvalid;
     private static String dmnPmmlModel;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -73,7 +77,9 @@ class JITEfestoResourceTest {
     @BeforeAll
     public static void setup() throws IOException {
         pmmlModel = FileUtils.getFileContent(PMML_FILE);
+        pmmlModelInvalid = FileUtils.getFileContent(PMML_FILE_INVALID);
         dmnModel = FileUtils.getFileContent(DMN_FILE);
+        dmnModelInvalid = FileUtils.getFileContent(DMN_FILE_INVALID);
         dmnPmmlModel = FileUtils.getFileContent(DMN_PMML_FILE);
     }
 
@@ -174,5 +180,94 @@ class JITEfestoResourceTest {
         assertThat(decisionResult.getEvaluationStatus()).isEqualTo(DMNDecisionResult.DecisionEvaluationStatus.SUCCEEDED);
         assertThat(decisionResult.getResult()).isEqualTo(52.5);
     }
+
+    /*
+     * @Test
+     * void validateModels_Invalid() {
+     * ResourceWithURI resourceWithURIPMML = getResourceWithURI("/pmml/" + PMML_FILE_INVALID, PMML_MODEL_NAME, pmmlModelInvalid);
+     * ResourceWithURI resourceWithURIDMNPMML = getResourceWithURI("/dmn/" + DMN_FILE_INVALID, "", dmnModelInvalid);
+     * MultipleResourcesPayload multipleResourcesPayload =
+     * new MultipleResourcesPayload(resourceWithURIDMNPMML.getURI(), Arrays.asList(resourceWithURIDMNPMML, resourceWithURIPMML));
+     * 
+     * JITEfestoValidation retrieved = jitEfestoService.validatePayload(multipleResourcesPayload);
+     * assertThat(retrieved.getValidations()).hasSameSizeAs(multipleResourcesPayload.getResources());
+     * EfestoValidationOutput pmmlValidation = retrieved.getValidations()
+     * .stream()
+     * .filter(out -> out.getModelIdentifier().equals(PMML_FILE_INVALID))
+     * .findFirst()
+     * .orElseThrow();
+     * assertThat(pmmlValidation.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+     * assertThat(pmmlValidation.getMessages())
+     * .hasSize(2)
+     * .contains("Field \"fld7\" is not defined")
+     * .contains("Field \"fld1\" is not defined");
+     * EfestoValidationOutput dmnValidation = retrieved.getValidations()
+     * .stream()
+     * .filter(out -> out.getModelIdentifier().equals(DMN_FILE_INVALID))
+     * .findFirst()
+     * .orElseThrow();
+     * assertThat(dmnValidation.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+     * assertThat(dmnValidation.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+     * assertThat(dmnValidation.getMessages()).hasSize(2);
+     * }
+     */
+
+    @Test
+    void validateModel_PMML_Invalid() {
+        ResourceWithURI resourceWithURI = getResourceWithURI("/pmml/" + PMML_FILE_INVALID, PMML_MODEL_NAME, pmmlModelInvalid);
+        MultipleResourcesPayload payload =
+                new MultipleResourcesPayload(resourceWithURI.getURI(), Collections.singletonList(resourceWithURI));
+        String response = given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when()
+                .post("/jitefesto/validate")
+                .then()
+                .statusCode(200)
+                .body(containsString("{\"validations\":[{\"modelIdentifier\":\"test_invalid.pmml\"," +
+                        "\"status\":\"FAIL\",\"messages\":[\"Field \\\"fld7\\\" is not " +
+                        "defined\",\"Field \\\"fld1\\\" is not defined\"]}]}"))
+                .extract()
+                .asString();
+
+        LOG.info("Evaluate response: {}", response);
+        /*
+         * Map<String, Object> result = MAPPER.readValue(response, Map.class);
+         * assertThat(result).hasSize(1).containsKey(resourceWithURIDMNPMML.getURI().fullPath());
+         * Object retrieved = result.get(resourceWithURIDMNPMML.getURI().fullPath());
+         * assertThat(retrieved).isNotNull();
+         * assertThat(retrieved.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+         * assertThat(retrieved.getMessages())
+         * .hasSize(2)
+         * .contains("Field \"fld7\" is not defined")
+         * .contains("Field \"fld1\" is not defined");
+         */
+    }
+
+    /*
+     * @Test
+     * void validateModel_DMN_Invalid() {
+     * ResourceWithURI resourceWithURI = getResourceWithURI("/dmn/" + DMN_FILE_INVALID, "", dmnModelInvalid);
+     * 
+     * String response = given()
+     * .contentType(ContentType.JSON)
+     * .body(payload)
+     * .when()
+     * .post("/jitefesto/evaluate")
+     * .then()
+     * .statusCode(200)
+     * .body(containsString("{\"/dmn/KiePMMLRegression.dmn\":{\"messages\":[]," +
+     * "\"decisionResults\":[{\"decisionId\":\"_97845D38-0E4C-41D0-9998" +
+     * "-0D6B149751F3\",\"decisionName\":\"Decision\",\"result\":52.5," +
+     * "\"messages\":[],\"evaluationStatus\":\"SUCCEEDED\"}]}}"))
+     * .extract()
+     * .asString();
+     * 
+     * LOG.info("Evaluate response: {}", response);
+     * Map<String, Object> result = MAPPER.readValue(response, Map.class);
+     * assertThat(result).hasSize(1).containsKey(resourceWithURIDMNPMML.getURI().fullPath());
+     * Object retrieved = result.get(resourceWithURIDMNPMML.getURI().fullPath());
+     * }
+     */
 
 }

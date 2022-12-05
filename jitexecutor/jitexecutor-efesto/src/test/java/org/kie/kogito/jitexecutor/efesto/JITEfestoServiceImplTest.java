@@ -30,15 +30,19 @@ import org.kie.efesto.common.api.identifiers.NamedLocalUriId;
 import org.kie.kogito.jitexecutor.efesto.dmn.model.EfestoOutputDMN;
 import org.kie.kogito.jitexecutor.efesto.dmn.model.JITDMNDecisionResult;
 import org.kie.kogito.jitexecutor.efesto.dmn.model.JITDMNResult;
+import org.kie.kogito.jitexecutor.efesto.model.EfestoValidationOutput;
 import org.kie.kogito.jitexecutor.efesto.requests.JitExecutorUri;
 import org.kie.kogito.jitexecutor.efesto.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.efesto.requests.ResourceWithURI;
 import org.kie.kogito.jitexecutor.efesto.responses.JITEfestoResult;
+import org.kie.kogito.jitexecutor.efesto.responses.JITEfestoValidation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.DMN_FILE;
+import static org.kie.kogito.jitexecutor.efesto.TestingUtils.DMN_FILE_INVALID;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.DMN_PMML_FILE;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.PMML_FILE;
+import static org.kie.kogito.jitexecutor.efesto.TestingUtils.PMML_FILE_INVALID;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.PMML_MODEL_NAME;
 import static org.kie.kogito.jitexecutor.efesto.TestingUtils.getResourceWithURI;
 
@@ -46,14 +50,18 @@ class JITEfestoServiceImplTest {
 
     private static JITEfestoServiceImpl jitEfestoService;
     private static String pmmlModel;
+    private static String pmmlModelInvalid;
     private static String dmnModel;
+    private static String dmnModelInvalid;
     private static String dmnPmmlModel;
 
     @BeforeAll
     public static void setup() throws IOException {
         jitEfestoService = new JITEfestoServiceImpl();
         pmmlModel = FileUtils.getFileContent(PMML_FILE);
+        pmmlModelInvalid = FileUtils.getFileContent(PMML_FILE_INVALID);
         dmnModel = FileUtils.getFileContent(DMN_FILE);
+        dmnModelInvalid = FileUtils.getFileContent(DMN_FILE_INVALID);
         dmnPmmlModel = FileUtils.getFileContent(DMN_PMML_FILE);
     }
 
@@ -178,6 +186,74 @@ class JITEfestoServiceImplTest {
         ResourceWithURI resourceWithURI = getResourceWithURI("/dmn/" + DMN_FILE, "", dmnModel);
         NamedLocalUriId retrieved = jitEfestoService.compileModel(resourceWithURI);
         assertThat(retrieved).isNotNull();
+    }
+
+    @Test
+    void validateModels_Invalid() {
+        ResourceWithURI resourceWithURIPMML = getResourceWithURI("/pmml/" + PMML_FILE_INVALID, PMML_MODEL_NAME, pmmlModelInvalid);
+        ResourceWithURI resourceWithURIDMNPMML = getResourceWithURI("/dmn/" + DMN_FILE_INVALID, "", dmnModelInvalid);
+        MultipleResourcesPayload multipleResourcesPayload =
+                new MultipleResourcesPayload(resourceWithURIDMNPMML.getURI(), Arrays.asList(resourceWithURIDMNPMML, resourceWithURIPMML));
+
+        JITEfestoValidation retrieved = jitEfestoService.validatePayload(multipleResourcesPayload);
+        assertThat(retrieved.getValidations()).hasSameSizeAs(multipleResourcesPayload.getResources());
+        EfestoValidationOutput pmmlValidation = retrieved.getValidations()
+                .stream()
+                .filter(out -> out.getModelIdentifier().equals(PMML_FILE_INVALID))
+                .findFirst()
+                .orElseThrow();
+        assertThat(pmmlValidation.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+        assertThat(pmmlValidation.getMessages())
+                .hasSize(2)
+                .contains("Field \"fld7\" is not defined")
+                .contains("Field \"fld1\" is not defined");
+        EfestoValidationOutput dmnValidation = retrieved.getValidations()
+                .stream()
+                .filter(out -> out.getModelIdentifier().equals(DMN_FILE_INVALID))
+                .findFirst()
+                .orElseThrow();
+        assertThat(dmnValidation.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+        assertThat(dmnValidation.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+        assertThat(dmnValidation.getMessages()).hasSize(2);
+    }
+
+    @Test
+    void validateModel_PMML_Valid() {
+        ResourceWithURI resourceWithURI = getResourceWithURI("/pmml/" + PMML_FILE, PMML_MODEL_NAME, pmmlModel);
+        EfestoValidationOutput retrieved = jitEfestoService.validateModel(resourceWithURI);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.OK);
+        assertThat(retrieved.getMessages()).isEmpty();
+    }
+
+    @Test
+    void validateModel_PMML_Invalid() {
+        ResourceWithURI resourceWithURI = getResourceWithURI("/pmml/" + PMML_FILE_INVALID, PMML_MODEL_NAME, pmmlModelInvalid);
+        EfestoValidationOutput retrieved = jitEfestoService.validateModel(resourceWithURI);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+        assertThat(retrieved.getMessages())
+                .hasSize(2)
+                .contains("Field \"fld7\" is not defined")
+                .contains("Field \"fld1\" is not defined");
+    }
+
+    @Test
+    void validateModel_DMN_Valid() {
+        ResourceWithURI resourceWithURI = getResourceWithURI("/dmn/" + DMN_FILE, "", dmnModel);
+        EfestoValidationOutput retrieved = jitEfestoService.validateModel(resourceWithURI);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.OK);
+        assertThat(retrieved.getMessages()).hasSize(6);
+    }
+
+    @Test
+    void validateModel_DMN_Invalid() {
+        ResourceWithURI resourceWithURI = getResourceWithURI("/dmn/" + DMN_FILE_INVALID, "", dmnModelInvalid);
+        EfestoValidationOutput retrieved = jitEfestoService.validateModel(resourceWithURI);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getStatus()).isEqualTo(EfestoValidationOutput.STATUS.FAIL);
+        assertThat(retrieved.getMessages()).hasSize(2);
     }
 
 }

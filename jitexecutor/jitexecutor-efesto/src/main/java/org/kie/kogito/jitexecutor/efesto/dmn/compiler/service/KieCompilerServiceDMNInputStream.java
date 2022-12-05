@@ -19,7 +19,9 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.kie.api.builder.Message;
 import org.kie.dmn.api.core.DMNMessage;
 import org.kie.dmn.core.compiler.profiles.ExtendedDMNProfile;
 import org.kie.dmn.validation.DMNValidator;
@@ -35,6 +37,7 @@ import org.kie.efesto.compilationmanager.api.model.EfestoResource;
 import org.kie.efesto.compilationmanager.api.service.KieCompilerService;
 import org.kie.kogito.jitexecutor.efesto.dmn.identifiers.DmnIdFactory;
 import org.kie.kogito.jitexecutor.efesto.dmn.identifiers.KieDmnComponentRoot;
+import org.kie.kogito.jitexecutor.efesto.model.EfestoValidationOutput;
 
 /**
  * For the moment being, use this for DMN "validation", since DMN does not have a code-generation phase
@@ -56,14 +59,47 @@ public class KieCompilerServiceDMNInputStream implements KieCompilerService<Efes
                     toProcess.getClass().getName()));
         }
         EfestoInputStreamResource inputStreamResource = (EfestoInputStreamResource) toProcess;
-        List<DMNMessage> messages = validator.validate(new InputStreamReader(inputStreamResource.getContent()), DMNValidator.Validation.VALIDATE_SCHEMA, DMNValidator.Validation.VALIDATE_MODEL,
-                DMNValidator.Validation.VALIDATE_COMPILATION, DMNValidator.Validation.ANALYZE_DECISION_TABLE);
-        return Collections.singletonList(getDefaultEfestoCompilationOutput(inputStreamResource.getFileName(), inputStreamResource.getModelType()));
+        List<DMNMessage> messages = validator.validate(new InputStreamReader(inputStreamResource.getContent()),
+                DMNValidator.Validation.VALIDATE_SCHEMA,
+                DMNValidator.Validation.VALIDATE_MODEL,
+                DMNValidator.Validation.VALIDATE_COMPILATION,
+                DMNValidator.Validation.ANALYZE_DECISION_TABLE);
+        if (hasError(messages)) {
+            return Collections.emptyList();
+        } else {
+            return Collections.singletonList(getDefaultEfestoCompilationOutput(inputStreamResource.getFileName(),
+                    inputStreamResource.getModelType()));
+        }
+    }
+
+    // This should be declared in efesto interface
+    public EfestoValidationOutput validateResource(EfestoResource toProcess) {
+        if (!canManageResource(toProcess)) {
+            throw new KieCompilerServiceException(String.format("%s can not try to validate %s",
+                    this.getClass().getName(),
+                    toProcess.getClass().getName()));
+        }
+        EfestoInputStreamResource inputStreamResource = (EfestoInputStreamResource) toProcess;
+        List<DMNMessage> dmnMessages = validator.validate(new InputStreamReader(inputStreamResource.getContent()),
+                DMNValidator.Validation.VALIDATE_SCHEMA,
+                DMNValidator.Validation.VALIDATE_MODEL,
+                DMNValidator.Validation.VALIDATE_COMPILATION,
+                DMNValidator.Validation.ANALYZE_DECISION_TABLE);
+        EfestoValidationOutput.STATUS status = hasError(dmnMessages) ? EfestoValidationOutput.STATUS.FAIL : EfestoValidationOutput.STATUS.OK;
+        String modelIdentifier = ((EfestoInputStreamResource) toProcess).getFileName();
+        List<String> messages = dmnMessages.stream()
+                .map(dmnMessage -> dmnMessage.getLevel() + ":" + dmnMessage.getText())
+                .collect(Collectors.toList());
+        return new EfestoValidationOutput(modelIdentifier, status, messages);
     }
 
     @Override
     public String getModelType() {
         return "dmn";
+    }
+
+    private boolean hasError(List<DMNMessage> dmnMessages) {
+        return dmnMessages.stream().anyMatch(dmnMessage -> dmnMessage.getLevel().equals(Message.Level.ERROR));
     }
 
     private static EfestoCompilationOutput getDefaultEfestoCompilationOutput(String fileName, String modelName) {

@@ -15,6 +15,7 @@
  */
 package org.kie.kogito.jitexecutor.efesto;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,7 @@ import org.kie.efesto.common.api.identifiers.NamedLocalUriId;
 import org.kie.efesto.runtimemanager.api.model.EfestoOutput;
 import org.kie.kogito.jitexecutor.efesto.managers.EfestoCompilerManager;
 import org.kie.kogito.jitexecutor.efesto.managers.EfestoRuntimeManager;
+import org.kie.kogito.jitexecutor.efesto.model.EfestoValidationOutput;
 import org.kie.kogito.jitexecutor.efesto.requests.JitExecutorUri;
 import org.kie.kogito.jitexecutor.efesto.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.efesto.requests.ResourceWithURI;
@@ -51,7 +53,16 @@ public class JITEfestoServiceImpl implements JITEfestoService {
 
     @Override
     public JITEfestoValidation validatePayload(MultipleResourcesPayload payload) {
-        return null;
+        List<EfestoValidationOutput> validationOutputs = payload.getResources()
+                .stream().map(this::validateModel)
+                .collect(Collectors.toList());
+        return new JITEfestoValidation(validationOutputs);
+    }
+
+    EfestoValidationOutput validateModel(ResourceWithURI resourceWithURI) {
+        LOGGER.debug("validateModel {}", resourceWithURI);
+        return EfestoCompilerManager.validateModel(resourceWithURI.getContent(),
+                resourceWithURI.getURI().fileName());
     }
 
     JITEfestoResult evaluateModel(NamedLocalUriId localUriId, Map<String, Object> inputData) {

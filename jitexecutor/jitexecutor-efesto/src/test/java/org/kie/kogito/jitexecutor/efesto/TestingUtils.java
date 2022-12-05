@@ -21,7 +21,10 @@ import org.kie.kogito.jitexecutor.efesto.requests.ResourceWithURI;
 public class TestingUtils {
 
     public static final String PMML_FILE = "test_regression.pmml";
+
+    public static final String PMML_FILE_INVALID = "test_invalid.pmml";
     public static final String DMN_FILE = "test.dmn";
+    public static final String DMN_FILE_INVALID = "test_invalid.dmn";
     public static final String DMN_PMML_FILE = "KiePMMLRegression.dmn";
     public static final String PMML_MODEL_NAME = "LinReg";
 

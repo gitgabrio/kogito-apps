@@ -56,7 +56,7 @@ public class JITEfestoResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response schema(MultipleResourcesPayload payload) {
         JITEfestoValidation result = jitEfestoService.validatePayload(payload);
-        return Response.ok(result.getErrors()).build();
+        return Response.ok(result).build();
     }
 
 }

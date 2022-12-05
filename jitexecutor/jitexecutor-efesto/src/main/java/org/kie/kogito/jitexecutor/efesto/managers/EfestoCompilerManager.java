@@ -18,6 +18,7 @@ package org.kie.kogito.jitexecutor.efesto.managers;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,7 +32,10 @@ import org.kie.efesto.compilationmanager.api.exceptions.KieCompilerServiceExcept
 import org.kie.efesto.compilationmanager.api.model.EfestoInputStreamResource;
 import org.kie.efesto.compilationmanager.api.service.CompilationManager;
 import org.kie.efesto.compilationmanager.api.utils.SPIUtils;
+import org.kie.kogito.jitexecutor.efesto.dmn.compiler.service.KieCompilerServiceDMNInputStream;
+import org.kie.kogito.jitexecutor.efesto.model.EfestoValidationOutput;
 import org.kie.kogito.jitexecutor.efesto.model.JitExecutorCompilationContext;
+import org.kie.kogito.jitexecutor.efesto.pmml.compiler.service.KieCompilerServicePMMLInputStream;
 import org.kie.kogito.jitexecutor.efesto.storage.ContextStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,20 +52,41 @@ public class EfestoCompilerManager {
         compilationManager = SPIUtils.getCompilationManager(false).orElseThrow(() -> new RuntimeException("Failed to retrieve CompilationManager"));
     }
 
+    public static EfestoValidationOutput validateModel(String toCompile, String fileName) {
+        EfestoInputStreamResource efestoResource =
+                new EfestoInputStreamResource(new ByteArrayInputStream(toCompile.getBytes(StandardCharsets.UTF_8)),
+                        fileName);
+
+        // For the moment being Efesto does not provide a "validation" API.
+        // Let's do it here manually, but later this should be provided by efesto out-of-the-box
+        String modelType = fileName.substring(fileName.lastIndexOf('.') + 1);
+        switch (modelType) {
+            case "dmn":
+                return new KieCompilerServiceDMNInputStream().validateResource(efestoResource);
+            case "pmml":
+                return new KieCompilerServicePMMLInputStream().validateResource(efestoResource);
+            default:
+                return new EfestoValidationOutput(fileName, EfestoValidationOutput.STATUS.FAIL,
+                        Collections.singletonList("Unmanaged model type"));
+        }
+    }
+
     public static ModelLocalUriId compileModel(String toCompile, String fileName) {
-        EfestoInputStreamResource efestoResource = new EfestoInputStreamResource(new ByteArrayInputStream(toCompile.getBytes(StandardCharsets.UTF_8)),
-                fileName);
-        JitExecutorCompilationContext compilationContext = new JitExecutorCompilationContext(Thread.currentThread().getContextClassLoader(), toCompile);
+        EfestoInputStreamResource efestoResource =
+                new EfestoInputStreamResource(new ByteArrayInputStream(toCompile.getBytes(StandardCharsets.UTF_8)),
+                        fileName);
+        JitExecutorCompilationContext compilationContext =
+                new JitExecutorCompilationContext(Thread.currentThread().getContextClassLoader(), toCompile);
         try {
             compilationManager.processResource(compilationContext, efestoResource);
-            ModelLocalUriId toReturn = getModelLocalUriIdFromGeneratedResourcesMap(compilationContext.getGeneratedResourcesMap());
+            ModelLocalUriId toReturn =
+                    getModelLocalUriIdFromGeneratedResourcesMap(compilationContext.getGeneratedResourcesMap());
             ContextStorage.putEfestoCompilationContext(toReturn, compilationContext);
             return toReturn;
         } catch (Exception e) {
             logger.error("Failed to process {}", fileName, e);
             throw new KieEfestoCommonException(e);
         }
-
     }
 
     static ModelLocalUriId getModelLocalUriIdFromGeneratedResourcesMap(Map<String, GeneratedResources> generatedResourcesMap) {
@@ -74,5 +99,4 @@ public class EfestoCompilerManager {
                         .orElseThrow(() -> new KieCompilerServiceException("Failed to retrieve a GeneratedExecutableResource"));
         return generatedExecutableResource.getModelLocalUriId();
     }
-
 }

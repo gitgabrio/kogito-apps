@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.kie.kogito.jitexecutor.efesto.responses;
+package org.kie.kogito.jitexecutor.efesto.pmml.compiler.exceptions;
 
-import java.io.Serializable;
 import java.util.Collection;
 
-import org.kie.kogito.jitexecutor.efesto.model.EfestoValidationOutput;
+public class ExceptionCollection extends Exception {
 
-public class JITEfestoValidation implements Serializable {
+    private Collection<Exception> exceptions;
 
-    private Collection<EfestoValidationOutput> validations;
-
-    public JITEfestoValidation() {
+    public ExceptionCollection(Collection<Exception> exceptions) {
+        this.exceptions = exceptions;
     }
 
-    public JITEfestoValidation(Collection<EfestoValidationOutput> validations) {
-        this.validations = validations;
-    }
-
-    public Collection<EfestoValidationOutput> getValidations() {
-        return validations;
+    public Collection<Exception> getExceptions() {
+        return exceptions;
     }
 }

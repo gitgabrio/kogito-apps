@@ -15,11 +15,10 @@
  */
 package org.kie.kogito.jitexecutor.efesto.pmml.compiler.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBException;
 
 import org.dmg.pmml.PMML;
 import org.kie.efesto.common.api.identifiers.EfestoAppRoot;
@@ -31,11 +30,12 @@ import org.kie.efesto.compilationmanager.api.model.EfestoCompilationOutput;
 import org.kie.efesto.compilationmanager.api.model.EfestoInputStreamResource;
 import org.kie.efesto.compilationmanager.api.model.EfestoResource;
 import org.kie.efesto.compilationmanager.api.service.KieCompilerService;
+import org.kie.kogito.jitexecutor.efesto.model.EfestoValidationOutput;
+import org.kie.kogito.jitexecutor.efesto.pmml.compiler.exceptions.ExceptionCollection;
 import org.kie.kogito.jitexecutor.efesto.pmml.identifiers.KiePmmlComponentRoot;
 import org.kie.kogito.jitexecutor.efesto.pmml.identifiers.PmmlIdFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 
 /**
  * For the moment being, use this for DMN "validation", since DMN does not have a code-generation phase
@@ -62,8 +62,8 @@ public class KieCompilerServicePMMLInputStream implements KieCompilerService<Efe
             return retrieved.getModels().stream()
                     .map(model -> getDefaultEfestoCompilationOutput(inputStreamResource.getFileName(), model.getModelName()))
                     .collect(Collectors.toList());
-        } catch (JAXBException | SAXException e) {
-            LOGGER.error("Failed to validate PMML model", e);
+        } catch (Exception e) {
+            LOGGER.error("Failed to process PMML model", e);
             return Collections.emptyList();
         }
     }
@@ -71,6 +71,40 @@ public class KieCompilerServicePMMLInputStream implements KieCompilerService<Efe
     @Override
     public String getModelType() {
         return "pmml";
+    }
+
+    // This should be declared in efesto interface
+    public EfestoValidationOutput validateResource(EfestoResource toProcess) {
+        if (!canManageResource(toProcess)) {
+            throw new KieCompilerServiceException(String.format("%s can not try to validate %s",
+                    this.getClass().getName(),
+                    toProcess.getClass().getName()));
+        }
+        EfestoInputStreamResource inputStreamResource = (EfestoInputStreamResource) toProcess;
+        String modelIdentifier = ((EfestoInputStreamResource) toProcess).getFileName();
+        EfestoValidationOutput.STATUS status;
+        List<String> messages;
+        try {
+            PMMLValidator.validateInputStream(inputStreamResource.getContent());
+            status = EfestoValidationOutput.STATUS.OK;
+            messages = Collections.emptyList();
+
+        } catch (ExceptionCollection e) {
+            String error = e.getMessage() == null || e.getMessage().isEmpty() ? e.getClass().getName() : e.getMessage();
+            LOGGER.warn("Failed to validate PMML model due to {}", error);
+            status = EfestoValidationOutput.STATUS.FAIL;
+            messages = new ArrayList<>();
+            for (Exception ex : e.getExceptions()) {
+                String exerror = ex.getMessage() == null || ex.getMessage().isEmpty() ? ex.getClass().getName() : ex.getMessage();
+                messages.add(exerror);
+            }
+        } catch (Exception e) {
+            String error = e.getMessage() == null || e.getMessage().isEmpty() ? e.getClass().getName() : e.getMessage();
+            LOGGER.warn("Failed to validate PMML model due to {}", error);
+            status = EfestoValidationOutput.STATUS.FAIL;
+            messages = Collections.singletonList(error);
+        }
+        return new EfestoValidationOutput(modelIdentifier, status, messages);
     }
 
     private static EfestoCompilationOutput getDefaultEfestoCompilationOutput(String fileName, String modelName) {

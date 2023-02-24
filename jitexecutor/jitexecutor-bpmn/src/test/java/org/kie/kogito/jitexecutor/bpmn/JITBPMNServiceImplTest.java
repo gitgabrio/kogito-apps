@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import org.drools.io.FileSystemResource;
 import org.drools.util.IoUtils;
@@ -33,12 +34,7 @@ import org.kie.kogito.jitexecutor.bpmn.responses.JITBPMNValidationResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.MULTIPLE_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.MULTIPLE_INVALID_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.SINGLE_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.SINGLE_INVALID_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.SINGLE_UNPARSABLE_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.UNPARSABLE_BPMN2_FILE;
+import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.*;
 
 class JITBPMNServiceImplTest {
 
@@ -80,6 +76,22 @@ class JITBPMNServiceImplTest {
         assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid1 - name : invalid1-process-id - error : Process has no end node.");
         assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid2 - name : invalid2-process-id - error : Process has no start node.");
         assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid2 - name : invalid2-process-id - error : Process has no end node.");
+    }
+
+    @Test
+    void validateModel_CatchNowhereBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(CATCH_NOWHERE))));
+        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getErrors()).isNotNull().hasSize(1);
+        System.out.println(retrieved.getErrors().iterator().next());
+        retrieved.getErrors().forEach(new Consumer<String>() {
+            @Override
+            public void accept(String s) {
+                assertThat(s).contains("Event node 'null' [1] has no incoming connectionNode details");
+                assertThat(s).contains("UniqueId: _46A46B0C-22EE-4ACC-BC7B-C0EDDAFDD9DF; BPMN.InputTypes: {}; BPMN.OutputTypes: {};");
+            }
+        });
     }
 
     @Test

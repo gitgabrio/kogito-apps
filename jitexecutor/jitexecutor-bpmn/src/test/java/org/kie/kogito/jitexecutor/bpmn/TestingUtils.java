@@ -17,7 +17,7 @@ package org.kie.kogito.jitexecutor.bpmn;
 
 public class TestingUtils {
 
-    public static final String SINGLE_BPMN_FILE = "/SingleProcess.bpmn";
+    public static final String CATCH_NOWHERE = "/catch-nowhere.bpmn";
     public static final String MULTIPLE_BPMN_FILE = "/MultipleProcess.bpmn";
 
     public static final String INVALID_BPMN_FILE = "/InvalidModel.bpmn";

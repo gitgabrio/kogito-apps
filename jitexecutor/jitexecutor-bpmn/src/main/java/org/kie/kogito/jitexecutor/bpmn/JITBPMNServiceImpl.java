@@ -22,6 +22,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -33,8 +36,11 @@ import org.jbpm.compiler.xml.XmlProcessReader;
 import org.jbpm.compiler.xml.core.SemanticModules;
 import org.jbpm.process.core.validation.ProcessValidationError;
 import org.jbpm.ruleflow.core.validation.RuleFlowProcessValidator;
+import org.kie.api.definition.process.Node;
 import org.kie.api.definition.process.Process;
 import org.kie.api.io.Resource;
+import org.kie.kogito.jitexecutor.bpmn.overrides.JITBPMNSemanticModule;
+import org.kie.kogito.jitexecutor.bpmn.overrides.JITProcessParsingValidationException;
 import org.kie.kogito.jitexecutor.bpmn.responses.JITBPMNValidationResult;
 import org.kie.kogito.jitexecutor.common.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.common.requests.ResourceWithURI;
@@ -54,7 +60,7 @@ public class JITBPMNServiceImpl implements JITBPMNService {
     private static String ERROR_TEMPLATE = "Uri: %s - Process id: %s - name : %s - error : %s";
 
     static {
-        BPMN_SEMANTIC_MODULES.addSemanticModule(new BPMNSemanticModule());
+        BPMN_SEMANTIC_MODULES.addSemanticModule(new JITBPMNSemanticModule());
         BPMN_SEMANTIC_MODULES.addSemanticModule(new BPMNExtensionsSemanticModule());
         BPMN_SEMANTIC_MODULES.addSemanticModule(new BPMNDISemanticModule());
     }
@@ -94,6 +100,18 @@ public class JITBPMNServiceImpl implements JITBPMNService {
                     toReturn.add(getErrorString(processValidationError, resourceUri));
                 }
             }
+        } catch (JITProcessParsingValidationException e) {
+            StringBuilder errorBuilder = new StringBuilder(e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+            Node node = e.getNode();
+            errorBuilder.append("Node details. ");
+            errorBuilder.append(String.format("NodeContainer: %s; ", node.getNodeContainer()));
+            node.getMetaData().forEach((s, o) -> {
+                if (o != null) {
+                    errorBuilder.append(String.format("%s: %s; ", s, o));
+                }
+            });
+            toReturn = Collections.singleton(errorBuilder.toString());
+            LOGGER.error("Fail to validate", e);
         } catch (Throwable e) {
             String error = e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString();
             toReturn = Collections.singleton(error);

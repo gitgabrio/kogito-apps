@@ -84,13 +84,9 @@ class JITBPMNServiceImplTest {
         JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
         assertThat(retrieved.getErrors()).isNotNull().hasSize(1);
-        System.out.println(retrieved.getErrors().iterator().next());
-        retrieved.getErrors().forEach(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
-                assertThat(s).contains("Event node 'null' [1] has no incoming connectionNode details");
-                assertThat(s).contains("UniqueId: _46A46B0C-22EE-4ACC-BC7B-C0EDDAFDD9DF; BPMN.InputTypes: {}; BPMN.OutputTypes: {};");
-            }
+        retrieved.getErrors().forEach(s -> {
+            assertThat(s).contains("Event node 'null' [1] has no incoming connectionNode details");
+            assertThat(s).contains("UniqueId: _46A46B0C-22EE-4ACC-BC7B-C0EDDAFDD9DF; BPMN.InputTypes: {}; BPMN.OutputTypes: {};");
         });
     }
 

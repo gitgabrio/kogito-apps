@@ -18,11 +18,17 @@ package org.kie.kogito.jitexecutor.bpmn;
 public class TestingUtils {
 
     public static final String CATCH_NOWHERE = "/catch-nowhere.bpmn";
-    public static final String MULTIPLE_BPMN_FILE = "/MultipleProcess.bpmn";
 
-    public static final String INVALID_BPMN_FILE = "/InvalidModel.bpmn";
+    public static final String AD_HOC_SUBPROCESS = "/ad-hoc-subprocess.bpmn";
+    public static final String LANE_WITH_ANNOTATION = "/lane-with-annotation.bpmn";
 
-    public static final String UNPARSABLE_BPMN_FILE = "/UnparsableModel.bpmn";
+    public static final String INVALID_EXPRESSION = "/invalid-expression.bpmn";
+
+    public static final String MISSING_ERROR = "/missing-error.bpmn";
+
+    public static final String MISSING_PROCESS_VARIABLE = "/missing-process-variable.bpmn";
+
+    public static final String MISSING_SIGNAL = "/missing-signal.bpmn";
     public static final String SINGLE_BPMN2_FILE = "/SingleProcess.bpmn2";
     public static final String MULTIPLE_BPMN2_FILE = "/MultipleProcess.bpmn2";
     public static final String SINGLE_INVALID_BPMN2_FILE = "/SingleInvalidModel.bpmn2";

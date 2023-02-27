@@ -21,6 +21,7 @@ import org.drools.util.StringUtils;
 import org.jbpm.process.core.impl.ProcessImpl;
 import org.jbpm.process.core.validation.ProcessValidationError;
 import org.jbpm.process.core.validation.impl.ProcessValidationErrorImpl;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.kie.api.definition.process.Process;
 import org.kie.api.io.Resource;
@@ -101,6 +102,88 @@ class JITBPMNServiceImplTest {
                 result.getNodeName().equals("(unknown)") &&
                 result.getProcessId().equals("catch_nowhere") &&
                 result.getErrorMessage().equals("Event node 'null' [1] has no incoming connection"));
+    }
+
+    @Test
+    void validateModel_AdHocSubprocessBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(AD_HOC_SUBPROCESS))));
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getResults()).isNotNull().hasSize(5);
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getNodeId() == 0 &&
+                result.getNodeName() == null &&
+                result.getProcessId().equals("ad_hoc_subprocess") &&
+                result.getErrorMessage().equals("Process has no start node."));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getNodeId() == 0 &&
+                result.getNodeName() == null &&
+                result.getProcessId().equals("ad_hoc_subprocess") &&
+                result.getErrorMessage().equals("Process has no end node."));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getNodeId() == 1 &&
+                result.getNodeName().equals("Sub-process") &&
+                result.getProcessId().equals("ad_hoc_subprocess") &&
+                result.getErrorMessage().equals("Node 'Sub-process' [1] Dynamic has no incoming connection"));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getNodeId() == 1 &&
+                result.getNodeName().equals("Sub-process") &&
+                result.getProcessId().equals("ad_hoc_subprocess") &&
+                result.getErrorMessage().equals("Node 'Sub-process' [1] Dynamic has no outgoing connection"));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getNodeId() == 1 &&
+                result.getNodeName().equals("Sub-process") &&
+                result.getProcessId().equals("ad_hoc_subprocess") &&
+                result.getErrorMessage().equals("Node 'Sub-process' [1] Has no connection to the start node."));
+    }
+
+    @Test
+    void validateModel_LaneWithAnnotationBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(LANE_WITH_ANNOTATION))));
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.SEVERE) &&
+                result.getNodeId() == -1 &&
+                result.getNodeName().equals("") &&
+                result.getProcessId().equals("") &&
+                result.getErrorMessage().equals("Could not find source [_72784A45-EB33-4E6B-B4D6-1E651282BF7C] for association _047C7DDC-8D2B-423A-9574-65A847490E71]"));
+    }
+
+    @Disabled("condition on edge refer to non existing variable, but no problem reported from validation")
+    @Test
+    void validateModel_InvalidExpressionBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(INVALID_EXPRESSION))));
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
+    }
+
+    @Disabled("error event do not specify error. is there some default behavior that all errors are assumed in similar case?")
+    @Test
+    void validateModel_MissingErrorBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(MISSING_ERROR))));
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
+    }
+
+    @Disabled("in the task assignments of the business rule task, we assign 'Result' to '[nothing]', maybe valid from spec point of view, but doesn't make much sense I think")
+    @Test
+    void validateModel_MissingProcessVariableBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(MISSING_PROCESS_VARIABLE))));
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
+    }
+
+    @Disabled("signal event do not specify signal. is there some default behavior that all signals are assumed in similar case?")
+    @Test
+    void validateModel_MissingSignalBPMN() throws IOException {
+        String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(MISSING_SIGNAL))));
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
     }
 
     @Test

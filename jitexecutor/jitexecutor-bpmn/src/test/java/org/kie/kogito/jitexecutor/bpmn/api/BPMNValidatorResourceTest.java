@@ -16,35 +16,28 @@
 
 package org.kie.kogito.jitexecutor.bpmn.api;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import org.drools.util.IoUtils;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.jitexecutor.bpmn.JITBPMNService;
+import org.kie.kogito.jitexecutor.bpmn.responses.MultipleResponsesPayload;
 import org.kie.kogito.jitexecutor.common.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.common.requests.ResourceWithURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.MULTIPLE_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.MULTIPLE_INVALID_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.SINGLE_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.SINGLE_INVALID_BPMN2_FILE;
-import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.SINGLE_UNPARSABLE_BPMN2_FILE;
+import static org.kie.kogito.jitexecutor.bpmn.TestingUtils.*;
 
 @QuarkusTest
 public class BPMNValidatorResourceTest {
@@ -55,10 +48,6 @@ public class BPMNValidatorResourceTest {
     static {
         MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
-
-    private static final CollectionType LIST_OF_MSGS = MAPPER.getTypeFactory()
-            .constructCollectionType(List.class,
-                    String.class);
 
     @Test
     void test_SingleValidBPMN2() throws IOException {
@@ -77,8 +66,8 @@ public class BPMNValidatorResourceTest {
                 .asString();
 
         LOG.info("Validate response: {}", response);
-        List<String> messages = MAPPER.readValue(response, LIST_OF_MSGS);
-        assertThat(messages).isEmpty();
+        MultipleResponsesPayload responsePayload = MAPPER.readValue(response, MultipleResponsesPayload.class);
+        assertThat(responsePayload.getResults()).isEmpty();
     }
 
     @Test
@@ -98,8 +87,8 @@ public class BPMNValidatorResourceTest {
                 .asString();
 
         LOG.info("Validate response: {}", response);
-        List<String> messages = MAPPER.readValue(response, LIST_OF_MSGS);
-        assertThat(messages).isEmpty();
+        MultipleResponsesPayload responsePayload = MAPPER.readValue(response, MultipleResponsesPayload.class);
+        assertThat(responsePayload.getResults()).isEmpty();
     }
 
     @Test
@@ -114,15 +103,13 @@ public class BPMNValidatorResourceTest {
                 .post("/jitbpmn/validate")
                 .then()
                 .statusCode(200)
-                .body(containsString("[\"Uri: uri - Process id: invalid - name : invalid-process-id - error : Process has no " +
-                        "start node.\",\"Uri: uri - Process id: invalid - name : invalid-process-id - error" +
-                        " : Process has no end node.\"]"))
+                .body(containsString("{\"mainURI\":\"uri\",\"results\":[{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid\",\"errorMessage\":\"Process has no start node.\"},{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid\",\"errorMessage\":\"Process has no end node.\"}]}"))
                 .extract()
                 .asString();
 
         LOG.info("Validate response: {}", response);
-        List<String> messages = MAPPER.readValue(response, LIST_OF_MSGS);
-        assertThat(messages).hasSize(2);
+        MultipleResponsesPayload responsePayload = MAPPER.readValue(response, MultipleResponsesPayload.class);
+        assertThat(responsePayload.getResults()).hasSize(2);
     }
 
     @Test
@@ -137,18 +124,13 @@ public class BPMNValidatorResourceTest {
                 .post("/jitbpmn/validate")
                 .then()
                 .statusCode(200)
-                .body(containsString("[\"Uri: uri - Process id: invalid1 - name : invalid1-process-id - error : Process has no " +
-                        "start node.\",\"Uri: uri - Process id: invalid1 - name : invalid1-process-id - " +
-                        "error : Process has no end node.\",\"Uri: uri - Process id: invalid2 - name : " +
-                        "invalid2-process-id - error : Process has no start node.\",\"Uri: uri - Process " +
-                        "id: invalid2 - name : invalid2-process-id - error : Process has no end " +
-                        "node.\"]"))
+                .body(containsString("{\"mainURI\":\"uri\",\"results\":[{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid1\",\"errorMessage\":\"Process has no start node.\"},{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid1\",\"errorMessage\":\"Process has no end node.\"},{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid2\",\"errorMessage\":\"Process has no start node.\"},{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid2\",\"errorMessage\":\"Process has no end node.\"}]}"))
                 .extract()
                 .asString();
 
         LOG.info("Validate response: {}", response);
-        List<String> messages = MAPPER.readValue(response, LIST_OF_MSGS);
-        assertThat(messages).hasSize(4);
+        MultipleResponsesPayload responsePayload = MAPPER.readValue(response, MultipleResponsesPayload.class);
+        assertThat(responsePayload.getResults()).hasSize(4);
     }
 
     @Test
@@ -166,15 +148,13 @@ public class BPMNValidatorResourceTest {
                 .post("/jitbpmn/validate")
                 .then()
                 .statusCode(200)
-                .body(containsString("[\"Uri: UriInvalid - Process id: invalid - name : invalid-process-id - error : Process has no " +
-                        "start node.\",\"Uri: UriInvalid - Process id: invalid - name : invalid-process-id - error" +
-                        " : Process has no end node.\"]"))
+                .body(containsString("{\"mainURI\":\"mainUri\",\"results\":[{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid\",\"errorMessage\":\"Process has no start node.\"},{\"errorLevel\":\"WARNING\",\"nodeId\":0,\"nodeName\":null,\"processId\":\"invalid\",\"errorMessage\":\"Process has no end node.\"}]}"))
                 .extract()
                 .asString();
 
         LOG.info("Validate response: {}", response);
-        List<String> messages = MAPPER.readValue(response, LIST_OF_MSGS);
-        assertThat(messages).hasSize(2);
+        MultipleResponsesPayload responsePayload = MAPPER.readValue(response, MultipleResponsesPayload.class);
+        assertThat(responsePayload.getResults()).hasSize(2);
     }
 
     @Test
@@ -189,13 +169,13 @@ public class BPMNValidatorResourceTest {
                 .post("/jitbpmn/validate")
                 .then()
                 .statusCode(200)
-                .body(containsString("[\"Could not find message _T6T0kEcTEDuygKsUt0on2Q____\"]"))
+                .body(containsString("{\"mainURI\":\"uri\",\"results\":[{\"errorLevel\":\"SEVERE\",\"nodeId\":-1,\"nodeName\":\"\",\"processId\":\"\",\"errorMessage\":\"Could not find message _T6T0kEcTEDuygKsUt0on2Q____\"}]}"))
                 .extract()
                 .asString();
 
         LOG.info("Validate response: {}", response);
-        List<String> messages = MAPPER.readValue(response, LIST_OF_MSGS);
-        assertThat(messages).hasSize(1);
+        MultipleResponsesPayload responsePayload = MAPPER.readValue(response, MultipleResponsesPayload.class);
+        assertThat(responsePayload.getResults()).hasSize(1);
     }
 
     private MultipleResourcesPayload getMultipleResourcePayload(String content, String uri) {

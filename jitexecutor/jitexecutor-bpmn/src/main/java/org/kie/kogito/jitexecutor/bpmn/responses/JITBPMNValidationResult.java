@@ -16,17 +16,73 @@
 package org.kie.kogito.jitexecutor.bpmn.responses;
 
 import java.io.Serializable;
-import java.util.Collection;
 
 public class JITBPMNValidationResult implements Serializable {
 
-    private final Collection<String> errors;
-
-    public JITBPMNValidationResult(Collection<String> errors) {
-        this.errors = errors;
+    public enum ERROR_LEVEL {
+        FINE,
+        WARNING,
+        SEVERE
     }
 
-    public Collection<String> getErrors() {
-        return errors;
+    private ERROR_LEVEL errorLevel;
+    private long nodeId;
+    private String nodeName;
+    private String processId;
+    private String errorMessage;
+
+    public JITBPMNValidationResult() {
+    }
+
+    public JITBPMNValidationResult(ERROR_LEVEL errorLevel, String errorMessage) {
+        this(errorLevel, -1, "", "", errorMessage);
+    }
+
+    public JITBPMNValidationResult(ERROR_LEVEL errorLevel, long nodeId, String nodeName, String processId, String errorMessage) {
+        this.errorLevel = errorLevel;
+        this.nodeId = nodeId;
+        this.nodeName = nodeName;
+        this.processId = processId;
+        this.errorMessage = errorMessage;
+    }
+
+    public ERROR_LEVEL getErrorLevel() {
+        return errorLevel;
+    }
+
+    public void setErrorLevel(ERROR_LEVEL errorLevel) {
+        this.errorLevel = errorLevel;
+    }
+
+    public long getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(long nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
+    }
+
+    public String getProcessId() {
+        return processId;
+    }
+
+    public void setProcessId(String processId) {
+        this.processId = processId;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 }

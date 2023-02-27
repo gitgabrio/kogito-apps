@@ -24,7 +24,6 @@ import org.kie.api.definition.process.Node;
 import org.kie.api.definition.process.NodeContainer;
 import org.kie.kogito.internal.process.runtime.KogitoNode;
 import org.kie.kogito.internal.process.runtime.KogitoWorkflowProcess;
-import org.kie.kogito.process.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -171,131 +170,143 @@ public class JITProcessHandler extends ProcessHandler {
 
     private void postProcessNodes(RuleFlowProcess process, NodeContainer container) {
         List<String> eventSubProcessHandlers = new ArrayList<>();
+
         for (Node node : container.getNodes()) {
+            try {
+                if (node instanceof StateNode) {
+                    StateNode stateNode = (StateNode) node;
+                    String condition = (String) stateNode.getMetaData("Condition");
+                    Constraint constraint = new ConstraintImpl();
+                    constraint.setConstraint(condition);
+                    constraint.setType("rule");
+                    for (org.kie.api.definition.process.Connection connection : stateNode.getDefaultOutgoingConnections()) {
+                        stateNode.setConstraint(connection, constraint);
+                    }
+                } else if (node instanceof NodeContainer) {
+                    // prepare event sub process
+                    if (node instanceof EventSubProcessNode) {
+                        EventSubProcessNode eventSubProcessNode = (EventSubProcessNode) node;
 
-            if (node instanceof StateNode) {
-                StateNode stateNode = (StateNode) node;
-                String condition = (String) stateNode.getMetaData("Condition");
-                Constraint constraint = new ConstraintImpl();
-                constraint.setConstraint(condition);
-                constraint.setType("rule");
-                for (org.kie.api.definition.process.Connection connection : stateNode.getDefaultOutgoingConnections()) {
-                    stateNode.setConstraint(connection, constraint);
-                }
-            } else if (node instanceof NodeContainer) {
-                // prepare event sub process
-                if (node instanceof EventSubProcessNode) {
-                    EventSubProcessNode eventSubProcessNode = (EventSubProcessNode) node;
+                        Node[] nodes = eventSubProcessNode.getNodes();
+                        for (Node subNode : nodes) {
+                            // avoids cyclomatic complexity
+                            if (subNode == null || !(subNode instanceof StartNode)) {
+                                continue;
+                            }
+                            List<Trigger> triggers = ((StartNode) subNode).getTriggers();
+                            if (triggers == null) {
+                                continue;
+                            }
+                            for (Trigger trigger : triggers) {
+                                if (trigger instanceof EventTrigger) {
+                                    final List<EventFilter> filters = ((EventTrigger) trigger).getEventFilters();
 
-                    Node[] nodes = eventSubProcessNode.getNodes();
-                    for (Node subNode : nodes) {
-                        // avoids cyclomatic complexity
-                        if (subNode == null || !(subNode instanceof StartNode)) {
-                            continue;
-                        }
-                        List<Trigger> triggers = ((StartNode) subNode).getTriggers();
-                        if (triggers == null) {
-                            continue;
-                        }
-                        for (Trigger trigger : triggers) {
-                            if (trigger instanceof EventTrigger) {
-                                final List<EventFilter> filters = ((EventTrigger) trigger).getEventFilters();
+                                    for (EventFilter filter : filters) {
+                                        if (filter instanceof EventTypeFilter) {
+                                            eventSubProcessNode.addEvent((EventTypeFilter) filter);
 
-                                for (EventFilter filter : filters) {
-                                    if (filter instanceof EventTypeFilter) {
-                                        eventSubProcessNode.addEvent((EventTypeFilter) filter);
+                                            String type = ((EventTypeFilter) filter).getType();
+                                            if (type.startsWith("Error-") || type.startsWith("Escalation")) {
+                                                String faultCode = (String) subNode.getMetaData().get("FaultCode");
+                                                String replaceRegExp = "Error-|Escalation-";
+                                                final String signalType = type;
 
-                                        String type = ((EventTypeFilter) filter).getType();
-                                        if (type.startsWith("Error-") || type.startsWith("Escalation")) {
-                                            String faultCode = (String) subNode.getMetaData().get("FaultCode");
-                                            String replaceRegExp = "Error-|Escalation-";
-                                            final String signalType = type;
+                                                ExceptionScope exceptionScope =
+                                                        (ExceptionScope) ((ContextContainer) eventSubProcessNode.getParentContainer()).getDefaultContext(ExceptionScope.EXCEPTION_SCOPE);
+                                                if (exceptionScope == null) {
+                                                    exceptionScope = new ExceptionScope();
+                                                    ((ContextContainer) eventSubProcessNode.getParentContainer()).addContext(exceptionScope);
+                                                    ((ContextContainer) eventSubProcessNode.getParentContainer()).setDefaultContext(exceptionScope);
+                                                }
+                                                String faultVariable = null;
+                                                if (trigger.getInAssociations() != null && !trigger.getInAssociations().isEmpty()) {
+                                                    faultVariable = findVariable(trigger.getInAssociations().get(0).getTarget().getLabel(), process.getVariableScope());
+                                                }
 
-                                            ExceptionScope exceptionScope =
-                                                    (ExceptionScope) ((ContextContainer) eventSubProcessNode.getParentContainer()).getDefaultContext(ExceptionScope.EXCEPTION_SCOPE);
-                                            if (exceptionScope == null) {
-                                                exceptionScope = new ExceptionScope();
-                                                ((ContextContainer) eventSubProcessNode.getParentContainer()).addContext(exceptionScope);
-                                                ((ContextContainer) eventSubProcessNode.getParentContainer()).setDefaultContext(exceptionScope);
+                                                ActionExceptionHandler exceptionHandler = new ActionExceptionHandler();
+                                                DroolsConsequenceAction action = new DroolsConsequenceAction("java", "");
+                                                action.setMetaData("Action", new SignalProcessInstanceAction(signalType, faultVariable, null, SignalProcessInstanceAction.PROCESS_INSTANCE_SCOPE));
+                                                exceptionHandler.setAction(action);
+                                                exceptionHandler.setFaultVariable(faultVariable);
+                                                if (faultCode != null) {
+                                                    String trimmedType = type.replaceFirst(replaceRegExp, "");
+                                                    exceptionScope.setExceptionHandler(trimmedType, exceptionHandler);
+                                                    eventSubProcessHandlers.add(trimmedType);
+                                                } else {
+                                                    exceptionScope.setExceptionHandler(faultCode, exceptionHandler);
+                                                }
+                                            } else if (type.equals("Compensation")) {
+                                                // 1. Find the parent sub-process to this event sub-process
+                                                NodeContainer parentSubProcess = null;
+                                                NodeContainer subProcess = eventSubProcessNode.getParentContainer();
+                                                Object isForCompensationObj = eventSubProcessNode.getMetaData("isForCompensation");
+                                                if (isForCompensationObj == null) {
+                                                    eventSubProcessNode.setMetaData("isForCompensation", true);
+                                                    logger.warn("Overriding empty value of \"isForCompensation\" attribute on Event Sub-Process [{}] and setting it to true.",
+                                                            eventSubProcessNode.getMetaData("UniqueId"));
+                                                }
+                                                String compensationHandlerId = "";
+                                                if (subProcess instanceof RuleFlowProcess) {
+                                                    // If jBPM deletes the process (instance) as soon as the process completes..
+                                                    // ..how do you expect to signal compensation on the completed process (instance)?!?
+                                                    throw new ProcessParsingValidationException("Compensation Event Sub-Processes at the process level are not supported.");
+                                                }
+                                                if (subProcess instanceof Node) {
+                                                    parentSubProcess = ((KogitoNode) subProcess).getParentContainer();
+                                                    compensationHandlerId = (String) ((CompositeNode) subProcess).getMetaData(Metadata.UNIQUE_ID);
+                                                }
+                                                // 2. The event filter (never fires, purely for dumping purposes) has already been added
+
+                                                // 3. Add compensation scope
+                                                addCompensationScope(process, eventSubProcessNode, parentSubProcess, compensationHandlerId);
                                             }
-                                            String faultVariable = null;
-                                            if (trigger.getInAssociations() != null && !trigger.getInAssociations().isEmpty()) {
-                                                faultVariable = findVariable(trigger.getInAssociations().get(0).getTarget().getLabel(), process.getVariableScope());
-                                            }
-
-                                            ActionExceptionHandler exceptionHandler = new ActionExceptionHandler();
-                                            DroolsConsequenceAction action = new DroolsConsequenceAction("java", "");
-                                            action.setMetaData("Action", new SignalProcessInstanceAction(signalType, faultVariable, null, SignalProcessInstanceAction.PROCESS_INSTANCE_SCOPE));
-                                            exceptionHandler.setAction(action);
-                                            exceptionHandler.setFaultVariable(faultVariable);
-                                            if (faultCode != null) {
-                                                String trimmedType = type.replaceFirst(replaceRegExp, "");
-                                                exceptionScope.setExceptionHandler(trimmedType, exceptionHandler);
-                                                eventSubProcessHandlers.add(trimmedType);
-                                            } else {
-                                                exceptionScope.setExceptionHandler(faultCode, exceptionHandler);
-                                            }
-                                        } else if (type.equals("Compensation")) {
-                                            // 1. Find the parent sub-process to this event sub-process
-                                            NodeContainer parentSubProcess = null;
-                                            NodeContainer subProcess = eventSubProcessNode.getParentContainer();
-                                            Object isForCompensationObj = eventSubProcessNode.getMetaData("isForCompensation");
-                                            if (isForCompensationObj == null) {
-                                                eventSubProcessNode.setMetaData("isForCompensation", true);
-                                                logger.warn("Overriding empty value of \"isForCompensation\" attribute on Event Sub-Process [{}] and setting it to true.",
-                                                        eventSubProcessNode.getMetaData("UniqueId"));
-                                            }
-                                            String compensationHandlerId = "";
-                                            if (subProcess instanceof RuleFlowProcess) {
-                                                // If jBPM deletes the process (instance) as soon as the process completes..
-                                                // ..how do you expect to signal compensation on the completed process (instance)?!?
-                                                throw new ProcessParsingValidationException("Compensation Event Sub-Processes at the process level are not supported.");
-                                            }
-                                            if (subProcess instanceof Node) {
-                                                parentSubProcess = ((KogitoNode) subProcess).getParentContainer();
-                                                compensationHandlerId = (String) ((CompositeNode) subProcess).getMetaData(Metadata.UNIQUE_ID);
-                                            }
-                                            // 2. The event filter (never fires, purely for dumping purposes) has already been added
-
-                                            // 3. Add compensation scope
-                                            addCompensationScope(process, eventSubProcessNode, parentSubProcess, compensationHandlerId);
                                         }
                                     }
-                                }
-                            } else if (trigger instanceof ConstraintTrigger) {
-                                ConstraintTrigger constraintTrigger = (ConstraintTrigger) trigger;
+                                } else if (trigger instanceof ConstraintTrigger) {
+                                    ConstraintTrigger constraintTrigger = (ConstraintTrigger) trigger;
 
-                                if (constraintTrigger.getConstraint() != null) {
-                                    String processId = ((RuleFlowProcess) container).getId();
-                                    String type = "RuleFlowStateEventSubProcess-Event-" + processId + "-" + eventSubProcessNode.getUniqueId();
-                                    EventTypeFilter eventTypeFilter = new EventTypeFilter();
-                                    eventTypeFilter.setType(type);
-                                    eventSubProcessNode.addEvent(eventTypeFilter);
+                                    if (constraintTrigger.getConstraint() != null) {
+                                        String processId = ((RuleFlowProcess) container).getId();
+                                        String type = "RuleFlowStateEventSubProcess-Event-" + processId + "-" + eventSubProcessNode.getUniqueId();
+                                        EventTypeFilter eventTypeFilter = new EventTypeFilter();
+                                        eventTypeFilter.setType(type);
+                                        eventSubProcessNode.addEvent(eventTypeFilter);
+                                    }
                                 }
                             }
                         }
                     }
+                    postProcessNodes(process, (NodeContainer) node);
+                } else if (node instanceof EndNode) {
+                    handleIntermediateOrEndThrowCompensationEvent((EndNode) node);
+                } else if (node instanceof ActionNode) {
+                    handleIntermediateOrEndThrowCompensationEvent((ActionNode) node);
+                } else if (node instanceof EventNode) {
+                    final EventNode eventNode = (EventNode) node;
+                    if (!(eventNode instanceof BoundaryEventNode) && eventNode.getDefaultIncomingConnections().isEmpty()) {
+                        throw new ProcessParsingValidationException("Event node '" + node.getName() + "' [" + node.getId() + "] has no incoming connection");
+                    }
                 }
-                postProcessNodes(process, (NodeContainer) node);
-            } else if (node instanceof EndNode) {
-                handleIntermediateOrEndThrowCompensationEvent((EndNode) node);
-            } else if (node instanceof ActionNode) {
-                handleIntermediateOrEndThrowCompensationEvent((ActionNode) node);
-            } else if (node instanceof EventNode) {
-                final EventNode eventNode = (EventNode) node;
-                if (!(eventNode instanceof BoundaryEventNode) && eventNode.getDefaultIncomingConnections().isEmpty()) {
-                    throw new JITProcessParsingValidationException("Event node '" + node.getName() + "' [" + node.getId() + "] has no incoming connection", node);
-                }
+            } catch (ProcessParsingValidationException e) {
+                String processId = e.getProcessId() != null ? e.getProcessId() : process.getId();
+                String nodeName = node.getName() != null ? node.getName() : "(unknown)";
+                throw new JITProcessParsingValidationException(node.getId(), nodeName, processId, e.getMessage());
             }
         }
 
-        // process fault node to disable termnate parent if there is event subprocess handler
+        // process fault node to disable terminate parent if there is event subprocess handler
         for (Node node : container.getNodes()) {
-            if (node instanceof FaultNode) {
-                FaultNode faultNode = (FaultNode) node;
-                if (eventSubProcessHandlers.contains(faultNode.getFaultName())) {
-                    faultNode.setTerminateParent(false);
+            try {
+                if (node instanceof FaultNode) {
+                    FaultNode faultNode = (FaultNode) node;
+                    if (eventSubProcessHandlers.contains(faultNode.getFaultName())) {
+                        faultNode.setTerminateParent(false);
+                    }
                 }
+            } catch (ProcessParsingValidationException e) {
+                String processId = e.getProcessId() != null ? e.getProcessId() : process.getId();
+                String nodeName = node.getName() != null ? node.getName() : "(unknown)";
+                throw new JITProcessParsingValidationException(node.getId(), nodeName, processId, e.getMessage());
             }
         }
     }

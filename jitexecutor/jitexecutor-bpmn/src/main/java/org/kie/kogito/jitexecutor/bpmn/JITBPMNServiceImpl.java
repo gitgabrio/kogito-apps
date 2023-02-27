@@ -16,44 +16,40 @@
 
 package org.kie.kogito.jitexecutor.bpmn;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-
-import javax.enterprise.context.ApplicationScoped;
-
 import org.drools.io.InputStreamResource;
 import org.jbpm.bpmn2.xml.BPMNDISemanticModule;
 import org.jbpm.bpmn2.xml.BPMNExtensionsSemanticModule;
-import org.jbpm.bpmn2.xml.BPMNSemanticModule;
 import org.jbpm.compiler.xml.XmlProcessReader;
 import org.jbpm.compiler.xml.core.SemanticModules;
 import org.jbpm.process.core.validation.ProcessValidationError;
-import org.jbpm.ruleflow.core.validation.RuleFlowProcessValidator;
-import org.kie.api.definition.process.Node;
 import org.kie.api.definition.process.Process;
 import org.kie.api.io.Resource;
 import org.kie.kogito.jitexecutor.bpmn.overrides.JITBPMNSemanticModule;
 import org.kie.kogito.jitexecutor.bpmn.overrides.JITProcessParsingValidationException;
+import org.kie.kogito.jitexecutor.bpmn.overrides.JITProcessValidationError;
+import org.kie.kogito.jitexecutor.bpmn.overrides.JITRuleFlowProcessValidator;
 import org.kie.kogito.jitexecutor.bpmn.responses.JITBPMNValidationResult;
+import org.kie.kogito.jitexecutor.bpmn.responses.MultipleResponsesPayload;
 import org.kie.kogito.jitexecutor.common.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.common.requests.ResourceWithURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import javax.enterprise.context.ApplicationScoped;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
 @ApplicationScoped
 public class JITBPMNServiceImpl implements JITBPMNService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JITBPMNServiceImpl.class);
 
-    private static final RuleFlowProcessValidator PROCESS_VALIDATOR = RuleFlowProcessValidator.getInstance();
+    private static final JITRuleFlowProcessValidator PROCESS_VALIDATOR = JITRuleFlowProcessValidator.getInstance();
 
     private static final SemanticModules BPMN_SEMANTIC_MODULES = new SemanticModules();
 
@@ -66,24 +62,24 @@ public class JITBPMNServiceImpl implements JITBPMNService {
     }
 
     @Override
-    public JITBPMNValidationResult validatePayload(MultipleResourcesPayload payload) {
-        Collection<String> errors = new ArrayList<>();
+    public MultipleResponsesPayload validatePayload(MultipleResourcesPayload payload) {
+        Collection<JITBPMNValidationResult> errors = new ArrayList<>();
         for (ResourceWithURI resourceWithURI : payload.getResources()) {
             errors.addAll(collectErrors(resourceWithURI.getContent(), resourceWithURI.getURI()));
         }
-        return new JITBPMNValidationResult(errors);
+        return new MultipleResponsesPayload(payload.getMainURI(), errors);
     }
 
     @Override
-    public JITBPMNValidationResult validateModel(String modelXML) {
+    public MultipleResponsesPayload validateModel(String modelXML) {
         LOGGER.trace("Received\n{}", modelXML);
-        Collection<String> errors = collectErrors(modelXML, null);
-        return new JITBPMNValidationResult(errors);
+        Collection<JITBPMNValidationResult> errors = collectErrors(modelXML, null);
+        return new MultipleResponsesPayload("", errors);
     }
 
-    static Collection<String> collectErrors(String modelXML, String resourceUri) {
+    static Collection<JITBPMNValidationResult> collectErrors(String modelXML, String resourceUri) {
         LOGGER.trace("Received\n{}", modelXML);
-        Collection<String> toReturn;
+        Collection<JITBPMNValidationResult> toReturn;
         Collection<Process> processes;
         try {
             processes = parseModelXml(modelXML);
@@ -92,39 +88,30 @@ public class JITBPMNServiceImpl implements JITBPMNService {
                 if (resourceUri != null) {
                     error += " on resource " + resourceUri;
                 }
-                toReturn = Collections.singleton(error);
+                toReturn = Collections.singleton(new JITBPMNValidationResult(JITBPMNValidationResult.ERROR_LEVEL.SEVERE, error));
             } else {
                 toReturn = new ArrayList<>();
-                ProcessValidationError[] processValidationErrors = validateProcesses(processes);
-                for (ProcessValidationError processValidationError : processValidationErrors) {
-                    toReturn.add(getErrorString(processValidationError, resourceUri));
+                JITProcessValidationError[] processValidationErrors = validateProcesses(processes);
+                for (JITProcessValidationError processValidationError : processValidationErrors) {
+                    toReturn.add(getJITBPMNValidationResult(processValidationError));
                 }
             }
         } catch (JITProcessParsingValidationException e) {
-            StringBuilder errorBuilder = new StringBuilder(e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
-            Node node = e.getNode();
-            errorBuilder.append("Node details. ");
-            errorBuilder.append(String.format("NodeContainer: %s; ", node.getNodeContainer()));
-            node.getMetaData().forEach((s, o) -> {
-                if (o != null) {
-                    errorBuilder.append(String.format("%s: %s; ", s, o));
-                }
-            });
-            toReturn = Collections.singleton(errorBuilder.toString());
+            toReturn = Collections.singleton(getJITBPMNValidationResult(e));
             LOGGER.error("Fail to validate", e);
         } catch (Throwable e) {
             String error = e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString();
-            toReturn = Collections.singleton(error);
+            toReturn = Collections.singleton(new JITBPMNValidationResult(JITBPMNValidationResult.ERROR_LEVEL.SEVERE, error));
             LOGGER.error("Fail to validate", e);
         }
         return toReturn;
     }
 
-    static ProcessValidationError[] validateProcesses(Collection<Process> processes) {
-        ProcessValidationError[] toReturn = new ProcessValidationError[0];
+    static JITProcessValidationError[] validateProcesses(Collection<Process> processes) {
+        JITProcessValidationError[] toReturn = new JITProcessValidationError[0];
         for (Process toValidate : processes) {
-            ProcessValidationError[] toAdd = PROCESS_VALIDATOR.validateProcess(toValidate);
-            ProcessValidationError[] temp = new ProcessValidationError[toReturn.length + toAdd.length];
+            JITProcessValidationError[] toAdd = PROCESS_VALIDATOR.validateProcess(toValidate);
+            JITProcessValidationError[] temp = new JITProcessValidationError[toReturn.length + toAdd.length];
             System.arraycopy(toReturn, 0, temp, 0, toReturn.length);
             System.arraycopy(toAdd, 0, temp, (temp.length - toAdd.length), toAdd.length);
             toReturn = temp;
@@ -146,6 +133,22 @@ public class JITBPMNServiceImpl implements JITBPMNService {
         } catch (SAXException | IOException e) {
             throw new RuntimeException("Could not parse " + r, e);
         }
+    }
+
+    static JITBPMNValidationResult getJITBPMNValidationResult(JITProcessValidationError exception) {
+        return new JITBPMNValidationResult(JITBPMNValidationResult.ERROR_LEVEL.WARNING,
+                exception.getNodeId(),
+                exception.getNodeName(),
+                exception.getProcess().getId(),
+                exception.getMessage());
+    }
+
+    static JITBPMNValidationResult getJITBPMNValidationResult(JITProcessParsingValidationException exception) {
+        return new JITBPMNValidationResult(JITBPMNValidationResult.ERROR_LEVEL.SEVERE,
+                exception.getNodeId(),
+                exception.getNodeName(),
+                exception.getProcessId(),
+                exception.getMessage());
     }
 
     static String getErrorString(ProcessValidationError processValidationError, String resourceUri) {

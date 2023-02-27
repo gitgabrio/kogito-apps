@@ -15,12 +15,6 @@
  */
 package org.kie.kogito.jitexecutor.bpmn;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.function.Consumer;
-
 import org.drools.io.FileSystemResource;
 import org.drools.util.IoUtils;
 import org.drools.util.StringUtils;
@@ -31,6 +25,12 @@ import org.junit.jupiter.api.Test;
 import org.kie.api.definition.process.Process;
 import org.kie.api.io.Resource;
 import org.kie.kogito.jitexecutor.bpmn.responses.JITBPMNValidationResult;
+import org.kie.kogito.jitexecutor.bpmn.responses.MultipleResponsesPayload;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,60 +43,77 @@ class JITBPMNServiceImplTest {
     @Test
     void validateModel_SingleValidBPMN2() throws IOException {
         String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(SINGLE_BPMN2_FILE))));
-        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
-        assertThat(retrieved.getErrors()).isNotNull().isEmpty();
+        assertThat(retrieved.getResults()).isNotNull().isEmpty();
     }
 
     @Test
     void validateModel_MultipleValidBPMN2() throws IOException {
         String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(MULTIPLE_BPMN2_FILE))));
-        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
-        assertThat(retrieved.getErrors()).isNotNull().isEmpty();
+        assertThat(retrieved.getResults()).isNotNull().isEmpty();
     }
 
     @Test
     void validateModel_SingleInvalidBPMN2() throws IOException {
         String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(SINGLE_INVALID_BPMN2_FILE))));
-        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
-        assertThat(retrieved.getErrors()).isNotNull().hasSize(2);
-        assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid - name : invalid-process-id - error : Process has no start node.");
-        assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid - name : invalid-process-id - error : Process has no end node.");
+        assertThat(retrieved.getResults()).isNotNull().hasSize(2);
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getProcessId().equals("invalid") &&
+                result.getErrorMessage().equals("Process has no start node."));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getProcessId().equals("invalid") &&
+                result.getErrorMessage().equals("Process has no end node."));
     }
 
     @Test
     void validateModel_MultipleInvalidBPMN2() throws IOException {
         String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(MULTIPLE_INVALID_BPMN2_FILE))));
-        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
-        assertThat(retrieved.getErrors()).isNotNull().hasSize(4);
-        assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid1 - name : invalid1-process-id - error : Process has no start node.");
-        assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid1 - name : invalid1-process-id - error : Process has no end node.");
-        assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid2 - name : invalid2-process-id - error : Process has no start node.");
-        assertThat(retrieved.getErrors()).contains("Uri: (unknown) - Process id: invalid2 - name : invalid2-process-id - error : Process has no end node.");
+        assertThat(retrieved.getResults()).isNotNull().hasSize(4);
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getProcessId().equals("invalid1") &&
+                result.getErrorMessage().equals("Process has no start node."));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getProcessId().equals("invalid1") &&
+                result.getErrorMessage().equals("Process has no end node."));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getProcessId().equals("invalid2") &&
+                result.getErrorMessage().equals("Process has no start node."));
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.WARNING) &&
+                result.getProcessId().equals("invalid2") &&
+                result.getErrorMessage().equals("Process has no end node."));
     }
 
     @Test
     void validateModel_CatchNowhereBPMN() throws IOException {
         String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(CATCH_NOWHERE))));
-        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
-        assertThat(retrieved.getErrors()).isNotNull().hasSize(1);
-        retrieved.getErrors().forEach(s -> {
-            assertThat(s).contains("Event node 'null' [1] has no incoming connectionNode details");
-            assertThat(s).contains("UniqueId: _46A46B0C-22EE-4ACC-BC7B-C0EDDAFDD9DF; BPMN.InputTypes: {}; BPMN.OutputTypes: {};");
-        });
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.SEVERE) &&
+                result.getNodeId() == 1 &&
+                result.getNodeName().equals("(unknown)") &&
+                result.getProcessId().equals("catch_nowhere") &&
+                result.getErrorMessage().equals("Event node 'null' [1] has no incoming connection"));
     }
 
     @Test
     void validateModel_SingleUnparsableBPMN2() throws IOException {
         String toValidate = new String(IoUtils.readBytesFromInputStream(Objects.requireNonNull(JITBPMNService.class.getResourceAsStream(SINGLE_UNPARSABLE_BPMN2_FILE))));
-        JITBPMNValidationResult retrieved = jitBpmnService.validateModel(toValidate);
+        MultipleResponsesPayload retrieved = jitBpmnService.validateModel(toValidate);
         assertThat(retrieved).isNotNull();
-        assertThat(retrieved.getErrors()).isNotNull().hasSize(1);
-        assertThat(retrieved.getErrors()).contains("Could not find message _T6T0kEcTEDuygKsUt0on2Q____");
+        assertThat(retrieved.getResults()).isNotNull().hasSize(1);
+        assertThat(retrieved.getResults()).anyMatch(result -> result.getErrorLevel().equals(JITBPMNValidationResult.ERROR_LEVEL.SEVERE) &&
+                result.getNodeId() == -1 &&
+                result.getNodeName().equals("") &&
+                result.getProcessId().equals("") &&
+                result.getErrorMessage().equals("Could not find message _T6T0kEcTEDuygKsUt0on2Q____"));
     }
 
     @Test

@@ -18,6 +18,32 @@
     <module>jitexecutor-bpmn</module>
     <module>jitexecutor-dmn</module>
     <module>jitexecutor-runner</module>
+    <module>jitexecutor-jlinked</module>
   </modules>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>1.0.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.4</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.enterprise</groupId>
+        <artifactId>jakarta.enterprise.cdi-api</artifactId>
+        <version>3.0.0</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-jackson</artifactId>
+        <version>2.16.3.Final</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>

@@ -15,8 +15,7 @@
 
   <name>Kogito Apps</name>
   <description>Kogito Apps</description>
-
-  <repositories>
+    <repositories>
     <!-- Bootstrap repository to locate the parent pom when the parent pom has not been build locally. -->
     <repository>
         <id>jboss-public-repository-group</id>

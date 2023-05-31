@@ -5,14 +5,14 @@ import {
   KogitoPageLayout,
   PageNotFound,
   NoData,
-  ouiaAttribute,
-  GraphQL,
-  OUIAProps
+  GraphQL
 } from '@kogito-apps/common';
+import { ouiaAttribute, OUIAProps } from '@kogito-apps/ouia-tools';
 import ProcessListPage from '../ProcessListPage/ProcessListPage';
 import ProcessDetailsPage from '../ProcessDetailsPage/ProcessDetailsPage';
 import DomainExplorerPage from '../DomainExplorerPage/DomainExplorerPage';
 import DomainExplorerLandingPage from '../DomainExplorerLandingPage/DomainExplorerLandingPage';
+import JobsManagementPage from '../JobsManagementPage/JobsManagementPage';
 import './PageLayout.css';
 import managementConsoleLogo from '../../../static/managementConsoleLogo.svg';
 import { History, Location } from 'history';
@@ -26,7 +26,7 @@ const PageLayout: React.FC<IOwnProps & OUIAProps> = ({ ...props }) => {
   const { pathname } = props.location;
 
   const PageNav = (
-    <Nav aria-label="Nav" theme="dark">
+    <Nav aria-label="Nav" theme="dark" ouiaId="navigation-list">
       <NavList>
         <NavItem isActive={pathname === '/ProcessInstances'}>
           <Link
@@ -44,6 +44,14 @@ const PageLayout: React.FC<IOwnProps & OUIAProps> = ({ ...props }) => {
             Domain Explorer
           </Link>
         </NavItem>
+        <NavItem isActive={pathname === '/JobsManagement'}>
+          <Link
+            to="/JobsManagement"
+            {...ouiaAttribute('data-ouia-navigation-name', 'jobs-management')}
+          >
+            Jobs
+          </Link>
+        </NavItem>
       </NavList>
     </Nav>
   );
@@ -55,7 +63,7 @@ const PageLayout: React.FC<IOwnProps & OUIAProps> = ({ ...props }) => {
   const availableDomains =
     !getQuery.loading && getQuery.data && getQuery.data.__type.fields.slice(2);
   const domains = [];
-  availableDomains && availableDomains.map(item => domains.push(item.name));
+  availableDomains && availableDomains.map((item) => domains.push(item.name));
   return (
     <React.Fragment>
       <KogitoPageLayout
@@ -84,7 +92,7 @@ const PageLayout: React.FC<IOwnProps & OUIAProps> = ({ ...props }) => {
           <Route
             exact
             path="/DomainExplorer/:domainName"
-            render={_props => (
+            render={(_props) => (
               <DomainExplorerPage
                 {..._props}
                 domains={domains}
@@ -92,9 +100,10 @@ const PageLayout: React.FC<IOwnProps & OUIAProps> = ({ ...props }) => {
               />
             )}
           />
+          <Route exact path="/JobsManagement" component={JobsManagementPage} />
           <Route
             path="/NoData"
-            render={_props => (
+            render={(_props) => (
               <NoData
                 {..._props}
                 defaultPath="/ProcessInstances"
@@ -104,7 +113,7 @@ const PageLayout: React.FC<IOwnProps & OUIAProps> = ({ ...props }) => {
           />
           <Route
             path="*"
-            render={_props => (
+            render={(_props) => (
               <PageNotFound
                 {..._props}
                 defaultPath="/ProcessInstances"

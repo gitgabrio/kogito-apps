@@ -3,8 +3,10 @@ import { Flex, FlexItem, Title, Tooltip } from '@patternfly/react-core';
 import SkeletonStripe from '../../Atoms/SkeletonStripe/SkeletonStripe';
 import ExecutionStatus from '../../Atoms/ExecutionStatus/ExecutionStatus';
 import FormattedDate from '../../Atoms/FormattedDate/FormattedDate';
-import { RemoteData, Execution } from '../../../types';
+import ExecutionId from '../../Atoms/ExecutionId/ExecutionId';
+import { RemoteData, Execution, RemoteDataStatus } from '../../../types';
 import './ExecutionHeader.scss';
+import { attributeOuiaId } from '@kogito-apps/ouia-tools';
 
 type ExecutionHeaderProps = {
   execution: RemoteData<Error, Execution>;
@@ -14,10 +16,13 @@ const ExecutionHeader = (props: ExecutionHeaderProps) => {
   const { execution } = props;
 
   return (
-    <section className="execution-header">
+    <section
+      className="execution-header"
+      {...attributeOuiaId('execution-header')}
+    >
       <Flex>
         <FlexItem>
-          {execution.status === 'LOADING' && (
+          {execution.status === RemoteDataStatus.LOADING && (
             <SkeletonStripe
               isInline={true}
               customStyle={{
@@ -28,16 +33,16 @@ const ExecutionHeader = (props: ExecutionHeaderProps) => {
               }}
             />
           )}
-          {execution.status === 'SUCCESS' && (
-            <Title size="3xl" headingLevel="h2">
+          {execution.status === RemoteDataStatus.SUCCESS && (
+            <Title size="3xl" headingLevel="h2" {...attributeOuiaId('title')}>
               <span className="execution-header__uuid">
-                ID# {execution.data.executionId}
+                Execution <ExecutionId id={execution.data.executionId} />
               </span>
             </Title>
           )}
         </FlexItem>
         <FlexItem className="execution-header__property">
-          {execution.status === 'SUCCESS' && (
+          {execution.status === RemoteDataStatus.SUCCESS && (
             <Tooltip
               entryDelay={23}
               exitDelay={23}
@@ -52,8 +57,12 @@ const ExecutionHeader = (props: ExecutionHeaderProps) => {
                       fullDateAndTime={true}
                     />
                   </span>
-                  <br />
-                  <span>Executed by {execution.data.executorName}</span>
+                  {execution.data.executorName && (
+                    <>
+                      <br />
+                      <span>Executed by {execution.data.executorName}</span>
+                    </>
+                  )}
                 </div>
               }
             >
@@ -62,6 +71,7 @@ const ExecutionHeader = (props: ExecutionHeaderProps) => {
                   result={
                     execution.data.executionSucceeded ? 'success' : 'failure'
                   }
+                  ouiaId="status"
                 />
               </div>
             </Tooltip>

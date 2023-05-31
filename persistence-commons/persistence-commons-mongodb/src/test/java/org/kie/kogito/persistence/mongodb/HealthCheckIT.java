@@ -16,10 +16,11 @@
 
 package org.kie.kogito.persistence.mongodb;
 
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.testcontainers.quarkus.MongoDBQuarkusTestResource;
+
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,7 +35,7 @@ class HealthCheckIT {
         String connection = "MongoDB connection health check";
 
         given()
-                .when().get("/health/ready")
+                .when().get("/q/health/ready")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo(status))

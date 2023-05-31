@@ -51,19 +51,33 @@ Enviroment variables can be used to set the information needed to connect to kaf
 
 ```bash
 export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-export QUARKUS_INFINISPAN_CLIENT_SERVER_LIST=localhost:11222
-export QUARKUS_INFINISPAN_CLIENT_AUTH_USERNAME=myuser
-export QUARKUS_INFINISPAN_CLIENT_AUTH_PASSWORD=mypassword
+export QUARKUS_INFINISPAN_CLIENT_HOSTS=localhost:11222
+export QUARKUS_INFINISPAN_CLIENT_USERNAME=myuser
+export QUARKUS_INFINISPAN_CLIENT_PASSWORD=mypassword
+```
+
+#### Handling failures
+
+The Trusty service by default is configured so that if a connection exception occurs during the processing of a kafka event, the message is not acked and the application is set in an unhealthy status. It's responsability of the underlying orchestrator to redeploy the service until the infrastructural issue is fixed. 
+If you are not using any orchestrator, we suggest you to set up the following ENV variable so to disable this behaviour. With the following variables
+```bash
+export KAFKA_APPLICATION_FAILURE_STRATEGY=ignore
+```
+the application discards all the events even if it would be possible to recover them in a second moment. This prevents the trusty service to stay in an unhealthy status waiting for redeployment.
+
+In addition to that, if you would like to ignore the type of the exception and nack the message if **any** exception is raised, you can set the variable
+```bash
+export TRUSTY_MESSAGING_NACK_ON_ANY_EXCEPTION=true
 ```
 
 ### Explainability service
 
 The explainability service provides local and global explaination. 
-- The local explaination aims to find the most relevant features that contributed to take that particular decision. In order to do that, the explainability service interacts with the kogito-runtime application to re-execute the decision with perturbed features. At the moment, the communication between explainability service and the kogito application is performed via HTTP calls. 
+- The local explanation aims to find the most relevant features that contributed to take that particular decision. In order to do that, the explainability service interacts with the kogito-runtime application to re-execute the decision with perturbed features. At the moment, the communication between explainability service and the kogito application is performed via HTTP calls. 
 - The global explainability is still under development. 
 
 As a consequence, the dependencies of the explainability service are Kafka and the availability of the kogito application. 
 
 ## An example project
 
-A sample end to end project is provided [here](https://github.com/kiegroup/kogito-examples/tree/master/dmn-tracing-quarkus).
+A sample end to end project is provided [here](https://github.com/kiegroup/kogito-examples/tree/main/dmn-tracing-quarkus).

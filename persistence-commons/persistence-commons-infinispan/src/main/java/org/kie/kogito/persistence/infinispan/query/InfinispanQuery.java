@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.kie.kogito.persistence.infinispan.query;
 
 import java.util.List;
@@ -84,24 +83,24 @@ public class InfinispanQuery<T> implements Query<T> {
 
     @Override
     public List<T> execute() {
-        StringBuilder queryString = new StringBuilder("from " + rootType + " o");
+        StringBuilder queryString = new StringBuilder("FROM " + rootType + " o");
         if (filters != null && !filters.isEmpty()) {
-            queryString.append(" where ");
+            queryString.append(" WHERE ");
             queryString.append(filters.stream().map(filterStringFunction()).collect(joining(AND)));
         }
         if (sortBy != null && !sortBy.isEmpty()) {
-            queryString.append(" order by ");
+            queryString.append(" ORDER BY ");
             queryString.append(sortBy.stream().map(f -> "o." + f.getAttribute() + " " + f.getSort().name()).collect(joining(", ")));
         }
         LOGGER.debug("Executing Infinispan query: {}", queryString);
-        org.infinispan.query.dsl.Query query = qf.create(queryString.toString());
+        org.infinispan.query.dsl.Query<T> query = qf.create(queryString.toString());
         if (limit != null) {
             query.maxResults(limit);
         }
         if (offset != null) {
             query.startOffset(offset);
         }
-        return query.list();
+        return query.execute().list();
     }
 
     private Function<AttributeFilter<?>, String> filterStringFunction() {
@@ -138,6 +137,8 @@ public class InfinispanQuery<T> implements Query<T> {
                     return getRecursiveString(filter, OR);
                 case AND:
                     return getRecursiveString(filter, AND);
+                case NOT:
+                    return format("not %s", filterStringFunction().apply((AttributeFilter<?>) filter.getValue()));
                 default:
                     return null;
             }
@@ -148,6 +149,6 @@ public class InfinispanQuery<T> implements Query<T> {
         return ((List<AttributeFilter<?>>) filter.getValue())
                 .stream()
                 .map(filterStringFunction())
-                .collect(joining(joining,  "(", ")"));
+                .collect(joining(joining, "(", ")"));
     }
 }

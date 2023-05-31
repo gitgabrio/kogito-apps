@@ -11,6 +11,7 @@ jest.mock('../../../../graphql/types');
 // tslint:disable: no-unexpected-multiline
 describe('Domain explorer filter options component tests', () => {
   const defaultProps = {
+    filterArgument: 'TravelsArgument',
     generateFilterQuery: jest.fn(),
     setOffset: jest.fn(),
     filterChips: ['metadata / processInstances / state: ACTIVE'],
@@ -85,18 +86,9 @@ describe('Domain explorer filter options component tests', () => {
     jest.clearAllMocks();
   });
 
-  let useEffect;
-
-  const mockUseEffect = () => {
-    useEffect.mockImplementationOnce(f => f());
-  };
-
-  beforeEach(() => {
-    useEffect = jest.spyOn(React, 'useEffect');
-    mockUseEffect();
-  });
   it('Snapshot test with default props', async () => {
     const props = {
+      filterArgument: 'TravelsArgument',
       generateFilterQuery: jest.fn(),
       reset: false,
       setReset: jest.fn(),
@@ -251,8 +243,7 @@ describe('Domain explorer filter options component tests', () => {
         }
       }
     };
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -266,8 +257,7 @@ describe('Domain explorer filter options component tests', () => {
         }
       }
     });
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -424,13 +414,11 @@ describe('Domain explorer filter options component tests', () => {
     wrapper.update();
     wrapper.setProps({});
 
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -463,44 +451,22 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // simulate on select prop on fields dropdown to make a selection
     act(() => {
-      wrapper
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.find('#select-field').first().props()['onSelect'](obj);
     });
     // simulate dropdown to select an operator
     act(() => {
-      wrapper
-        .find('#select-operator')
-        .first()
-        .props()
-        ['onSelect'](obj2);
+      wrapper.find('#select-operator').first().props()['onSelect'](obj2);
     });
     expect(wrapper.find('input')).toBeTruthy();
     // check input textbox when the operator is either "equal" or "like"
-    wrapper
-      .update()
-      .find('input')
-      .at(0)
-      .simulate('change', 'Hello');
+    wrapper.update().find('input').at(0).simulate('change', 'Hello');
     expect(wrapper.find('#button-with-string')).toBeTruthy();
     // trigger button click after setting isDisable false on button
     act(() => {
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()['isDisabled'] = false;
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()['disabled'] = false;
+      wrapper.find('#button-with-string').at(0).props()['isDisabled'] = false;
+      wrapper.find('#button-with-string').at(0).props()['disabled'] = false;
       const event = {} as React.MouseEvent<HTMLButtonElement, MouseEvent>;
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()
-        ['onClick'](event);
+      wrapper.find('#button-with-string').at(0).props()['onClick'](event);
     });
   });
   it('check "in" operator', async () => {
@@ -549,13 +515,11 @@ describe('Domain explorer filter options component tests', () => {
     );
     wrapper.update();
     wrapper.setProps({});
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -590,19 +554,11 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // simulate on select prop on fields dropdown to make a selection
     act(() => {
-      wrapper
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.find('#select-field').first().props()['onSelect'](obj);
     });
     // trigger on select prop to make a selection on operator dropdown
     act(() => {
-      wrapper
-        .find('#select-operator')
-        .first()
-        .props()
-        ['onSelect'](obj2);
+      wrapper.find('#select-operator').first().props()['onSelect'](obj2);
     });
     expect(wrapper.find('input')).toBeTruthy();
     // check input text box group when selected operator is "in"
@@ -614,31 +570,19 @@ describe('Domain explorer filter options component tests', () => {
 
     expect(wrapper.find('#button-with-arrayInput')).toBeTruthy();
     // trigger button click after setting isDisable false on button
-    wrapper
-      .find('#button-with-arrayInput')
-      .at(0)
-      .props()['isDisabled'] = false;
-    wrapper
-      .find('#button-with-arrayInput')
-      .at(0)
-      .props()['disabled'] = false;
+    wrapper.find('#button-with-arrayInput').at(0).props()['isDisabled'] = false;
+    wrapper.find('#button-with-arrayInput').at(0).props()['disabled'] = false;
     const event = {} as React.MouseEvent<HTMLButtonElement, MouseEvent>;
     act(() => {
-      wrapper
-        .find('#button-with-arrayInput')
-        .at(0)
-        .props()
-        ['onClick'](event);
+      wrapper.find('#button-with-arrayInput').at(0).props()['onClick'](event);
     });
   });
   it('check isNull operator', async () => {
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -718,34 +662,18 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // simulate on select prop on fields dropdown to make a selection
     act(() => {
-      wrapper
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.find('#select-field').first().props()['onSelect'](obj);
     });
     // simulate on toggle prop on fields dropdown
     act(() => {
-      wrapper
-        .find('#select-field')
-        .first()
-        .props()
-        ['onToggle']();
+      wrapper.find('#select-field').first().props()['onToggle']();
     });
     // simulate on select on operatore dropdown
     act(() => {
-      wrapper
-        .find('#select-operator')
-        .first()
-        .props()
-        ['onSelect'](obj2);
+      wrapper.find('#select-operator').first().props()['onSelect'](obj2);
     });
     act(() => {
-      wrapper
-        .find('#select-operator')
-        .first()
-        .props()
-        ['onToggle']();
+      wrapper.find('#select-operator').first().props()['onToggle']();
     });
     const obj3 = {
       target: {
@@ -754,11 +682,7 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // check if third value input is a dropdown when selected operator is "isNull"
     act(() => {
-      wrapper
-        .update()
-        .find('Dropdown')
-        .props()
-        ['onSelect'](obj3);
+      wrapper.update().find('Dropdown').props()['onSelect'](obj3);
     });
     expect(wrapper.find('dropdown')).toBeTruthy();
     // stimulate on toggle props on boolean value dropdown
@@ -770,20 +694,14 @@ describe('Domain explorer filter options component tests', () => {
         ['toggle']['props']['onToggle']();
     });
     expect(wrapper.find('#button-with-boolean')).toBeTruthy();
-    wrapper
-      .update()
-      .find('#button-with-boolean')
-      .first()
-      .simulate('click');
+    wrapper.update().find('#button-with-boolean').first().simulate('click');
   });
   it('check equal operator on enumSingleSelection', async () => {
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -903,12 +821,7 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // simulate field dropdown to select "state" field
     act(() => {
-      wrapper
-        .update()
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.update().find('#select-field').first().props()['onSelect'](obj);
     });
     // simulate field dropdown to select "equal" operator
     act(() => {
@@ -934,19 +847,11 @@ describe('Domain explorer filter options component tests', () => {
         ['onSelect'](obj3);
     });
     act(() => {
-      wrapper
-        .update()
-        .find('#enumSingleSelection')
-        .at(0)
-        .props()
-        ['onToggle']();
+      wrapper.update().find('#enumSingleSelection').at(0).props()['onToggle']();
     });
     expect(wrapper.find('#enumSingleSelection')).toBeTruthy();
-    wrapper
-      .update()
-      .find('#enumSingleSelection')
-      .at(0)
-      .props()['selections'] = 'ACTIVE';
+    wrapper.update().find('#enumSingleSelection').at(0).props()['selections'] =
+      'ACTIVE';
     expect(wrapper.find('#button-with-enumSingleSelection')).toBeTruthy();
     wrapper
       .update()
@@ -955,13 +860,11 @@ describe('Domain explorer filter options component tests', () => {
       .simulate('click');
   });
   it('check in operator on enumSingleSelection', async () => {
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -1090,12 +993,7 @@ describe('Domain explorer filter options component tests', () => {
     wrapper.setProps({});
     // simulate field dropdown to select "state" field
     act(() => {
-      wrapper
-        .update()
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.update().find('#select-field').first().props()['onSelect'](obj);
     });
     // simulate operator dropdown to select "in" operator
     act(() => {
@@ -1122,12 +1020,7 @@ describe('Domain explorer filter options component tests', () => {
         ['onSelect'](obj3);
     });
     act(() => {
-      wrapper
-        .update()
-        .find('#enumMultiSelection')
-        .at(0)
-        .props()
-        ['onToggle']();
+      wrapper.update().find('#enumMultiSelection').at(0).props()['onToggle']();
     });
     expect(wrapper.find('#button-with-enumMultiSelection')).toBeTruthy();
     wrapper
@@ -1137,13 +1030,11 @@ describe('Domain explorer filter options component tests', () => {
       .simulate('click');
   });
   it('check equal operator on user task enumSingleSelection', async () => {
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -1277,12 +1168,7 @@ describe('Domain explorer filter options component tests', () => {
     wrapper.setProps({});
     // simulate fields dropdown to select "state" from userTasks
     act(() => {
-      wrapper
-        .update()
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.update().find('#select-field').first().props()['onSelect'](obj);
     });
     // simulate operator dropdown to select "in" operator
     act(() => {
@@ -1297,13 +1183,11 @@ describe('Domain explorer filter options component tests', () => {
     expect(wrapper.find('#button-with-enumMultiSelection')).toBeTruthy();
   });
   it('test empty parent string', () => {
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -1376,11 +1260,7 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // simulate field operator to test root options which has no parent
     act(() => {
-      wrapper
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.find('#select-field').first().props()['onSelect'](obj);
     });
     const obj2 = {
       target: {
@@ -1388,38 +1268,21 @@ describe('Domain explorer filter options component tests', () => {
       }
     } as any;
     act(() => {
-      wrapper
-        .find('#select-operator')
-        .first()
-        .props()
-        ['onSelect'](obj2);
+      wrapper.find('#select-operator').first().props()['onSelect'](obj2);
     });
-    wrapper
-      .update()
-      .find('input')
-      .at(0)
-      .simulate('change', 'Hello');
+    wrapper.update().find('input').at(0).simulate('change', 'Hello');
     act(() => {
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()['isDisabled'] = false;
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()['disabled'] = false;
+      wrapper.find('#button-with-string').at(0).props()['isDisabled'] = false;
+      wrapper.find('#button-with-string').at(0).props()['disabled'] = false;
       const event = {} as React.MouseEvent<HTMLButtonElement, MouseEvent>;
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()
-        ['onClick'](event);
+      wrapper.find('#button-with-string').at(0).props()['onClick'](event);
     });
     expect(wrapper.find('input')).toBeTruthy();
     expect(wrapper.find('#button-with-string')).toBeTruthy();
   });
   it('test reset to default', () => {
     const props = {
+      filterArgument: 'TravelsArgument',
       generateFilterQuery: jest.fn(),
       setReset: jest.fn(),
       setOffset: jest.fn(),
@@ -1531,13 +1394,11 @@ describe('Domain explorer filter options component tests', () => {
       },
       reset: true
     };
-    // @ts-ignore
-    useGetInputFieldsFromQueryQuery.mockReturnValue({
+    (useGetInputFieldsFromQueryQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {}
     });
-    // @ts-ignore
-    useGetInputFieldsFromTypeQuery.mockReturnValue({
+    (useGetInputFieldsFromTypeQuery as jest.Mock).mockReturnValue({
       loading: false,
       data: {
         __type: {
@@ -1568,11 +1429,7 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // check reset to default sets "id" field on dropdown
     act(() => {
-      wrapper
-        .find('#select-field')
-        .first()
-        .props()
-        ['onSelect'](obj);
+      wrapper.find('#select-field').first().props()['onSelect'](obj);
     });
     const obj2 = {
       target: {
@@ -1581,32 +1438,14 @@ describe('Domain explorer filter options component tests', () => {
     } as any;
     // check reset to default sets "equal" operator on dropdown
     act(() => {
-      wrapper
-        .find('#select-operator')
-        .first()
-        .props()
-        ['onSelect'](obj2);
+      wrapper.find('#select-operator').first().props()['onSelect'](obj2);
     });
-    wrapper
-      .update()
-      .find('input')
-      .at(0)
-      .simulate('change', 'Hello');
+    wrapper.update().find('input').at(0).simulate('change', 'Hello');
     act(() => {
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()['isDisabled'] = false;
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()['disabled'] = false;
+      wrapper.find('#button-with-string').at(0).props()['isDisabled'] = false;
+      wrapper.find('#button-with-string').at(0).props()['disabled'] = false;
       const event = {} as React.MouseEvent<HTMLButtonElement, MouseEvent>;
-      wrapper
-        .find('#button-with-string')
-        .at(0)
-        .props()
-        ['onClick'](event);
+      wrapper.find('#button-with-string').at(0).props()['onClick'](event);
     });
     expect(wrapper.find('input')).toBeTruthy();
   });

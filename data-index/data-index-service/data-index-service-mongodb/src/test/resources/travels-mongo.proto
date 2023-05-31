@@ -38,6 +38,8 @@ message Traveller {
     optional string firstName = 3;
     optional string lastName = 4;
     optional string nationality = 5;
+    repeated Address locations = 6;
+    repeated string aliases = 7;
 }
 
 message Travels {
@@ -53,15 +55,15 @@ message Travels {
 /* @Indexed */
 message Trip {
     option java_package = "org.acme.travels.travels";
-    /* @Field(store = Store.YES) */
+    /* @Field(index = Index.NO, store = Store.YES) */
     optional kogito.Date begin = 1;
-    /* @Field(store = Store.YES) */
+    /* @Field(index = Index.NO, store = Store.YES) */
     optional string city = 2;
-    /* @Field(store = Store.YES) */
+    /* @Field(index = Index.NO, store = Store.YES) */
     optional string country = 3;
-    /* @Field(store = Store.YES) */
+    /* @Field(index = Index.NO, store = Store.YES) */
     optional kogito.Date end = 4;
-    /* @Field(store = Store.YES) */
+    /* @Field(index = Index.NO, store = Store.YES) */
     optional bool visaRequired = 5;
 }
 
@@ -75,4 +77,5 @@ message VisaApplication {
     optional string lastName = 6;
     optional string nationality = 7;
     optional string passportNumber = 8;
+    optional int64 id = 9;
 }

@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { IRow, Table, TableBody, TableHeader } from '@patternfly/react-table';
+import { useRouteMatch } from 'react-router-dom';
+import {
+  IRow,
+  Table,
+  TableBody,
+  TableHeader,
+  Tr
+} from '@patternfly/react-table';
 import {
   Bullseye,
   EmptyState,
@@ -8,27 +14,55 @@ import {
   EmptyStateIcon,
   Title
 } from '@patternfly/react-core';
-import { SearchIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, SearchIcon } from '@patternfly/react-icons';
 import ExecutionStatus from '../../Atoms/ExecutionStatus/ExecutionStatus';
 import FormattedDate from '../../Atoms/FormattedDate/FormattedDate';
 import skeletonRows from '../../../utils/skeletonRows/skeletonRows';
-import { Execution, Executions, RemoteData } from '../../../types';
+import ExecutionId from '../../Atoms/ExecutionId/ExecutionId';
+import {
+  Execution,
+  Executions,
+  RemoteData,
+  RemoteDataStatus
+} from '../../../types';
+import TrustyLink from '../../Atoms/TrustyLink/TrustyLink';
 
 type ExecutionTableProps = {
   data: RemoteData<Error, Executions>;
 };
 
-const ExecutionTable = (props: ExecutionTableProps) => {
+const ExecutionTable: React.FC<ExecutionTableProps> = props => {
   const { data } = props;
-  const columns = ['ID', 'Description', 'Executor', 'Date', 'Execution Status'];
-  const [rows, setRows] = useState<IRow[]>(prepareRows(columns.length, data));
+  const columns = ['ID', 'Description', 'Executor', 'Date', 'Execution status'];
+  const { url } = useRouteMatch();
+  const [rows, setRows] = useState<IRow[]>(
+    prepareRows(columns.length, data, url)
+  );
 
   useEffect(() => {
-    setRows(prepareRows(columns.length, data));
-  }, [data.status]);
+    setRows(prepareRows(columns.length, data, url));
+  }, [data, columns.length, url]);
+
+  const customRowWrapper = ({ row, rowProps, ...props }) => {
+    const [rowKey, rowIndex] = rowProps;
+    return (
+      <Tr
+        ouiaId={row.ouiaId}
+        data-key={rowKey} //The "Tr" element does not know "rowKey". When this row is missing then Chrome's console contains Warning.
+        data-index={rowIndex} //The "Tr" element does not know "rowIndex". When this row is missing then Chrome's console contains Warning.
+        {...props} //rows disappear when "props" is missing
+      />
+    );
+  };
 
   return (
-    <Table cells={columns} rows={rows} aria-label="Executions list">
+    <Table
+      cells={columns}
+      rows={rows}
+      rowWrapper={customRowWrapper}
+      aria-label="Executions list"
+      ouiaId="exec-table"
+    >
       <TableHeader />
       <TableBody rowKey="executionKey" />
     </Table>
@@ -37,41 +71,45 @@ const ExecutionTable = (props: ExecutionTableProps) => {
 
 const prepareRows = (
   columnsNumber: number,
-  data: RemoteData<Error, Executions>
+  data: RemoteData<Error, Executions>,
+  url: string
 ) => {
   let rows;
   switch (data.status) {
-    case 'NOT_ASKED':
-    case 'LOADING':
+    case RemoteDataStatus.NOT_ASKED:
+    case RemoteDataStatus.LOADING:
       rows = skeletonRows(columnsNumber, 10, 'executionKey');
       break;
-    case 'SUCCESS':
+    case RemoteDataStatus.SUCCESS:
       if (data.data.headers.length > 0) {
-        rows = prepareExecutionsRows(data.data.headers);
+        rows = prepareExecutionsRows(data.data.headers, url);
       } else {
         rows = noExecutions(columnsNumber);
       }
       break;
-    case 'FAILURE':
+    case RemoteDataStatus.FAILURE:
       rows = loadingError(columnsNumber);
       break;
   }
   return rows;
 };
 
-const prepareExecutionsRows = (rowData: Execution[]) => {
+const prepareExecutionsRows = (rowData: Execution[], url: string) => {
   return rowData.map(item => ({
     executionKey: 'key-' + item.executionId,
+    ouiaId: item.executionId,
     cells: [
       {
         title: (
-          <Link
-            to={`/audit/${item.executionType.toLocaleLowerCase()}/${
+          <TrustyLink
+            url={`${url}/${item.executionType.toLocaleLowerCase()}/${
               item.executionId
             }`}
+            data-ouia-component-id="show-detail"
+            data-ouia-component-type="link"
           >
-            {'#' + item.executionId.toUpperCase()}
-          </Link>
+            <ExecutionId id={item.executionId} />
+          </TrustyLink>
         )
       },
       item.executedModelName,
@@ -81,6 +119,7 @@ const prepareExecutionsRows = (rowData: Execution[]) => {
         title: (
           <ExecutionStatus
             result={item.executionSucceeded ? 'success' : 'failure'}
+            ouiaId="status"
           />
         )
       }
@@ -129,10 +168,11 @@ const loadingError = (colSpan: number) => {
               <EmptyState>
                 <EmptyStateIcon icon={ExclamationCircleIcon} color="#C9190B" />
                 <Title headingLevel="h5" size="lg">
-                  Loading Error
+                  Cannot load data
                 </Title>
                 <EmptyStateBody>
-                  We are unable to load data right now. Try again later.
+                  Try refreshing the page after a few minutes. If the problem
+                  persists, contact Customer Support.
                 </EmptyStateBody>
               </EmptyState>
             </Bullseye>

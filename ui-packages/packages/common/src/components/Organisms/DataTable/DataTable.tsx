@@ -19,7 +19,7 @@ import '@patternfly/patternfly/patternfly-addons.css';
 import _ from 'lodash';
 import uuidv4 from 'uuid';
 import jp from 'jsonpath';
-import { OUIAProps, componentOuiaProps } from '../../../utils/OuiaUtils';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 
 export interface DataTableColumn {
   path: string;
@@ -33,7 +33,7 @@ export interface DataTableColumn {
 interface IOwnProps {
   data: any[];
   isLoading: boolean;
-  columns?: DataTableColumn[];
+  columns: DataTableColumn[];
   networkStatus: any;
   error: any;
   refetch: () => void;
@@ -57,7 +57,7 @@ const getColumns = (data: any[], columns: DataTableColumn[]) => {
   let columnList: ICell[] = [];
   if (data) {
     columnList = columns
-      ? _.filter(columns, column => !_.isEmpty(column.path)).map(column => {
+      ? _.filter(columns, (column) => !_.isEmpty(column.path)).map((column) => {
           return {
             title: column.label,
             data: column.path,
@@ -77,8 +77,8 @@ const getColumns = (data: any[], columns: DataTableColumn[]) => {
             transforms: column.isSortable ? [sortable] : undefined
           } as ICell;
         })
-      : _.filter(_.keys(_.sample(data)), key => key !== '__typename').map(
-          key => ({ title: key, data: `$.${key}` } as ICell)
+      : _.filter(_.keys(_.sample(data)), (key) => key !== '__typename').map(
+          (key) => ({ title: key, data: `$.${key}` } as ICell)
         );
   }
   return columnList;
@@ -87,7 +87,7 @@ const getColumns = (data: any[], columns: DataTableColumn[]) => {
 const getRows = (data: any[], columns: ICell[]) => {
   let rowList: IRow[] = [];
   if (data) {
-    rowList = data.map(rowData => {
+    rowList = data.map((rowData) => {
       return {
         cells: _.reduce(
           columns,
@@ -125,15 +125,13 @@ const DataTable: React.FC<IOwnProps & OUIAProps> = ({
 
   useEffect(() => {
     if (!_.isEmpty(data)) {
-      setColumnList(getColumns(data, columns));
+      const cols = getColumns(data, columns);
+      if (!_.isEmpty(cols)) {
+        setColumnList(cols);
+        setRows(getRows(data, cols));
+      }
     }
   }, [data]);
-
-  useEffect(() => {
-    if (!_.isEmpty(data) && !_.isEmpty(columnList)) {
-      setRows(getRows(data, columnList));
-    }
-  }, [columnList]);
 
   const onSort = (event, index, direction) => {
     if (_.isFunction(onSorting)) {
@@ -198,7 +196,7 @@ const DataTable: React.FC<IOwnProps & OUIAProps> = ({
             <TableBody rowKey="rowKey" />
           </Table>
         )}
-      {data !== undefined && !isLoading && rows.length === 0 && (
+      {data !== undefined && !isLoading && data.length === 0 && (
         <KogitoEmptyState
           type={KogitoEmptyStateType.Search}
           title="No results found"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates. 
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.kie.kogito.persistence.protobuf.domain;
 
 import java.util.List;
@@ -43,7 +42,7 @@ import static java.util.stream.Collectors.toMap;
 public class ProtoDomainModelProducer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtoDomainModelProducer.class);
-    
+
     @Inject
     Event<DomainModelRegisteredEvent> domainEvent;
 
@@ -67,7 +66,7 @@ public class ProtoDomainModelProducer {
 
         @Override
         public AttributeDescriptor apply(FieldDescriptor field) {
-            return new AttributeDescriptor(field.getName(), new FieldTypeMapper().apply(field));
+            return new AttributeDescriptor(field.getName(), new FieldTypeMapper().apply(field), field.getLabel().toString());
         }
     }
 
@@ -92,9 +91,16 @@ public class ProtoDomainModelProducer {
                     return Integer.class.getName();
                 case LONG:
                     return Long.class.getName();
+                case FLOAT:
+                    return Float.class.getName();
+                case DOUBLE:
+                    return Double.class.getName();
                 case BOOLEAN:
                     return Boolean.class.getName();
                 case MESSAGE:
+                    if (fd.getOption("kogito_java_class") != null) {
+                        return fd.getOption("kogito_java_class").getValue().toString();
+                    }
                     return fd.getMessageType().getFullName();
                 default:
                     return String.class.getName();

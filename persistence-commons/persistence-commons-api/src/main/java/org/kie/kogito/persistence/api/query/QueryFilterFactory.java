@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates. 
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.kie.kogito.persistence.api.query;
 
 import java.util.Arrays;
@@ -86,5 +85,9 @@ public final class QueryFilterFactory {
 
     public static AttributeFilter<List<AttributeFilter>> and(List<AttributeFilter<?>> filters) {
         return new AttributeFilter(null, FilterCondition.AND, filters);
+    }
+
+    public static <T> AttributeFilter<AttributeFilter<T>> not(AttributeFilter<T> filter) {
+        return new AttributeFilter<>(null, FilterCondition.NOT, filter);
     }
 }

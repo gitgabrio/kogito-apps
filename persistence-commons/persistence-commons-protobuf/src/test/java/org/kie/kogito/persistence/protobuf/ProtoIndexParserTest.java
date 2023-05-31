@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.INDEXED_ANNOTATION;
 import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.configureBuilder;
 import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.createAttributeDescriptor;
-import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.createEntityIndexeDescriptors;
+import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.createEntityIndexDescriptors;
 import static org.kie.kogito.persistence.protobuf.TestUtils.getTestFileContent;
 import static org.kie.kogito.persistence.protobuf.TestUtils.getValidEntityIndexDescriptors;
 
@@ -44,7 +44,7 @@ class ProtoIndexParserTest {
 
     @Test
     void testConfigureBuilder() {
-        Map<String, EntityIndexDescriptor> entityIndexes = createFileDescriptor().getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor>getProcessedAnnotation(INDEXED_ANNOTATION))
+        Map<String, EntityIndexDescriptor> entityIndexes = createFileDescriptor().getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor> getProcessedAnnotation(INDEXED_ANNOTATION))
                 .filter(Objects::nonNull).collect(toMap(EntityIndexDescriptor::getName, Function.identity()));
         assertEquals(getValidEntityIndexDescriptors(false), entityIndexes);
     }
@@ -64,10 +64,10 @@ class ProtoIndexParserTest {
     @Test
     void testCreateEntityIndexeDescriptors() {
         FileDescriptor fileDescriptor = createFileDescriptor();
-        Map<String, EntityIndexDescriptor> entityIndexes = createFileDescriptor().getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor>getProcessedAnnotation(INDEXED_ANNOTATION))
+        Map<String, EntityIndexDescriptor> entityIndexes = createFileDescriptor().getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor> getProcessedAnnotation(INDEXED_ANNOTATION))
                 .filter(Objects::nonNull).collect(toMap(EntityIndexDescriptor::getName, Function.identity()));
 
-        Map<String, EntityIndexDescriptor> indexDescriptor = createEntityIndexeDescriptors(fileDescriptor, entityIndexes);
+        Map<String, EntityIndexDescriptor> indexDescriptor = createEntityIndexDescriptors(fileDescriptor, entityIndexes);
 
         assertEquals(getValidEntityIndexDescriptors(true), indexDescriptor);
     }

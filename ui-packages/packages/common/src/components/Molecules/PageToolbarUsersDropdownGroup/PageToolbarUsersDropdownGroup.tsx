@@ -17,12 +17,12 @@
 import React from 'react';
 import {
   AppContext,
-  isContextInTestMode,
   useKogitoAppContext
 } from '../../../environment/context/KogitoAppContext';
 import { DropdownGroup, DropdownItem, Tooltip } from '@patternfly/react-core';
-import { componentOuiaProps, OUIAProps } from '../../../utils/OuiaUtils';
+import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
 import { TestUserContext } from '../../../environment/auth/TestUserContext';
+import { isTestUserSystemEnabled } from '../../../utils/Utils';
 
 interface IOwnProps {
   toggleAddUsersModal: () => void;
@@ -36,10 +36,12 @@ const PageToolbarUsersDropdownGroup: React.FC<IOwnProps & OUIAProps> = ({
 }) => {
   const context: AppContext = useKogitoAppContext();
 
-  if (!isContextInTestMode(context)) {
+  if (!isTestUserSystemEnabled()) {
     return null;
   }
-  const testUserSystem: TestUserContext = context.userContext as TestUserContext;
+
+  const testUserSystem: TestUserContext =
+    context.userContext as TestUserContext;
 
   const users = testUserSystem.getUserManager().listAllUsers();
 

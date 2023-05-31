@@ -16,13 +16,13 @@
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 
-import { getWrapper } from '../../../../utils/OuiaUtils';
+import { mount } from 'enzyme';
 import PageToolbarUsersDropdownGroup from '../PageToolbarUsersDropdownGroup';
 import { DropdownGroup, DropdownItem } from '@patternfly/react-core';
 import { TEST_USERS } from '../../../../environment/auth/TestUserManager';
 import {
   resetTestKogitoAppContext,
-  setTestKogitoAppContextModeToTest,
+  testIsTestUserSystemEnabledMock,
   testKogitoAppContext
 } from '../../../../environment/auth/tests/utils/KogitoAppContextTestingUtils';
 
@@ -30,31 +30,33 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@patternfly/react-core', () => ({
-  ...jest.requireActual('@patternfly/react-core'),
-  DropdownSeparator: () => <MockedComponent />,
-  DropdownItem: () => <MockedComponent />
-}));
+jest.mock('@patternfly/react-core', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-core'), {
+    DropdownSeparator: () => <MockedComponent />,
+    DropdownItem: () => <MockedComponent />
+  })
+);
 
 const getDropdownItem = (wrapper, userId: string) => {
   return wrapper.findWhere(
-    element =>
+    (element) =>
       element.key() === `kogito-user-management-group-test-user__${userId}`
   );
 };
 
 describe('PageToolbarUsersDropdownGroup tests', () => {
-  afterEach(() => {
-    resetTestKogitoAppContext();
+  beforeEach(() => {
+    testIsTestUserSystemEnabledMock.mockReturnValue(true);
+    resetTestKogitoAppContext(false);
   });
 
-  it('Test render in prod mode', () => {
-    setTestKogitoAppContextModeToTest(false);
+  it('Test render TestUserSystem disabled', () => {
+    testIsTestUserSystemEnabledMock.mockReturnValue(false);
+    resetTestKogitoAppContext(true);
 
-    const wrapper = getWrapper(
-      <PageToolbarUsersDropdownGroup toggleAddUsersModal={jest.fn()} />,
-      'PageToolbarUsersDropdownGroup'
-    );
+    const wrapper = mount(
+      <PageToolbarUsersDropdownGroup toggleAddUsersModal={jest.fn()} />
+    ).find('PageToolbarUsersDropdownGroup');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -64,15 +66,12 @@ describe('PageToolbarUsersDropdownGroup tests', () => {
     expect(wrapper.find(DropdownItem).exists()).toBeFalsy();
   });
 
-  it('Test render in test mode', () => {
+  it('Test render TestUserSystem enabled', () => {
     const toggleAddUserModal = jest.fn();
 
-    const wrapper = getWrapper(
-      <PageToolbarUsersDropdownGroup
-        toggleAddUsersModal={toggleAddUserModal}
-      />,
-      'PageToolbarUsersDropdownGroup'
-    );
+    const wrapper = mount(
+      <PageToolbarUsersDropdownGroup toggleAddUsersModal={toggleAddUserModal} />
+    ).find('PageToolbarUsersDropdownGroup');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -84,7 +83,7 @@ describe('PageToolbarUsersDropdownGroup tests', () => {
     expect(getDropdownItem(wrapper, TEST_USERS[2].id).exists()).toBeTruthy();
 
     const addNewUser = wrapper.findWhere(
-      element => element.key() === 'kogito-user-management-group-add'
+      (element) => element.key() === 'kogito-user-management-group-add'
     );
 
     expect(addNewUser.exists()).toBeTruthy();
@@ -94,15 +93,12 @@ describe('PageToolbarUsersDropdownGroup tests', () => {
     expect(toggleAddUserModal).toBeCalledTimes(1);
   });
 
-  it('Test render in test mode - switch user', () => {
+  it('Test render TestUserSystem enabled - switch user', () => {
     const toggleAddUserModal = jest.fn();
 
-    const wrapper = getWrapper(
-      <PageToolbarUsersDropdownGroup
-        toggleAddUsersModal={toggleAddUserModal}
-      />,
-      'PageToolbarUsersDropdownGroup'
-    );
+    const wrapper = mount(
+      <PageToolbarUsersDropdownGroup toggleAddUsersModal={toggleAddUserModal} />
+    ).find('PageToolbarUsersDropdownGroup');
 
     expect(wrapper).toMatchSnapshot();
 

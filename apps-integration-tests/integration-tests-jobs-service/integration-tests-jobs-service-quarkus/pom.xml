@@ -1,0 +1,25 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.kie.kogito</groupId>
+    <artifactId>integration-tests-jobs-service</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>integration-tests-jobs-service-quarkus</artifactId>
+  <name>Kogito Apps :: Integration Tests :: Jobs Service :: Quarkus</name>
+  <packaging>pom</packaging>
+
+  <properties>
+    <failsafe.include>**/*IT.java</failsafe.include>
+  </properties>
+
+  <modules>
+    <module>integration-tests-jobs-service-common-quarkus</module>
+    <module>integration-tests-jobs-service-quarkus-management</module>
+    <module>integration-tests-jobs-service-quarkus-messaging</module>
+    <module>integration-tests-jobs-service-quarkus-knative-eventing</module>
+    <module>integration-tests-jobs-service-quarkus-embedded</module>
+  </modules>
+</project>

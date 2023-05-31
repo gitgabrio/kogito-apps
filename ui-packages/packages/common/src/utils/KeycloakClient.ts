@@ -1,10 +1,16 @@
 import axios from 'axios';
-import { UserContext } from '../..';
 import { TestUserContextImpl } from '../environment/auth/TestUserContext';
 import { KeycloakUserContext } from '../environment/auth/KeycloakUserContext';
+import { isTestUserSystemEnabled } from './Utils';
+import { ANONYMOUS_USER, User, UserContext } from '../environment/auth/Auth';
+
+declare global {
+  interface Window {
+    KOGITO_AUTH_ENABLED: boolean;
+  }
+}
 
 export const isAuthEnabled = (): boolean => {
-  // @ts-ignore
   return window.KOGITO_AUTH_ENABLED;
 };
 
@@ -16,7 +22,7 @@ export const getLoadedSecurityContext = (): UserContext => {
         'Cannot load security context! Please reload screen and log in again.'
       );
     }
-    currentSecurityContext = new TestUserContextImpl();
+    currentSecurityContext = getNonAuthUserContext();
   }
   return currentSecurityContext;
 };
@@ -37,11 +43,22 @@ export const loadSecurityContext = async (onloadSuccess: () => void) => {
       });
     }
   } else {
-    currentSecurityContext = new TestUserContextImpl();
+    currentSecurityContext = getNonAuthUserContext();
     onloadSuccess();
   }
 };
 
+const getNonAuthUserContext = (): UserContext => {
+  if (isTestUserSystemEnabled()) {
+    return new TestUserContextImpl();
+  } else {
+    return {
+      getCurrentUser(): User {
+        return ANONYMOUS_USER;
+      }
+    };
+  }
+};
 export const getToken = (): string => {
   if (isAuthEnabled()) {
     const ctx = getLoadedSecurityContext() as KeycloakUserContext;
@@ -57,9 +74,9 @@ export const appRenderWithAxiosInterceptorConfig = (
   });
   if (isAuthEnabled()) {
     axios.interceptors.response.use(
-      response => response,
-      error => {
-        if (error.response.status === 401) {
+      (response) => response,
+      (error) => {
+        if (error.response && error.config && error.response.status === 401) {
           loadSecurityContext(() => {
             /* tslint:disable:no-string-literal */
             axios.defaults.headers.common['Authorization'] =
@@ -72,7 +89,7 @@ export const appRenderWithAxiosInterceptorConfig = (
       }
     );
     axios.interceptors.request.use(
-      config => {
+      (config) => {
         if (currentSecurityContext) {
           const t = getToken();
           /* tslint:disable:no-string-literal */
@@ -81,7 +98,7 @@ export const appRenderWithAxiosInterceptorConfig = (
           return config;
         }
       },
-      error => {
+      (error) => {
         /* tslint:disable:no-floating-promises */
         Promise.reject(error);
         /* tslint:enable:no-floating-promises */

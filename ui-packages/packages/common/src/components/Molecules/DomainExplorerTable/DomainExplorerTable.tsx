@@ -38,8 +38,8 @@ import {
   KogitoEmptyState,
   KogitoEmptyStateType
 } from '../../Atoms/KogitoEmptyState/KogitoEmptyState';
-import { set } from '../../../utils/Utils';
-import { OUIAProps, componentOuiaProps } from '../../../utils/OuiaUtils';
+import { constructObject } from '../../../utils/Utils';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 
 interface RowContent {
   cells: string[] | Record<string, unknown>[];
@@ -96,7 +96,7 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
   const currentPage = { prev: location.pathname };
   window.localStorage.setItem('state', JSON.stringify(currentPage));
 
-  const stateIcon = state => {
+  const stateIcon = (state) => {
     switch (state) {
       case ProcessInstanceState.Active:
         return (
@@ -149,13 +149,17 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
     }
   };
 
-  const getKeys = object => {
+  const getKeys = (object) => {
     const iter = (data, k = '') => {
       for (const i in data) {
         const rest = k.length ? ' / ' + i : i;
         if (data[i] === null) {
           !tempKeys.includes(k + rest) &&
-            tempKeys.push({ title: k + rest, transforms: [sortable] });
+            tempKeys.push({
+              title: k + rest,
+              transforms:
+                !tableLoading || !displayEmptyState ? [sortable] : null
+            });
           if (rest.hasOwnProperty) {
             tempValue.push(data[i]);
           }
@@ -167,7 +171,11 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
         } else {
           if (rest !== '__typename' && !rest.match('/ __typename')) {
             !tempKeys.includes(k + rest) &&
-              tempKeys.push({ title: k + rest, transforms: [sortable] });
+              tempKeys.push({
+                title: k + rest,
+                transforms:
+                  !tableLoading || !displayEmptyState ? [sortable] : null
+              });
             if (rest.hasOwnProperty) {
               tempValue.push(data[i].toString());
             }
@@ -181,7 +189,7 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
     return { tempKeys, tempValue };
   };
 
-  const getChildKeys = object => {
+  const getChildKeys = (object) => {
     const iter = (data, k = '') => {
       for (const i in data) {
         const rest = k.length ? ' / ' + i : i;
@@ -269,7 +277,7 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
     const tempKeys = [];
     let tempValue = [];
     iter(object);
-    tempValue = tempValue.filter(value => value !== null);
+    tempValue = tempValue.filter((value) => value !== null);
     return { tempKeys, tempValue };
   };
   const tableContent = columnFilters;
@@ -280,7 +288,7 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
 
   const initLoad = () => {
     if (columnFilters.length > 0) {
-      columnFilters.map(item => {
+      columnFilters.map((item) => {
         let metaArray = [];
         const metaKeys = [];
         const metaValues = [];
@@ -299,7 +307,7 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
           cells: tempParents.tempValue,
           rowKey: Math.random().toString()
         });
-        metaArray.map(data => {
+        metaArray.map((data) => {
           const tempMeta = getChildKeys(data);
           metaKeys.push(tempMeta.tempKeys);
           metaValues.push({
@@ -333,25 +341,17 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
         values = values.concat(innerTable);
         parentIndex = parentIndex + 2;
       });
-      const rowObject: any = {};
-      if (tableLoading && !isLoadingMore) {
-        rowObject.cells = [
-          {
-            props: { colSpan: 8 },
-            title: (
-              <Bullseye>
-                <KogitoSpinner spinnerText="Loading domain explorer" />
-              </Bullseye>
-            )
-          }
-        ];
-        values.push(rowObject);
-      }
     }
     const finalKeys = parentkeys[0];
-    finalKeys && setColumns([...finalKeys]);
+    if (displayEmptyState) {
+      const newColumns = [...finalKeys];
+      newColumns.unshift({ title: '', props: { style: { width: '96px' } } });
+      setColumns(newColumns);
+    } else {
+      finalKeys && setColumns([...finalKeys]);
+    }
     if (offset > 0) {
-      setRows(prev => [...prev, ...values]);
+      setRows((prev) => [...prev, ...values]);
     } else {
       setRows([...values]);
     }
@@ -365,7 +365,7 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
       parentIndex = lastObj.parent + 2;
     }
     initLoad();
-  }, [tableContent]);
+  }, [tableContent, displayEmptyState]);
 
   const onCollapse = (event, rowKey, isOpen) => {
     rows[rowKey].isOpen = isOpen;
@@ -376,32 +376,69 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
     setSortBy({ index, direction });
     const sortingColumn = event.target.innerText.replace(' / ', ',');
     const obj = {};
-    set(obj, sortingColumn, direction.toUpperCase());
+    constructObject(obj, sortingColumn, direction.toUpperCase());
     setOrderByObj(obj);
     setRunQuery(true);
   };
+
+  if (displayEmptyState) {
+    rows = [
+      {
+        rowKey: '1',
+        cells: [
+          {
+            props: { colSpan: 8 },
+            title: (
+              <KogitoEmptyState
+                type={KogitoEmptyStateType.Search}
+                title="No results found"
+                body="Try using different filters"
+              />
+            )
+          }
+        ]
+      }
+    ];
+  }
+  if (tableLoading && !isLoadingMore) {
+    rows = [
+      {
+        rowKey: '1',
+        cells: [
+          {
+            props: { colSpan: 8 },
+            title: <KogitoSpinner spinnerText="Loading domain data..." />
+          }
+        ]
+      }
+    ];
+  }
+
   return (
     <React.Fragment>
-      {displayTable && !displayEmptyState && columns.length && (
-        <Table
-          cells={columns}
-          rows={rows}
-          sortBy={sortBy}
-          onSort={onSort}
-          aria-label="Domain Explorer Table"
-          className="kogito-common--domain-explorer__table"
-          onCollapse={onCollapse}
-          {...componentOuiaProps(
-            ouiaId,
-            'domain-explorer-table',
-            ouiaSafe ? ouiaSafe : !tableLoading && !isLoadingMore
-          )}
-        >
-          <TableHeader />
-          <TableBody rowKey="rowKey" />
-        </Table>
-      )}
-      {!displayTable && (
+      {columns.length &&
+        !filterError &&
+        filterChips.length > 0 &&
+        selected.length > 0 && (
+          <Table
+            cells={columns}
+            rows={rows}
+            sortBy={sortBy}
+            onSort={onSort}
+            aria-label="Domain Explorer Table"
+            className="kogito-common--domain-explorer__table"
+            onCollapse={onCollapse}
+            {...componentOuiaProps(
+              ouiaId,
+              'domain-explorer-table',
+              ouiaSafe ? ouiaSafe : !tableLoading && !isLoadingMore
+            )}
+          >
+            <TableHeader />
+            <TableBody rowKey="rowKey" />
+          </Table>
+        )}
+      {!displayTable && !tableLoading && (
         <Card component={'div'}>
           <CardBody>
             {!displayEmptyState &&
@@ -428,19 +465,6 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
                   </EmptyState>
                 </Bullseye>
               )}
-            {displayEmptyState && (
-              <Bullseye>
-                <EmptyState>
-                  <EmptyStateIcon icon={SearchIcon} />
-                  <Title headingLevel="h5" size="lg">
-                    No data available
-                  </Title>
-                  <EmptyStateBody>
-                    Selected filters have no data to display. Try other filters.
-                  </EmptyStateBody>
-                </EmptyState>
-              </Bullseye>
-            )}
             {!displayEmptyState && !displayTable && filterError && (
               <ServerErrors error={filterError} variant="small" />
             )}
@@ -458,5 +482,4 @@ const DomainExplorerTable: React.FC<IOwnProps & OUIAProps> = ({
     </React.Fragment>
   );
 };
-
 export default DomainExplorerTable;

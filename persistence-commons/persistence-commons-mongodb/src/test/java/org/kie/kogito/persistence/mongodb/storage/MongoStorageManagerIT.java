@@ -18,24 +18,22 @@ package org.kie.kogito.persistence.mongodb.storage;
 
 import javax.inject.Inject;
 
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.persistence.api.Storage;
-import org.kie.kogito.persistence.api.factory.StorageQualifier;
 import org.kie.kogito.testcontainers.quarkus.MongoDBQuarkusTestResource;
+
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.kie.kogito.persistence.mongodb.Constants.MONGODB_STORAGE;
 
 @QuarkusTest
 @QuarkusTestResource(MongoDBQuarkusTestResource.class)
 class MongoStorageManagerIT {
 
     @Inject
-    @StorageQualifier(MONGODB_STORAGE)
     MongoStorageManager mongoStorageManager;
 
     Storage storage;
@@ -66,7 +64,7 @@ class MongoStorageManagerIT {
     @Test
     void getCacheWithDataFormat() {
         String storageName = "testCacheWithDataFormat";
-        storage = mongoStorageManager.getCacheWithDataFormat(storageName, String.class, "type");
+        storage = mongoStorageManager.getCache(storageName, String.class, "type");
 
         assertTrue(storage instanceof MongoStorage);
         assertEquals(storageName, ((MongoStorage) storage).mongoCollection.getNamespace().getCollectionName());

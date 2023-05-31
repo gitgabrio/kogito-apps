@@ -9,19 +9,22 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@patternfly/react-icons', () => ({
-  ...jest.requireActual('@patternfly/react-icons'),
-  InfoCircleIcon: () => {
-    return <MockedComponent />;
-  }
-}));
+jest.mock('@patternfly/react-icons', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-icons'), {
+    InfoCircleIcon: () => {
+      return <MockedComponent />;
+    }
+  })
+);
 
-jest.mock('@patternfly/react-core', () => ({
-  ...jest.requireActual('@patternfly/react-core'),
-  Tooltip: props => {
-    return <>{props.children} </>;
-  }
-}));
+jest.mock('@patternfly/react-core', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-core'), {
+    Tooltip: (props) => {
+      return <>{props.children} </>;
+    }
+  })
+);
+
 describe('Process details page milestones panel', () => {
   const props = {
     milestones: [
@@ -98,11 +101,8 @@ describe('Process details page milestones panel', () => {
   it('test assertions', () => {
     const wrapper = mount(<ProcessDetailsMilestones {...props2} />);
     expect(wrapper).toMatchSnapshot();
-    expect(
-      wrapper
-        .find('p')
-        .at(2)
-        .text()
-    ).toEqual('Milestone 3: Order delivered Available');
+    expect(wrapper.find('p').at(2).text()).toEqual(
+      'Milestone 3: Order delivered Available'
+    );
   });
 });

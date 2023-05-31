@@ -22,8 +22,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.infinispan.protostream.FileDescriptorSource;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ApplicationScoped
 public class ProtostreamProducer {
@@ -35,6 +36,7 @@ public class ProtostreamProducer {
     FileDescriptorSource kogitoTypesDescriptor() throws IOException {
         FileDescriptorSource source = new FileDescriptorSource();
         source.addProtoFile("decision.proto", Thread.currentThread().getContextClassLoader().getResourceAsStream("META-INF/decision.proto"));
+        source.addProtoFile("explanation.proto", Thread.currentThread().getContextClassLoader().getResourceAsStream("META-INF/explanation.proto"));
         return source;
     }
 
@@ -44,42 +46,23 @@ public class ProtostreamProducer {
     }
 
     @Produces
-    org.infinispan.protostream.MessageMarshaller decisionInputMarshaller() {
-        return new DecisionInputMarshaller(mapper);
-    }
-
-    @Produces
-    org.infinispan.protostream.MessageMarshaller decisionOutcomeMarshaller() {
-        return new DecisionOutcomeMarshaller(mapper);
-    }
-
-    @Produces
     org.infinispan.protostream.MessageMarshaller explainabilityResultMarshaller() {
-        return new ExplainabilityResultMarshaller(mapper);
+        return new LIMEExplainabilityResultMarshaller(mapper);
     }
 
     @Produces
-    org.infinispan.protostream.MessageMarshaller featureImportanceMarshaller() {
-        return new FeatureImportanceMarshaller(mapper);
+    org.infinispan.protostream.MessageMarshaller dmnModelMarshaller() {
+        return new DMNModelWithMetadataMarshaller(mapper);
     }
 
     @Produces
-    org.infinispan.protostream.MessageMarshaller messageExceptionFieldMarshaller() {
-        return new MessageExceptionFieldMarshaller(mapper);
+    org.infinispan.protostream.MessageMarshaller counterfactualMarshaller() {
+        return new CounterfactualExplainabilityRequestMarshaller(mapper);
     }
 
     @Produces
-    org.infinispan.protostream.MessageMarshaller messageMarshaller() {
-        return new MessageMarshaller(mapper);
+    org.infinispan.protostream.MessageMarshaller counterfactualResultMarshaller() {
+        return new CounterfactualExplainabilityResultMarshaller(mapper);
     }
 
-    @Produces
-    org.infinispan.protostream.MessageMarshaller saliencyMarshaller() {
-        return new SaliencyMarshaller(mapper);
-    }
-
-    @Produces
-    org.infinispan.protostream.MessageMarshaller typedValueMarshaller() {
-        return new TypedVariableMarshaller(mapper);
-    }
 }

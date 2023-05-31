@@ -13,6 +13,7 @@ import {
 import ExecutionTable from '../../Organisms/ExecutionTable/ExecutionTable';
 import useExecutions from './useExecutions';
 import { formatISO, sub } from 'date-fns';
+import { RemoteDataStatus } from '../../../types';
 
 type AuditOverviewProps = {
   dateRangePreset?: {
@@ -44,7 +45,7 @@ const AuditOverview = (props: AuditOverviewProps) => {
   });
 
   useEffect(() => {
-    if (executions.status === 'SUCCESS') {
+    if (executions.status === RemoteDataStatus.SUCCESS) {
       setTotal(executions.data.total);
     }
   }, [executions]);
@@ -54,7 +55,7 @@ const AuditOverview = (props: AuditOverviewProps) => {
       <PageSection variant={PageSectionVariants.light}>
         <TextContent>
           <Title size="3xl" headingLevel="h2">
-            Audit Investigation
+            Audit investigation
           </Title>
           <Text component="p">
             Here you can retrieve all the available information about past

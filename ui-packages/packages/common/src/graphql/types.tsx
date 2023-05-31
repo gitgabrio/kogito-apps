@@ -70,6 +70,7 @@ export namespace GraphQL {
   export type JobArgument = {
     and?: Maybe<Array<JobArgument>>;
     or?: Maybe<Array<JobArgument>>;
+    not?: Maybe<JobArgument>;
     id?: Maybe<IdArgument>;
     processId?: Maybe<StringArgument>;
     processInstanceId?: Maybe<IdArgument>;
@@ -223,6 +224,7 @@ export namespace GraphQL {
   export type ProcessInstanceArgument = {
     and?: Maybe<Array<ProcessInstanceArgument>>;
     or?: Maybe<Array<ProcessInstanceArgument>>;
+    not?: Maybe<ProcessInstanceArgument>;
     id?: Maybe<IdArgument>;
     processId?: Maybe<StringArgument>;
     processName?: Maybe<StringArgument>;
@@ -395,11 +397,13 @@ export namespace GraphQL {
   export type UserTaskInstanceArgument = {
     and?: Maybe<Array<UserTaskInstanceArgument>>;
     or?: Maybe<Array<UserTaskInstanceArgument>>;
+    not?: Maybe<UserTaskInstanceArgument>;
     state?: Maybe<StringArgument>;
     id?: Maybe<IdArgument>;
     description?: Maybe<StringArgument>;
     name?: Maybe<StringArgument>;
     priority?: Maybe<StringArgument>;
+    processId?: Maybe<StringArgument>;
     processInstanceId?: Maybe<IdArgument>;
     actualOwner?: Maybe<StringArgument>;
     potentialUsers?: Maybe<StringArrayArgument>;
@@ -457,6 +461,7 @@ export namespace GraphQL {
     description?: Maybe<OrderBy>;
     name?: Maybe<OrderBy>;
     priority?: Maybe<OrderBy>;
+    processId?: Maybe<OrderBy>;
     completed?: Maybe<OrderBy>;
     started?: Maybe<OrderBy>;
     referenceName?: Maybe<OrderBy>;
@@ -657,6 +662,7 @@ export namespace GraphQL {
 
   export type GetProcessInstancesQueryVariables = Exact<{
     where?: Maybe<ProcessInstanceArgument>;
+    orderBy?: Maybe<ProcessInstanceOrderBy>;
     offset?: Maybe<Scalars['Int']>;
     limit?: Maybe<Scalars['Int']>;
   }>;
@@ -1113,6 +1119,42 @@ export namespace GraphQL {
             | 'retries'
             | 'lastUpdate'
             | 'endpoint'
+            | 'nodeInstanceId'
+            | 'executionCounter'
+          >
+        >
+      >
+    >;
+  };
+
+  export type GetJobsWithFiltersQueryVariables = Exact<{
+    values?: Maybe<Array<Maybe<JobStatus>>>;
+    orderBy?: Maybe<JobOrderBy>;
+    offset?: Maybe<Scalars['Int']>;
+    limit?: Maybe<Scalars['Int']>;
+  }>;
+
+  export type GetJobsWithFiltersQuery = { __typename?: 'Query' } & {
+    Jobs?: Maybe<
+      Array<
+        Maybe<
+          { __typename?: 'Job' } & Pick<
+            Job,
+            | 'id'
+            | 'processId'
+            | 'processInstanceId'
+            | 'rootProcessId'
+            | 'status'
+            | 'expirationTime'
+            | 'priority'
+            | 'callbackEndpoint'
+            | 'repeatInterval'
+            | 'repeatLimit'
+            | 'scheduledId'
+            | 'retries'
+            | 'lastUpdate'
+            | 'endpoint'
+            | 'executionCounter'
           >
         >
       >
@@ -1122,11 +1164,13 @@ export namespace GraphQL {
   export const GetProcessInstancesDocument = gql`
     query getProcessInstances(
       $where: ProcessInstanceArgument
+      $orderBy: ProcessInstanceOrderBy
       $offset: Int
       $limit: Int
     ) {
       ProcessInstances(
         where: $where
+        orderBy: $orderBy
         pagination: { offset: $offset, limit: $limit }
       ) {
         id
@@ -1162,6 +1206,7 @@ export namespace GraphQL {
    * const { data, loading, error } = useGetProcessInstancesQuery({
    *   variables: {
    *      where: // value for 'where'
+   *      orderBy: // value for 'orderBy'
    *      offset: // value for 'offset'
    *      limit: // value for 'limit'
    *   },
@@ -1436,10 +1481,11 @@ export namespace GraphQL {
   export type GetColumnPickerAttributesLazyQueryHookResult = ReturnType<
     typeof useGetColumnPickerAttributesLazyQuery
   >;
-  export type GetColumnPickerAttributesQueryResult = ApolloReactCommon.QueryResult<
-    GetColumnPickerAttributesQuery,
-    GetColumnPickerAttributesQueryVariables
-  >;
+  export type GetColumnPickerAttributesQueryResult =
+    ApolloReactCommon.QueryResult<
+      GetColumnPickerAttributesQuery,
+      GetColumnPickerAttributesQueryVariables
+    >;
   export const GetQueryTypesDocument = gql`
     query getQueryTypes {
       __schema {
@@ -1647,10 +1693,11 @@ export namespace GraphQL {
   export type GetInputFieldsFromQueryLazyQueryHookResult = ReturnType<
     typeof useGetInputFieldsFromQueryLazyQuery
   >;
-  export type GetInputFieldsFromQueryQueryResult = ApolloReactCommon.QueryResult<
-    GetInputFieldsFromQueryQuery,
-    GetInputFieldsFromQueryQueryVariables
-  >;
+  export type GetInputFieldsFromQueryQueryResult =
+    ApolloReactCommon.QueryResult<
+      GetInputFieldsFromQueryQuery,
+      GetInputFieldsFromQueryQueryVariables
+    >;
   export const GetInputFieldsFromTypeDocument = gql`
     query getInputFieldsFromType($type: String!) {
       __type(name: $type) {
@@ -1988,8 +2035,9 @@ export namespace GraphQL {
         scheduledId
         retries
         lastUpdate
-        expirationTime
         endpoint
+        nodeInstanceId
+        executionCounter
       }
     }
   `;
@@ -2038,8 +2086,91 @@ export namespace GraphQL {
   export type GetJobsByProcessInstanceIdLazyQueryHookResult = ReturnType<
     typeof useGetJobsByProcessInstanceIdLazyQuery
   >;
-  export type GetJobsByProcessInstanceIdQueryResult = ApolloReactCommon.QueryResult<
-    GetJobsByProcessInstanceIdQuery,
-    GetJobsByProcessInstanceIdQueryVariables
+  export type GetJobsByProcessInstanceIdQueryResult =
+    ApolloReactCommon.QueryResult<
+      GetJobsByProcessInstanceIdQuery,
+      GetJobsByProcessInstanceIdQueryVariables
+    >;
+  export const GetJobsWithFiltersDocument = gql`
+    query getJobsWithFilters(
+      $values: [JobStatus]
+      $orderBy: JobOrderBy
+      $offset: Int
+      $limit: Int
+    ) {
+      Jobs(
+        where: { status: { in: $values } }
+        orderBy: $orderBy
+        pagination: { offset: $offset, limit: $limit }
+      ) {
+        id
+        processId
+        processInstanceId
+        rootProcessId
+        status
+        expirationTime
+        priority
+        callbackEndpoint
+        repeatInterval
+        repeatLimit
+        scheduledId
+        retries
+        lastUpdate
+        endpoint
+        executionCounter
+      }
+    }
+  `;
+
+  /**
+   * __useGetJobsWithFiltersQuery__
+   *
+   * To run a query within a React component, call `useGetJobsWithFiltersQuery` and pass it any options that fit your needs.
+   * When your component renders, `useGetJobsWithFiltersQuery` returns an object from Apollo Client that contains loading, error, and data properties
+   * you can use to render your UI.
+   *
+   * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+   *
+   * @example
+   * const { data, loading, error } = useGetJobsWithFiltersQuery({
+   *   variables: {
+   *      values: // value for 'values'
+   *      orderBy: // value for 'orderBy'
+   *      offset: // value for 'offset'
+   *      limit: // value for 'limit'
+   *   },
+   * });
+   */
+  export function useGetJobsWithFiltersQuery(
+    baseOptions?: ApolloReactHooks.QueryHookOptions<
+      GetJobsWithFiltersQuery,
+      GetJobsWithFiltersQueryVariables
+    >
+  ) {
+    return ApolloReactHooks.useQuery<
+      GetJobsWithFiltersQuery,
+      GetJobsWithFiltersQueryVariables
+    >(GetJobsWithFiltersDocument, baseOptions);
+  }
+  export function useGetJobsWithFiltersLazyQuery(
+    baseOptions?: ApolloReactHooks.LazyQueryHookOptions<
+      GetJobsWithFiltersQuery,
+      GetJobsWithFiltersQueryVariables
+    >
+  ) {
+    return ApolloReactHooks.useLazyQuery<
+      GetJobsWithFiltersQuery,
+      GetJobsWithFiltersQueryVariables
+    >(GetJobsWithFiltersDocument, baseOptions);
+  }
+  export type GetJobsWithFiltersQueryHookResult = ReturnType<
+    typeof useGetJobsWithFiltersQuery
+  >;
+  export type GetJobsWithFiltersLazyQueryHookResult = ReturnType<
+    typeof useGetJobsWithFiltersLazyQuery
+  >;
+  export type GetJobsWithFiltersQueryResult = ApolloReactCommon.QueryResult<
+    GetJobsWithFiltersQuery,
+    GetJobsWithFiltersQueryVariables
   >;
 }

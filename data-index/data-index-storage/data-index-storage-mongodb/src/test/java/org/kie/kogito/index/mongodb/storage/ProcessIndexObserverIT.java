@@ -18,8 +18,6 @@ package org.kie.kogito.index.mongodb.storage;
 
 import javax.inject.Inject;
 
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,9 +31,12 @@ import org.kie.kogito.persistence.mongodb.index.ProcessIndexEvent;
 import org.kie.kogito.persistence.mongodb.storage.MongoStorage;
 import org.kie.kogito.testcontainers.quarkus.MongoDBQuarkusTestResource;
 
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.kie.kogito.index.Constants.PROCESS_ID_MODEL_STORAGE;
+import static org.kie.kogito.index.storage.Constants.PROCESS_ID_MODEL_STORAGE;
 
 @QuarkusTest
 @QuarkusTestResource(MongoDBQuarkusTestResource.class)
@@ -71,8 +72,7 @@ class ProcessIndexObserverIT {
         processIndexObserver.onProcessIndexEvent(processIndexEvent);
 
         Storage<String, String> processIdStorage = new MongoStorage<>(mongoClientManager.getCollection(PROCESS_ID_MODEL_STORAGE, ProcessIdEntity.class),
-                                                                      mongoClientManager.getReactiveCollection(PROCESS_ID_MODEL_STORAGE, ProcessIdEntity.class),
-                                                                      String.class.getName(), new ProcessIdEntityMapper());
+                String.class.getName(), new ProcessIdEntityMapper());
         assertTrue(processIdStorage.containsKey(processId));
         assertEquals(processType, processIdStorage.get(processId));
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import Outcomes from '../Outcomes';
 import { mount } from 'enzyme';
-import { Outcome, ItemObject } from '../../../../types';
+import { ItemObjectValue, Outcome } from '../../../../types';
 
 jest.mock('uuid', () => {
   let value = 0;
@@ -13,7 +13,7 @@ describe('Outcomes', () => {
     const wrapper = mount(<Outcomes {...outcomesProps} />);
 
     expect(wrapper).toMatchSnapshot();
-    expect(wrapper.find('OutcomeCard')).toHaveLength(2);
+    expect(wrapper.find('OutcomeCard')).toHaveLength(3);
     expect(
       wrapper
         .find('h4.outcome-cards__card__title')
@@ -38,6 +38,18 @@ describe('Outcomes', () => {
         .at(1)
         .text()
     ).toMatch('21.7031851958099');
+    expect(
+      wrapper
+        .find('h4.outcome-cards__card__title')
+        .at(2)
+        .text()
+    ).toMatch('Client Score');
+    expect(
+      wrapper
+        .find('.outcome__property__value--bigger')
+        .at(2)
+        .text()
+    ).toMatch('Null');
   });
 
   test('handles clicks on the explanation link', () => {
@@ -268,10 +280,9 @@ const outcomesProps = {
       outcomeName: 'Mortgage Approval',
       evaluationStatus: 'SUCCEEDED',
       outcomeResult: {
-        name: 'Mortgage Approval',
-        typeRef: 'boolean',
-        value: true,
-        components: []
+        kind: 'UNIT',
+        type: 'boolean',
+        value: true
       },
       messages: [],
       hasErrors: false
@@ -281,10 +292,21 @@ const outcomesProps = {
       outcomeName: 'Risk Score',
       evaluationStatus: 'SUCCEEDED',
       outcomeResult: {
-        name: 'Risk Score',
-        typeRef: 'number',
-        value: 21.7031851958099,
-        components: []
+        kind: 'UNIT',
+        type: 'number',
+        value: 21.7031851958099
+      },
+      messages: [],
+      hasErrors: false
+    },
+    {
+      outcomeId: '_d361c79e-8c06-4504-bdb2-d6b90b915166',
+      outcomeName: 'Client Score',
+      evaluationStatus: 'SUCCEEDED',
+      outcomeResult: {
+        kind: 'UNIT',
+        type: 'number',
+        value: null
       },
       messages: [],
       hasErrors: false
@@ -303,98 +325,92 @@ const outcomesRecommendationProps = {
       hasErrors: false,
       messages: [],
       outcomeResult: {
-        name: 'Recommended Loan Products',
-        typeRef: 'tProducts',
-        value: null,
-        components: [
-          [
-            {
-              name: 'Product',
-              value: 'Lender B - ARM5/1-Standard',
-              typeRef: 'string',
-              components: []
-            },
-            {
-              name: 'Recommendation',
-              value: 'Good',
-              typeRef: 'string',
-              components: []
-            },
-            {
-              name: 'Note Amount',
-              value: '$273,775.90',
-              typeRef: 'string',
-              components: []
-            },
-            {
-              name: 'Interest Rate',
-              value: '3.8',
-              typeRef: 'string',
-              components: []
-            },
-            {
-              name: 'Monthly Payment',
-              value: '$1,267.90',
-              typeRef: 'string',
-              components: []
-            },
-            {
-              name: 'Cash to Close',
-              value: '$1,267.90',
-              typeRef: 'string',
-              components: []
-            },
-            {
-              name: 'Required Credit Score',
-              value: 720,
-              typeRef: 'number',
-              components: []
+        kind: 'COLLECTION',
+        type: 'tProducts',
+        value: [
+          {
+            kind: 'STRUCTURE',
+            type: 'tProduct',
+            value: {
+              Product: {
+                kind: 'UNIT',
+                type: 'string',
+                value: 'Lender B - ARM5/1-Standard'
+              },
+              Recommendation: {
+                kind: 'UNIT',
+                type: 'string',
+                value: 'Good'
+              },
+              'Note Amount': {
+                kind: 'UNIT',
+                type: 'string',
+                value: '$273,775.90'
+              },
+              'Interest Rate': {
+                kind: 'UNIT',
+                type: 'string',
+                value: '3.8'
+              },
+              'Monthly Payment': {
+                kind: 'UNIT',
+                type: 'string',
+                value: '$1,267.90'
+              },
+              'Cash to Close': {
+                kind: 'UNIT',
+                type: 'string',
+                value: '$1,267.90'
+              },
+              'Required Credit Score': {
+                kind: 'UNIT',
+                type: 'number',
+                value: 720
+              }
             }
-          ],
-          [
-            {
-              name: 'Product',
-              value: 'Lender C - Fixed30-Standard',
-              typeRef: 'string',
-              components: []
+          },
+          {
+            kind: 'STRUCTURE',
+            type: 'tProduct',
+            value: {
+              Product: {
+                kind: 'UNIT',
+                type: 'string',
+                value: 'Lender C - Fixed30-Standard'
+              }
             },
-            {
-              name: 'Recommendation',
-              value: 'Best',
-              typeRef: 'string',
-              components: []
+            Recommendation: {
+              kind: 'UNIT',
+              type: 'string',
+              value: 'Best'
             },
-            {
-              name: 'Note Amount',
+            'Note Amount': {
+              kind: 'UNIT',
+              type: 'string',
               value: '$274,599.40',
-              typeRef: 'string',
-              components: []
+              components: null
             },
-            {
-              name: 'Interest Rate',
-              value: '3.88',
-              typeRef: 'string',
-              components: []
+            'Interest Rate': {
+              kind: 'UNIT',
+              type: 'string',
+              value: '3.88'
             },
-            {
-              name: 'Monthly Payment',
-              value: '$1,291.27',
-              typeRef: 'string',
-              components: []
+            'Monthly Payment': {
+              kind: 'UNIT',
+              type: 'string',
+              value: '$1,291.27'
             },
-            {
-              name: 'Cash to Close',
-              value: '$75,491.99',
-              typeRef: 'string',
-              components: []
+            'Cash to Close': {
+              kind: 'UNIT',
+              type: 'string',
+              value: '$75,491.99'
             },
-            {
-              name: 'Required Credit Score',
-              value: 680,
-              typeRef: 'number',
-              components: []
+            'Required Credit Score': {
+              kind: 'UNIT',
+              type: 'number',
+              value: 680
             }
-          ]
+          }
         ]
       }
     }
@@ -412,74 +428,63 @@ const outcomeComposedProps = {
       hasErrors: false,
       messages: [],
       outcomeResult: {
-        name: 'Client Ratings',
-        typeRef: 'tProducts',
-        value: null,
-        components: [
-          {
-            name: 'Rating Type A',
-            value: null,
-            typeRef: 'string',
-            components: [
-              {
-                name: 'Loan Amount',
-                value: 540000,
-                typeRef: 'number',
-                components: []
+        kind: 'STRUCTURE',
+        type: 'tRatings',
+        value: {
+          'Rating Type A': {
+            kind: 'STRUCTURE',
+            type: 'tRating',
+            value: {
+              'Loan Amount': {
+                kind: 'UNIT',
+                type: 'number',
+                value: 540000
               },
-              {
-                name: 'Repayment Rate',
-                value: 900,
-                typeRef: 'number',
-                components: []
+              'Repayment Rate': {
+                kind: 'UNIT',
+                type: 'number',
+                value: 900
               },
-              {
-                name: 'Loan Eligibility',
-                value: true,
-                typeRef: 'boolean',
-                components: []
+              'Loan Eligibility': {
+                kind: 'UNIT',
+                type: 'boolean',
+                value: true
               }
-            ]
+            }
           },
-          {
-            name: 'Rating Type B',
-            value: null,
-            typeRef: 'number',
-            components: [
-              {
-                name: 'Loan amount',
-                value: 340000,
-                typeRef: 'number',
-                components: []
+          'Rating Type B': {
+            kind: 'STRUCTURE',
+            type: 'tRating',
+            value: {
+              'Loan amount': {
+                kind: 'UNIT',
+                type: 'number',
+                value: 340000
               },
-              {
-                name: 'Repayment rate',
-                value: 2000,
-                typeRef: 'number',
-                components: []
+              'Repayment rate': {
+                kind: 'UNIT',
+                type: 'number',
+                value: 2000
               },
-              {
-                name: 'Sub-Rating Type C',
-                value: null,
-                typeRef: 'number',
-                components: [
-                  {
-                    name: 'Loan amount',
-                    value: 390000,
-                    typeRef: 'number',
-                    components: []
+              'Sub-Rating Type C': {
+                kind: 'STRUCTURE',
+                type: 'tRating',
+                value: {
+                  'Loan amount': {
+                    kind: 'UNIT',
+                    type: 'number',
+                    value: 390000
                   },
-                  {
-                    name: 'Repayment rate',
-                    value: 5000,
-                    typeRef: 'number',
-                    components: []
+                  'Repayment rate': {
+                    kind: 'UNIT',
+                    type: 'number',
+                    value: 5000
                   }
-                ]
+                }
               }
-            ]
+            }
           }
-        ]
+        }
       }
     }
   ] as Outcome[],
@@ -493,7 +498,7 @@ const outcomeSkippedProps = {
       outcomeId: '_1CFF8C35-4EB2-351E-874C-DB27A2A424C0',
       outcomeName: 'Bank Score',
       evaluationStatus: 'SKIPPED',
-      outcomeResult: {} as ItemObject,
+      outcomeResult: {} as ItemObjectValue,
       messages: [],
       hasErrors: false
     } as Outcome
@@ -511,18 +516,20 @@ const outcomeMultiplePropertiesProps = {
       hasErrors: false,
       messages: [],
       outcomeResult: {
-        name: 'Last Transaction',
-        typeRef: 'tTransaction',
-        value: null,
-        components: [
-          {
-            name: 'Auth Code',
-            typeRef: 'tAuthCode',
-            value: 'Authorized',
-            components: []
+        kind: 'STRUCTURE',
+        type: 'tTransaction',
+        value: {
+          'Auth Code': {
+            kind: 'UNIT',
+            type: 'tAuthCode',
+            value: 'Authorized'
           },
-          { name: 'Amount', typeRef: 'number', value: 10000, components: [] }
-        ]
+          Amount: {
+            kind: 'UNIT',
+            type: 'number',
+            value: 10000
+          }
+        }
       }
     }
   ] as Outcome[],
@@ -539,10 +546,9 @@ const outcomeValuesArrayProps = {
       messages: [],
       hasErrors: false,
       outcomeResult: {
-        name: 'Merchant Blacklist',
-        typeRef: 'string',
-        value: ['ILLICITCORP', 'SLIMSHADY', 'TAINTEDTHINGS'],
-        components: []
+        kind: 'UNIT',
+        type: 'string',
+        value: ['ILLICITCORP', 'SLIMSHADY', 'TAINTEDTHINGS']
       }
     }
   ] as Outcome[],
@@ -557,10 +563,9 @@ const outcomeDetailProps = {
       outcomeName: 'Mortgage Approval',
       evaluationStatus: 'SUCCEEDED',
       outcomeResult: {
-        name: 'Mortgage Approval',
-        typeRef: 'boolean',
-        value: true,
-        components: []
+        kind: 'UNIT',
+        type: 'boolean',
+        value: true
       },
       messages: [],
       hasErrors: false

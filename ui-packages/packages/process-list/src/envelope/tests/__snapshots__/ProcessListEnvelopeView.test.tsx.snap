@@ -1,0 +1,67 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProcessListEnvelopeView tests Snapshot 1`] = `null`;
+
+exports[`ProcessListEnvelopeView tests Snapshot 2`] = `
+<ForwardRef
+  channelApi={
+    Object {
+      "notifications": Object {
+        "processList__openTriggerCloudEvent": [MockFunction],
+      },
+      "requests": Object {
+        "processList__applyFilter": [MockFunction],
+        "processList__applySorting": [MockFunction],
+        "processList__getChildProcessesQuery": [MockFunction],
+        "processList__handleProcessAbort": [MockFunction],
+        "processList__handleProcessMultipleAction": [MockFunction],
+        "processList__handleProcessRetry": [MockFunction],
+        "processList__handleProcessSkip": [MockFunction],
+        "processList__initialLoad": [MockFunction],
+        "processList__openProcess": [MockFunction],
+        "processList__query": [MockFunction],
+      },
+      "subscribe": [MockFunction],
+      "unsubscribe": [MockFunction],
+    }
+  }
+>
+  <MockedProcessList
+    driver={
+      ProcessListEnvelopeViewDriver {
+        "channelApi": Object {
+          "notifications": Object {
+            "processList__openTriggerCloudEvent": [MockFunction],
+          },
+          "requests": Object {
+            "processList__applyFilter": [MockFunction],
+            "processList__applySorting": [MockFunction],
+            "processList__getChildProcessesQuery": [MockFunction],
+            "processList__handleProcessAbort": [MockFunction],
+            "processList__handleProcessMultipleAction": [MockFunction],
+            "processList__handleProcessRetry": [MockFunction],
+            "processList__handleProcessSkip": [MockFunction],
+            "processList__initialLoad": [MockFunction],
+            "processList__openProcess": [MockFunction],
+            "processList__query": [MockFunction],
+          },
+          "subscribe": [MockFunction],
+          "unsubscribe": [MockFunction],
+        },
+      }
+    }
+    initialState={
+      Object {
+        "filters": Object {
+          "status": Array [],
+        },
+        "sortBy": Object {},
+      }
+    }
+    isEnvelopeConnectedToChannel={true}
+    isWorkflow={true}
+    pluralProcessLabel="Workflows"
+    singularProcessLabel="Workflow"
+  />
+</ForwardRef>
+`;

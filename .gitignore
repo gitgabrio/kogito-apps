@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-it/
 node/
 coverage/
 target/
@@ -15,6 +16,7 @@ package-lock.json
 /.*
 !.github
 !.gitignore
+!.ci
 !.mvn
 /nbproject
 /*.ipr
@@ -23,6 +25,8 @@ package-lock.json
 .classpath
 .project
 .settings
+.vscode
+!.husky
 
 # Cypress - runtime artifacts and undesired dirs
 **/cypress/screenshots

@@ -3,6 +3,7 @@
 exports[`ExecutionHeader renders a loading animation while fetching data 1`] = `
 <section
   className="execution-header"
+  data-ouia-component-id="execution-header"
 >
   <Flex>
     <FlexItem>
@@ -28,18 +29,22 @@ exports[`ExecutionHeader renders a loading animation while fetching data 1`] = `
 exports[`ExecutionHeader renders the execution info 1`] = `
 <section
   className="execution-header"
+  data-ouia-component-id="execution-header"
 >
   <Flex>
     <FlexItem>
       <Title
+        data-ouia-component-id="title"
         headingLevel="h2"
         size="3xl"
       >
         <span
           className="execution-header__uuid"
         >
-          ID# 
-          b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000
+          Execution 
+          <ExecutionId
+            id="b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000"
+          />
         </span>
       </Title>
     </FlexItem>
@@ -57,11 +62,13 @@ exports[`ExecutionHeader renders the execution info 1`] = `
                 fullDateAndTime={true}
               />
             </span>
-            <br />
-            <span>
-              Executed by 
-              Technical User
-            </span>
+            <React.Fragment>
+              <br />
+              <span>
+                Executed by 
+                Technical User
+              </span>
+            </React.Fragment>
           </div>
         }
         distance={5}
@@ -71,6 +78,7 @@ exports[`ExecutionHeader renders the execution info 1`] = `
       >
         <div>
           <ExecutionStatus
+            ouiaId="status"
             result="success"
           />
         </div>

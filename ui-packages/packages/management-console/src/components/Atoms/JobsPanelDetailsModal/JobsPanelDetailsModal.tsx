@@ -1,9 +1,8 @@
 import React from 'react';
-import { OUIAProps, componentOuiaProps, GraphQL } from '@kogito-apps/common';
+import { GraphQL } from '@kogito-apps/common';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 import {
   Modal,
-  Title,
-  TitleSizes,
   TextContent,
   Flex,
   FlexItem,
@@ -112,6 +111,14 @@ const JobsPanelDetailsModal: React.FC<IOwnProps & OUIAProps> = ({
             <FlexItem>
               <Split hasGutter>
                 <SplitItem>
+                  <Text component={TextVariants.h6}>Execution counter: </Text>
+                </SplitItem>
+                <SplitItem>{job.executionCounter}</SplitItem>
+              </Split>
+            </FlexItem>
+            <FlexItem>
+              <Split hasGutter>
+                <SplitItem>
                   <Text component={TextVariants.h6}>Last Updated: </Text>
                 </SplitItem>
                 <SplitItem>
@@ -143,11 +150,7 @@ const JobsPanelDetailsModal: React.FC<IOwnProps & OUIAProps> = ({
       aria-labelledby={actionType + 'modal'}
       aria-label={actionType + 'modal'}
       title=""
-      header={
-        <Title headingLevel="h1" size={TitleSizes['2xl']}>
-          {modalTitle}
-        </Title>
-      }
+      header={modalTitle}
       isOpen={isModalOpen}
       onClose={handleModalToggle}
       actions={modalAction}

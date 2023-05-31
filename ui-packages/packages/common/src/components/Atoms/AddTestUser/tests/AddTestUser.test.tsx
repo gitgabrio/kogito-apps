@@ -17,11 +17,11 @@
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 import { Alert, Form } from '@patternfly/react-core';
-import { getWrapper } from '../../../../utils/OuiaUtils';
+import { mount } from 'enzyme';
 import AddTestUser from '../AddTestUser';
 import {
   resetTestKogitoAppContext,
-  setTestKogitoAppContextModeToTest,
+  testIsTestUserSystemEnabledMock,
   testKogitoAppContext
 } from '../../../../environment/auth/tests/utils/KogitoAppContextTestingUtils';
 import { TestUserContext } from '../../../../environment/auth/TestUserContext';
@@ -30,32 +30,33 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@patternfly/react-core', () => ({
-  ...jest.requireActual('@patternfly/react-core'),
-  Alert: () => <MockedComponent />,
-  Button: () => <MockedComponent />,
-  Checkbox: () => <MockedComponent />,
-  TextInput: () => <MockedComponent />
-}));
+jest.mock('@patternfly/react-core', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-core'), {
+    Alert: () => <MockedComponent />,
+    Button: () => <MockedComponent />,
+    Checkbox: () => <MockedComponent />,
+    TextInput: () => <MockedComponent />
+  })
+);
 
 const findFormInput = (wrapper, id: string) => {
-  return wrapper.findWhere(element => element.prop('id') === id);
+  return wrapper.findWhere((element) => element.prop('id') === id);
 };
 
 const findFormGroup = (wrapper, id: string) => {
-  return wrapper.findWhere(element => element.prop('fieldId') === id);
+  return wrapper.findWhere((element) => element.prop('fieldId') === id);
 };
 
 describe('AddTestUser tests', () => {
-  afterEach(() => {
-    resetTestKogitoAppContext();
+  beforeEach(() => {
+    testIsTestUserSystemEnabledMock.mockReturnValue(true);
+    resetTestKogitoAppContext(false);
   });
 
-  it('Snapshot test in Test mode', () => {
-    const wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={jest.fn()} />,
-      'Stack'
-    );
+  it('Snapshot test - TestUserSystem enabled', () => {
+    const wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={jest.fn()} />
+    ).find('Stack');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -63,11 +64,10 @@ describe('AddTestUser tests', () => {
     expect(wrapper.find(Form).exists()).toBeTruthy();
   });
 
-  it('Snapshot test in Test mode - closed modal', () => {
-    const wrapper = getWrapper(
-      <AddTestUser isOpen={false} toggleModal={jest.fn()} />,
-      'Stack'
-    );
+  it('Snapshot test - TestUserSystem enabled - closed modal', () => {
+    const wrapper = mount(
+      <AddTestUser isOpen={false} toggleModal={jest.fn()} />
+    ).find('Stack');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -75,12 +75,12 @@ describe('AddTestUser tests', () => {
     expect(wrapper.find(Form).exists()).toBeFalsy();
   });
 
-  it('Snapshot test in Prod mode', () => {
-    setTestKogitoAppContextModeToTest(false);
-    const wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={jest.fn()} />,
-      'Stack'
-    );
+  it('Snapshot test - TestUserSystem disabled', () => {
+    testIsTestUserSystemEnabledMock.mockReturnValue(false);
+
+    const wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={jest.fn()} />
+    ).find('Stack');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -91,15 +91,14 @@ describe('AddTestUser tests', () => {
   it('Cancel test', () => {
     const toggleModal = jest.fn();
 
-    const wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={toggleModal} />,
-      'Form'
-    );
+    const wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={toggleModal} />
+    ).find('Form');
 
     expect(wrapper).toMatchSnapshot();
 
     const cancelButton = wrapper.findWhere(
-      element => element.prop('id') === 'cancel-add-test-user'
+      (element) => element.prop('id') === 'cancel-add-test-user'
     );
 
     expect(cancelButton.exists()).toBeTruthy();
@@ -114,15 +113,14 @@ describe('AddTestUser tests', () => {
   it('Add test with validation error', () => {
     const toggleModal = jest.fn();
 
-    let wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={toggleModal} />,
-      'Form'
-    );
+    let wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={toggleModal} />
+    ).find('Form');
 
     expect(wrapper).toMatchSnapshot();
 
     const addButton = wrapper.findWhere(
-      element => element.prop('id') === 'add-test-user'
+      (element) => element.prop('id') === 'add-test-user'
     );
 
     expect(addButton.exists()).toBeTruthy();
@@ -159,10 +157,9 @@ describe('AddTestUser tests', () => {
   it('Add test with successful validation', () => {
     const toggleModal = jest.fn();
 
-    let wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={toggleModal} />,
-      'Form'
-    );
+    let wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={toggleModal} />
+    ).find('Form');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -192,7 +189,7 @@ describe('AddTestUser tests', () => {
     expect(groups.prop('validated')).toStrictEqual('success');
 
     const addButton = wrapper.findWhere(
-      element => element.prop('id') === 'add-test-user'
+      (element) => element.prop('id') === 'add-test-user'
     );
 
     act(() => {
@@ -205,10 +202,9 @@ describe('AddTestUser tests', () => {
   it('Test userId field validations', () => {
     const toggleModal = jest.fn();
 
-    let wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={toggleModal} />,
-      'Form'
-    );
+    let wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={toggleModal} />
+    ).find('Form');
 
     expect(wrapper).toMatchSnapshot();
 
@@ -283,10 +279,9 @@ describe('AddTestUser tests', () => {
   it('Test groups field validations', () => {
     const toggleModal = jest.fn();
 
-    let wrapper = getWrapper(
-      <AddTestUser isOpen={true} toggleModal={toggleModal} />,
-      'Form'
-    );
+    let wrapper = mount(
+      <AddTestUser isOpen={true} toggleModal={toggleModal} />
+    ).find('Form');
 
     expect(wrapper).toMatchSnapshot();
 

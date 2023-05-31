@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.kie.kogito.persistence.protobuf;
 
 import java.util.Arrays;
@@ -26,7 +25,6 @@ import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
-import io.quarkus.runtime.StartupEvent;
 import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.SerializationContext;
 import org.infinispan.protostream.descriptors.Descriptor;
@@ -42,11 +40,13 @@ import org.kie.kogito.persistence.api.schema.SchemaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.quarkus.runtime.StartupEvent;
+
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.INDEXED_ANNOTATION;
 import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.configureBuilder;
-import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.createEntityIndexeDescriptors;
+import static org.kie.kogito.persistence.protobuf.ProtoIndexParser.createEntityIndexDescriptors;
 
 @ApplicationScoped
 public class ProtobufService {
@@ -76,9 +76,9 @@ public class ProtobufService {
             try {
                 SerializationContext ctx = createSerializationContext(FileDescriptorSource.fromString(name, content));
                 FileDescriptor desc = ctx.getFileDescriptors().get(name);
-                Map<String, EntityIndexDescriptor> entityIndexes = desc.getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor>getProcessedAnnotation(INDEXED_ANNOTATION))
+                Map<String, EntityIndexDescriptor> entityIndexes = desc.getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor> getProcessedAnnotation(INDEXED_ANNOTATION))
                         .filter(Objects::nonNull).collect(toMap(EntityIndexDescriptor::getName, Function.identity()));
-                Map<String, EntityIndexDescriptor> entityIndexDescriptors = createEntityIndexeDescriptors(desc, entityIndexes);
+                Map<String, EntityIndexDescriptor> entityIndexDescriptors = createEntityIndexDescriptors(desc, entityIndexes);
 
                 schemaEvent.fire(new SchemaRegisteredEvent(new SchemaDescriptor(name, content, entityIndexDescriptors, null), SCHEMA_TYPE));
             } catch (ProtobufValidationException e) {
@@ -92,7 +92,6 @@ public class ProtobufService {
     public void registerProtoBufferType(String content) throws ProtobufValidationException {
         LOGGER.debug("Registering new ProtoBuffer file with content: \n{}", content);
 
-        content = content.replaceAll("kogito.Date", "string");
         SerializationContext ctx = createSerializationContext(kogitoDescriptors, FileDescriptorSource.fromString(DOMAIN_MODEL_PROTO_NAME, content));
         FileDescriptor desc = ctx.getFileDescriptors().get(DOMAIN_MODEL_PROTO_NAME);
         Option processIdOption = desc.getOption("kogito_id");
@@ -117,14 +116,14 @@ public class ProtobufService {
 
         validateDescriptorField(messageName, descriptor, Constants.KOGITO_DOMAIN_ATTRIBUTE);
 
-        Map<String, EntityIndexDescriptor> entityIndexes = desc.getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor>getProcessedAnnotation(INDEXED_ANNOTATION))
+        Map<String, EntityIndexDescriptor> entityIndexes = desc.getMessageTypes().stream().map(t -> t.<EntityIndexDescriptor> getProcessedAnnotation(INDEXED_ANNOTATION))
                 .filter(Objects::nonNull).collect(toMap(EntityIndexDescriptor::getName, Function.identity()));
-        Map<String, EntityIndexDescriptor> entityIndexeDescriptors = createEntityIndexeDescriptors(desc, entityIndexes);
+        Map<String, EntityIndexDescriptor> entityIndexedDescriptors = createEntityIndexDescriptors(desc, entityIndexes);
 
         try {
-            schemaEvent.fire(new SchemaRegisteredEvent(new SchemaDescriptor(processId + ".proto", content, entityIndexeDescriptors, new ProcessDescriptor(processId, fullTypeName)), SCHEMA_TYPE));
+            schemaEvent.fire(new SchemaRegisteredEvent(new SchemaDescriptor(processId + ".proto", content, entityIndexedDescriptors, new ProcessDescriptor(processId, fullTypeName)), SCHEMA_TYPE));
         } catch (RuntimeException ex) {
-            throw new ProtobufValidationException(ex.getMessage());
+            throw new ProtobufValidationException(ex.getMessage(), ex);
         }
         domainModelEvent.fire(new FileDescriptorRegisteredEvent(desc));
     }

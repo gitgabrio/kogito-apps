@@ -1,8 +1,25 @@
+export interface TrustyContextValue {
+  config: {
+    counterfactualEnabled: boolean;
+    explanationEnabled: boolean;
+    serverRoot: string;
+    basePath: string;
+    useHrefLinks: boolean;
+  };
+}
+
 export type RemoteData<E, D> =
-  | { status: 'NOT_ASKED' }
-  | { status: 'LOADING' }
-  | { status: 'FAILURE'; error: E }
-  | { status: 'SUCCESS'; data: D };
+  | { status: RemoteDataStatus.NOT_ASKED }
+  | { status: RemoteDataStatus.LOADING }
+  | { status: RemoteDataStatus.FAILURE; error: E }
+  | { status: RemoteDataStatus.SUCCESS; data: D };
+
+export enum RemoteDataStatus {
+  NOT_ASKED,
+  LOADING,
+  FAILURE,
+  SUCCESS
+}
 
 export interface Execution {
   executionId: string;
@@ -25,26 +42,37 @@ export interface ExecutionRouteParams {
 
 export interface ItemObject {
   name: string;
-  typeRef: string;
-  value: string | number | boolean | Record<string, unknown> | null;
-  components: (ItemObject | ItemObject[])[];
-  impact?: boolean | number;
-  score?: number;
+  value: ItemObjectValue;
 }
 
-export function isItemObjectArray(object: any): object is ItemObject[] {
-  return typeof object[0].name === 'string';
+export type ItemObjectValue =
+  | ItemObjectUnit
+  | ItemObjectCollection
+  | ItemObjectStructure;
+
+export interface ItemObjectUnit {
+  kind: 'UNIT';
+  type: string;
+  value: string | number | boolean | Array<string | number | boolean> | null;
 }
 
-export function isItemObjectMultiArray(object: any): object is ItemObject[][] {
-  return Array.isArray(object[0]);
+export interface ItemObjectCollection {
+  kind: 'COLLECTION';
+  type: string;
+  value: ItemObjectValue[] | null;
+}
+
+export type ItemObjectMap = { [key: string]: ItemObjectValue };
+
+export interface ItemObjectStructure {
+  kind: 'STRUCTURE';
+  type: string;
+  value: ItemObjectMap;
 }
 
 export interface InputRow {
   inputLabel: string;
-  inputValue?: string | number | boolean | Record<string, unknown> | null;
-  hasEffect?: boolean | number;
-  score?: number;
+  inputValue?: ItemObject['value'];
   key: string;
   category: string;
 }
@@ -62,15 +90,14 @@ export type evaluationStatusStrings = keyof typeof evaluationStatus;
 export interface Outcome {
   outcomeId: string;
   outcomeName: string;
+  outcomeResult: ItemObjectValue;
   evaluationStatus: evaluationStatusStrings;
   hasErrors: boolean;
   messages: string[];
-  outcomeResult: ItemObject;
 }
 
 export interface FeatureScores {
   featureName: string;
-  featureId: string;
   featureScore: number;
 }
 
@@ -78,8 +105,16 @@ export interface Saliency {
   outcomeId: string;
   featureImportance: FeatureScores[];
 }
+
+export enum SaliencyStatus {
+  SUCCEEDED = 'SUCCEEDED',
+  FAILED = 'FAILED'
+}
+
+export type SaliencyStatusStrings = keyof typeof SaliencyStatus;
+
 export interface Saliencies {
-  status: 'SUCCEEDED' | 'FAILED';
+  status: SaliencyStatusStrings;
   statusDetail: string;
   saliencies: Saliency[];
 }
@@ -95,7 +130,116 @@ export interface ModelData {
   modelId?: string;
   name: string;
   namespace: string;
-  type: string;
+  modelVersion: string;
+  dmnVersion: string;
   serviceIdentifier: ServiceIdentifier;
   model: string;
 }
+
+export interface CFSearchInput {
+  name: string;
+  value: CFSearchInputValue;
+}
+
+export type CFSearchInputValue =
+  | CFSearchInputUnit
+  | CFSearchInputCollection
+  | CFSearchInputStructure;
+
+export interface CFSearchInputUnit {
+  kind: 'UNIT';
+  type: string;
+  fixed?: boolean;
+  domain?: CFNumericalDomain | CFCategoricalDomain;
+  originalValue: ItemObject['value'];
+}
+
+export interface CFNumericalDomain {
+  type: 'RANGE';
+  lowerBound?: number;
+  upperBound?: number;
+}
+
+export interface CFCategoricalDomain {
+  type: 'CATEGORICAL';
+  categories: string[];
+}
+
+export interface CFSearchInputCollection {
+  kind: 'COLLECTION';
+  type: string;
+  value: Array<CFSearchInputValue> | null;
+}
+
+export type CFSearchInputValueMap = { [key: string]: CFSearchInputValue };
+
+export interface CFSearchInputStructure {
+  kind: 'STRUCTURE';
+  type: string;
+  value: CFSearchInputValueMap | null;
+}
+
+export enum CFGoalRole {
+  UNSUPPORTED,
+  ORIGINAL,
+  FIXED,
+  FLOATING
+}
+
+export interface CFGoal {
+  id: string;
+  name: string;
+  role: CFGoalRole;
+  value: ItemObjectValue;
+  originalValue: CFGoal['value'];
+}
+
+export type CFResult = Array<unknown>;
+
+export interface CFStatus {
+  isDisabled: boolean;
+  executionStatus: CFExecutionStatus;
+  lastExecutionTime: null | string;
+}
+
+export enum CFExecutionStatus {
+  COMPLETED,
+  RUNNING,
+  NOT_STARTED,
+  FAILED,
+  NO_RESULTS
+}
+
+export type CFAnalysisResetType = 'NEW' | 'EDIT';
+
+export interface CFAnalysisExecution {
+  executionId: string;
+  counterfactualId: string;
+  maxRunningTimeSeconds: number;
+}
+
+export interface CFAnalysisResult {
+  executionId: string;
+  counterfactualId: string;
+  type: 'counterfactual';
+  valid: boolean;
+  status: 'SUCCEEDED' | 'FAILED';
+  statusDetails: string;
+  solutionId: string;
+  isValid: boolean;
+  stage: 'INTERMEDIATE' | 'FINAL';
+  inputs: ItemObject[];
+  outputs: ItemObject[];
+  sequenceId: number;
+}
+
+export interface CFAnalysisResultsSets extends CFAnalysisExecution {
+  goals: CFGoal[];
+  searchDomains: CFSearchInput[];
+  solutions: CFAnalysisResult[];
+}
+
+export type CFSupportMessage = {
+  id: string;
+  message: string;
+};

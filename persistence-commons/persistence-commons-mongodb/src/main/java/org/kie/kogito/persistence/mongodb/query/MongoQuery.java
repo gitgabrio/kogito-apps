@@ -20,15 +20,19 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 import org.bson.conversions.Bson;
 import org.kie.kogito.persistence.api.query.AttributeFilter;
 import org.kie.kogito.persistence.api.query.AttributeSort;
 import org.kie.kogito.persistence.api.query.Query;
 import org.kie.kogito.persistence.api.query.SortDirection;
 import org.kie.kogito.persistence.mongodb.model.MongoEntityMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mongodb.ExplainVerbosity;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 
 import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.Sorts.descending;
@@ -36,6 +40,8 @@ import static com.mongodb.client.model.Sorts.orderBy;
 import static java.util.stream.Collectors.toList;
 
 public class MongoQuery<V, E> implements Query<V> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MongoQuery.class);
 
     Integer limit;
     Integer offset;
@@ -86,6 +92,10 @@ public class MongoQuery<V, E> implements Query<V> {
         find = Optional.ofNullable(this.offset).map(find::skip).orElse(find);
         find = Optional.ofNullable(this.limit).map(find::limit).orElse(find);
 
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("-------------- Executing MongoDb query with { \"queryPlanner\": \"{}\"",
+                    find.explain(ExplainVerbosity.QUERY_PLANNER).toBsonDocument().get("queryPlanner"));
+        }
         List<V> list = new LinkedList<>();
         try (MongoCursor<E> cursor = find.iterator()) {
             while (cursor.hasNext()) {
@@ -98,10 +108,8 @@ public class MongoQuery<V, E> implements Query<V> {
 
     private Optional<Bson> generateSort() {
         return Optional.ofNullable(this.sortBy).map(sbList -> orderBy(sbList.stream().map(
-                sb -> SortDirection.ASC.equals(sb.getSort()) ?
-                        ascending(mongoEntityMapper.convertToMongoAttribute(sb.getAttribute())) :
-                        descending(mongoEntityMapper.convertToMongoAttribute(sb.getAttribute())))
-                                                                              .collect(toList()))
-        );
+                sb -> SortDirection.ASC.equals(sb.getSort()) ? ascending(mongoEntityMapper.convertToMongoAttribute(sb.getAttribute()))
+                        : descending(mongoEntityMapper.convertToMongoAttribute(sb.getAttribute())))
+                .collect(toList())));
     }
 }

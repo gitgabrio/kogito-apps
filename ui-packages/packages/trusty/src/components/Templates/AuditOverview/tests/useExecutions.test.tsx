@@ -2,9 +2,29 @@ import { renderHook } from '@testing-library/react-hooks';
 import useExecutions from '../useExecutions';
 import * as api from '../../../../utils/api/httpClient';
 import { act } from 'react-test-renderer';
+import { RemoteDataStatus } from '../../../../types';
+import { AxiosPromise } from 'axios';
+import { TrustyContext } from '../../TrustyApp/TrustyApp';
+import React from 'react';
 
 const flushPromises = () => new Promise(setImmediate);
 const apiMock = jest.spyOn(api, 'callOnceHandler');
+
+const contextWrapper = ({ children }) => (
+  <TrustyContext.Provider
+    value={{
+      config: {
+        counterfactualEnabled: false,
+        useHrefLinks: false,
+        explanationEnabled: false,
+        serverRoot: 'http://url-to-service',
+        basePath: '/'
+      }
+    }}
+  >
+    {children}
+  </TrustyContext.Provider>
+);
 
 beforeEach(() => {
   apiMock.mockClear();
@@ -62,66 +82,89 @@ describe('useExecutions', () => {
       }
     };
 
-    apiMock.mockImplementation(() => () =>
-      // @ts-ignore
-      Promise.resolve(executionsResponse)
-    );
-    const { result } = renderHook(() => {
-      return useExecutions({
-        searchString: '',
-        from: '',
-        to: '',
-        limit: 10,
-        offset: 0
-      });
+    let apiMockConfig = {};
+
+    apiMock.mockImplementation(() => config => {
+      apiMockConfig = config;
+      return Promise.resolve(executionsResponse) as AxiosPromise;
     });
-    expect(result.current.executions).toStrictEqual({ status: 'LOADING' });
+
+    const { result } = renderHook(
+      () => {
+        return useExecutions({
+          searchString: '',
+          from: '',
+          to: '',
+          limit: 10,
+          offset: 0
+        });
+      },
+      { wrapper: contextWrapper }
+    );
+    expect(result.current.executions).toStrictEqual({
+      status: RemoteDataStatus.LOADING
+    });
 
     await act(async () => {
       await flushPromises();
     });
 
     expect(result.current.executions).toStrictEqual(
-      Object.assign({ status: 'SUCCESS' }, executionsResponse)
+      Object.assign({ status: RemoteDataStatus.SUCCESS }, executionsResponse)
     );
     expect(apiMock).toHaveBeenCalledTimes(1);
+    expect(apiMockConfig['baseURL']).toEqual('http://url-to-service');
 
     act(() => {
       result.current.loadExecutions();
     });
 
-    expect(result.current.executions).toStrictEqual({ status: 'LOADING' });
+    expect(result.current.executions).toStrictEqual({
+      status: RemoteDataStatus.LOADING
+    });
 
     await act(async () => {
       await flushPromises();
     });
 
     expect(result.current.executions).toStrictEqual(
-      Object.assign({ status: 'SUCCESS' }, executionsResponse)
+      Object.assign({ status: RemoteDataStatus.SUCCESS }, executionsResponse)
     );
     expect(apiMock).toHaveBeenCalledTimes(1);
   });
 
   it('returns a loading error when APIs call fails', async () => {
-    apiMock.mockImplementation(() => () => Promise.reject('error'));
-    const { result } = renderHook(() => {
-      return useExecutions({
-        searchString: '',
-        from: '',
-        to: '',
-        limit: 10,
-        offset: 0
-      });
+    let apiMockConfig = {};
+
+    apiMock.mockImplementation(() => config => {
+      apiMockConfig = config;
+      return Promise.reject('error');
     });
-    expect(result.current.executions).toStrictEqual({ status: 'LOADING' });
+
+    const { result } = renderHook(
+      () => {
+        return useExecutions({
+          searchString: '',
+          from: '',
+          to: '',
+          limit: 10,
+          offset: 0
+        });
+      },
+      { wrapper: contextWrapper }
+    );
+    expect(result.current.executions).toStrictEqual({
+      status: RemoteDataStatus.LOADING
+    });
 
     await act(async () => {
       await flushPromises();
     });
 
     expect(result.current.executions).toStrictEqual(
-      Object.assign({ error: 'error', status: 'FAILURE' })
+      Object.assign({ error: 'error', status: RemoteDataStatus.FAILURE })
     );
     expect(apiMock).toHaveBeenCalledTimes(1);
+    expect(apiMockConfig['baseURL']).toEqual('http://url-to-service');
   });
 });

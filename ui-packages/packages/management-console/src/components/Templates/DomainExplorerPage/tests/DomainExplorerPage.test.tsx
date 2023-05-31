@@ -3,26 +3,28 @@ import { shallow } from 'enzyme';
 import { BrowserRouter, match } from 'react-router-dom';
 import { MockedProvider } from '@apollo/react-testing';
 import DomainExplorerPage from '../DomainExplorerPage';
-import { getWrapper } from '@kogito-apps/common';
+import { mount } from 'enzyme';
 import * as H from 'history';
 
 const MockedDomainExplorer = (): React.ReactElement => {
   return <></>;
 };
-jest.mock('@kogito-apps/common', () => ({
-  ...jest.requireActual('@kogito-apps/common'),
-  DomainExplorer: () => {
-    return <MockedDomainExplorer />;
-  }
-}));
+jest.mock('@kogito-apps/common', () =>
+  Object.assign({}, jest.requireActual('@kogito-apps/common'), {
+    DomainExplorer: () => {
+      return <MockedDomainExplorer />;
+    }
+  })
+);
 const MockedBreadcrumb = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@patternfly/react-core', () => ({
-  ...jest.requireActual('@patternfly/react-core'),
-  Breadcrumb: () => <MockedBreadcrumb />
-}));
+jest.mock('@patternfly/react-core', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-core'), {
+    Breadcrumb: () => <MockedBreadcrumb />
+  })
+);
 const props = {
   domains: ['Travels', 'VisaApplications'],
   loadingState: false
@@ -71,39 +73,36 @@ const props2 = {
 
 describe('DomainExplorerPage component', () => {
   it('Snapshot with default props', () => {
-    const wrapper = getWrapper(
+    const wrapper = mount(
       <MockedProvider mocks={[]} addTypename={false}>
         <BrowserRouter>
           <DomainExplorerPage {...props} {...routeComponentPropsMock} />
         </BrowserRouter>
-      </MockedProvider>,
-      'DomainExplorerPage'
-    );
+      </MockedProvider>
+    ).find('DomainExplorerPage');
 
     wrapper.update();
     expect(wrapper).toMatchSnapshot();
   });
   it('Check error response for getQueryFields query', async () => {
-    const wrapper = getWrapper(
+    const wrapper = mount(
       <BrowserRouter>
         <MockedProvider mocks={[]} addTypename={false}>
           <DomainExplorerPage {...props} {...routeComponentPropsMock} />
         </MockedProvider>
-      </BrowserRouter>,
-      'DomainExplorerPage'
-    );
+      </BrowserRouter>
+    ).find('DomainExplorerPage');
     wrapper.update();
     expect(wrapper).toMatchSnapshot();
   });
   it('Mock query testing', async () => {
-    const wrapper = getWrapper(
+    const wrapper = mount(
       <BrowserRouter>
         <MockedProvider mocks={[]} addTypename={false}>
           <DomainExplorerPage {...props} {...routeComponentPropsMock} />
         </MockedProvider>
-      </BrowserRouter>,
-      'DomainExplorerPage'
-    );
+      </BrowserRouter>
+    ).find('DomainExplorerPage');
     wrapper.update();
     expect(wrapper).toMatchSnapshot();
   });
@@ -128,14 +127,13 @@ describe('DomainExplorerPage component', () => {
     expect(wrapper).toMatchSnapshot();
   });
   it('check assertions on rememberedParams', () => {
-    const wrapper = getWrapper(
+    const wrapper = mount(
       <BrowserRouter>
         <MockedProvider mocks={[]} addTypename={false}>
           <DomainExplorerPage {...props2} {...routeComponentPropsMock2} />
         </MockedProvider>
-      </BrowserRouter>,
-      'DomainExplorerPage'
-    );
+      </BrowserRouter>
+    ).find('DomainExplorerPage');
     wrapper.update();
     expect(wrapper).toMatchSnapshot();
   });

@@ -35,6 +35,7 @@ import org.kie.kogito.persistence.api.schema.AttributeDescriptor;
 import org.kie.kogito.persistence.api.schema.EntityIndexDescriptor;
 import org.kie.kogito.persistence.api.schema.IndexDescriptor;
 
+import static java.util.Collections.emptyList;
 import static org.kie.kogito.persistence.protobuf.ProtobufService.DOMAIN_MODEL_PROTO_NAME;
 
 public class TestUtils {
@@ -51,9 +52,13 @@ public class TestUtils {
         DOMAIN_DESCRIPTOR = new DomainDescriptor();
         DOMAIN_DESCRIPTOR.setTypeName("org.acme.travels.travels.Travels");
         DOMAIN_DESCRIPTOR.setAttributes(List.of(new org.kie.kogito.persistence.api.proto.AttributeDescriptor("flight", "org.acme.travels.travels.Flight"),
-                                                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("hotel", "org.acme.travels.travels.Hotel"),
-                                                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("id", "java.lang.String"),
-                                                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("metadata", "java.lang.String")));
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("hotel", "org.acme.travels.travels.Hotel"),
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("id", "java.lang.String"),
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("metadata", "java.lang.String"),
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("testInt", "java.lang.Integer"),
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("testDouble", "java.lang.Double"),
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("testFloat", "java.lang.Float"),
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("testLong", "java.lang.Long")));
 
         DomainDescriptor flight = new DomainDescriptor();
         flight.setTypeName("org.acme.travels.travels.Flight");
@@ -62,7 +67,7 @@ public class TestUtils {
         DomainDescriptor hotel = new DomainDescriptor();
         hotel.setTypeName("org.acme.travels.travels.Hotel");
         hotel.setAttributes(List.of(new org.kie.kogito.persistence.api.proto.AttributeDescriptor("name", "java.lang.String"),
-                                    new org.kie.kogito.persistence.api.proto.AttributeDescriptor("room", "java.lang.String")));
+                new org.kie.kogito.persistence.api.proto.AttributeDescriptor("room", "java.lang.String")));
 
         ADDITIONAL_DESCRIPTORS = List.of(flight, hotel);
     }
@@ -93,28 +98,27 @@ public class TestUtils {
 
     static Map<String, EntityIndexDescriptor> getValidEntityIndexDescriptors(boolean includeUnindexedAttribute) {
         AttributeDescriptor flightNumber = new AttributeDescriptor("flightNumber", "string", true);
-        IndexDescriptor flightNumberIndex = new IndexDescriptor("flightNumber", List.of("flightNumber"));
         EntityIndexDescriptor flightEntityIndexDescriptor = new EntityIndexDescriptor("org.acme.travels.travels.Flight",
-                                                                                      List.of(flightNumberIndex), List.of(flightNumber));
+                emptyList(), List.of(flightNumber));
 
         AttributeDescriptor hotelName = new AttributeDescriptor("name", "string", true);
         AttributeDescriptor hotelRoom = new AttributeDescriptor("room", "string", true);
-        IndexDescriptor hotelNameIndex = new IndexDescriptor("name", List.of("name"));
         EntityIndexDescriptor hotelEntityIndexDescriptor = new EntityIndexDescriptor("org.acme.travels.travels.Hotel",
-                                                                                     List.of(hotelNameIndex),
-                                                                                     includeUnindexedAttribute ? List.of(hotelName, hotelRoom) : List.of(hotelName));
+                emptyList(),
+                includeUnindexedAttribute ? List.of(hotelName, hotelRoom) : List.of(hotelName));
 
         AttributeDescriptor flight = new AttributeDescriptor("flight", "Flight", false);
         AttributeDescriptor hotel = new AttributeDescriptor("hotel", "Hotel", false);
         AttributeDescriptor id = new AttributeDescriptor("id", "string", true);
         AttributeDescriptor metadata = new AttributeDescriptor("metadata", "string", true);
-        IndexDescriptor flightIndex = new IndexDescriptor("flight", List.of("flight"));
-        IndexDescriptor hotelIndex = new IndexDescriptor("hotel", List.of("hotel"));
+        AttributeDescriptor testInt = new AttributeDescriptor("testInt", "int32", true);
+        AttributeDescriptor testDouble = new AttributeDescriptor("testDouble", "double", true);
+        AttributeDescriptor testFloat = new AttributeDescriptor("testFloat", "float", true);
+        AttributeDescriptor testLong = new AttributeDescriptor("testLong", "int64", true);
         IndexDescriptor idIndex = new IndexDescriptor("id", List.of("id"));
-        IndexDescriptor metadataIndex = new IndexDescriptor("metadata", List.of("metadata"));
         EntityIndexDescriptor travelEntityIndexDescriptor = new EntityIndexDescriptor("org.acme.travels.travels.Travels",
-                                                                                      List.of(flightIndex, hotelIndex, idIndex, metadataIndex),
-                                                                                      List.of(flight, hotel, id, metadata));
+                List.of(idIndex),
+                List.of(flight, hotel, id, metadata, testInt, testDouble, testFloat, testLong));
 
         Map<String, EntityIndexDescriptor> entityIndexDescriptorMap = new HashMap<>();
         entityIndexDescriptorMap.put(flightEntityIndexDescriptor.getName(), flightEntityIndexDescriptor);

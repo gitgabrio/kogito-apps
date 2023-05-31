@@ -1,33 +1,58 @@
 import React from 'react';
 import ExecutionTable from '../ExecutionTable';
 import { shallow } from 'enzyme';
-import { Executions, RemoteData } from '../../../../types';
+import { Executions, RemoteData, RemoteDataStatus } from '../../../../types';
+import { TrustyContext } from '../../../Templates/TrustyApp/TrustyApp';
+
+const setupWrapper = (executions: RemoteData<Error, Executions>) => {
+  return shallow(
+    <TrustyContext.Provider
+      value={{
+        config: {
+          counterfactualEnabled: true,
+          explanationEnabled: true,
+          basePath: '/',
+          useHrefLinks: true
+        }
+      }}
+    >
+      <ExecutionTable data={executions} />
+    </TrustyContext.Provider>
+  );
+};
 
 describe('Execution table', () => {
   test('renders loading skeletons when the data is not yet fetching', () => {
-    const data = { status: 'NOT_ASKED' } as RemoteData<Error, Executions>;
-    const wrapper = shallow(<ExecutionTable data={data} />);
+    const data = { status: RemoteDataStatus.NOT_ASKED } as RemoteData<
+      Error,
+      Executions
+    >;
+    const wrapper = setupWrapper(data);
     expect(wrapper).toMatchSnapshot();
   });
 
   test('renders loading skeletons when the data is loading', () => {
-    const data = { status: 'LOADING' } as RemoteData<Error, Executions>;
-    const wrapper = shallow(<ExecutionTable data={data} />);
+    const data = { status: RemoteDataStatus.LOADING } as RemoteData<
+      Error,
+      Executions
+    >;
+    const wrapper = setupWrapper(data);
     expect(wrapper).toMatchSnapshot();
   });
 
   test('renders a loading error message when data loading fails', () => {
     const data = {
-      status: 'FAILURE',
+      status: RemoteDataStatus.FAILURE,
       error: { name: '', message: '' }
     } as RemoteData<Error, Executions>;
-    const wrapper = shallow(<ExecutionTable data={data} />);
+    const wrapper = setupWrapper(data);
+
     expect(wrapper).toMatchSnapshot();
   });
 
   test('renders a list of executions', () => {
     const data = {
-      status: 'SUCCESS',
+      status: RemoteDataStatus.SUCCESS,
       data: {
         total: 2,
         limit: 10,
@@ -52,14 +77,14 @@ describe('Execution table', () => {
         ]
       }
     } as RemoteData<Error, Executions>;
-    const wrapper = shallow(<ExecutionTable data={data} />);
+    const wrapper = setupWrapper(data);
 
     expect(wrapper).toMatchSnapshot();
   });
 
   test('renders no result message if no executions are found', () => {
     const data = {
-      status: 'SUCCESS',
+      status: RemoteDataStatus.SUCCESS,
       data: {
         total: 0,
         limit: 10,
@@ -67,7 +92,7 @@ describe('Execution table', () => {
         headers: []
       }
     } as RemoteData<Error, Executions>;
-    const wrapper = shallow(<ExecutionTable data={data} />);
+    const wrapper = setupWrapper(data);
 
     expect(wrapper).toMatchSnapshot();
   });

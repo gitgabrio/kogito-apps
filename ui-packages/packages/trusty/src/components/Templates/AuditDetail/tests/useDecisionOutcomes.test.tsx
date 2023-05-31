@@ -2,10 +2,29 @@ import { renderHook } from '@testing-library/react-hooks';
 import { act } from 'react-test-renderer';
 import * as api from '../../../../utils/api/httpClient';
 import useDecisionOutcomes from '../useDecisionOutcomes';
-import { Execution, Outcome } from '../../../../types';
+import { Execution, Outcome, RemoteDataStatus } from '../../../../types';
+import { AxiosPromise } from 'axios';
+import { TrustyContext } from '../../TrustyApp/TrustyApp';
+import React from 'react';
 
 const flushPromises = () => new Promise(setImmediate);
 const apiMock = jest.spyOn(api, 'httpClient');
+
+const contextWrapper = ({ children }) => (
+  <TrustyContext.Provider
+    value={{
+      config: {
+        counterfactualEnabled: false,
+        useHrefLinks: false,
+        explanationEnabled: false,
+        serverRoot: 'http://url-to-service',
+        basePath: '/'
+      }
+    }}
+  >
+    {children}
+  </TrustyContext.Provider>
+);
 
 beforeEach(() => {
   apiMock.mockClear();
@@ -28,10 +47,9 @@ describe('useDecisionOutcome', () => {
             outcomeName: 'Mortgage Approval',
             evaluationStatus: 'SUCCEEDED',
             outcomeResult: {
-              name: 'Mortgage Approval',
-              typeRef: 'boolean',
-              value: true,
-              components: null
+              kind: 'UNIT',
+              type: 'boolean',
+              value: true
             },
             messages: [],
             hasErrors: false
@@ -41,10 +59,9 @@ describe('useDecisionOutcome', () => {
             outcomeName: 'Risk Score',
             evaluationStatus: 'SUCCEEDED',
             outcomeResult: {
-              name: 'Risk Score',
-              typeRef: 'number',
-              value: 21.7031851958099,
-              components: null
+              kind: 'UNIT',
+              type: 'number',
+              value: 21.7031851958099
             },
             messages: [],
             hasErrors: false
@@ -53,22 +70,27 @@ describe('useDecisionOutcome', () => {
       }
     };
 
-    // @ts-ignore
-    apiMock.mockImplementation(() => Promise.resolve(outcomes));
+    apiMock.mockImplementation(() => Promise.resolve(outcomes) as AxiosPromise);
 
-    const { result } = renderHook(() => {
-      // tslint:disable-next-line:react-hooks-nesting
-      return useDecisionOutcomes('b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000');
-    });
+    const { result } = renderHook(
+      () => {
+        // tslint:disable-next-line:react-hooks-nesting
+        return useDecisionOutcomes('b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000');
+      },
+      { wrapper: contextWrapper }
+    );
 
-    expect(result.current).toStrictEqual({ status: 'LOADING' });
+    expect(result.current).toStrictEqual({ status: RemoteDataStatus.LOADING });
 
     await act(async () => {
       await flushPromises();
     });
 
     expect(result.current).toStrictEqual(
-      Object.assign({ status: 'SUCCESS' }, { data: outcomes.data.outcomes })
+      Object.assign(
+        { status: RemoteDataStatus.SUCCESS },
+        { data: outcomes.data.outcomes }
+      )
     );
     expect(apiMock).toHaveBeenCalledTimes(1);
   });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.kie.kogito.index.model;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -45,6 +45,8 @@ public class UserTaskInstanceMeta {
     private Set<String> potentialUsers;
     private String referenceName;
     private ZonedDateTime lastUpdate;
+    private List<Comment> comments;
+    private List<Attachment> attachments;
 
     public String getId() {
         return id;
@@ -178,6 +180,22 @@ public class UserTaskInstanceMeta {
         this.lastUpdate = lastUpdate;
     }
 
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+
+    public List<Attachment> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<Attachment> attachments) {
+        this.attachments = attachments;
+    }
+
     @Override
     public String toString() {
         return "UserTaskInstanceMeta{" +
@@ -197,6 +215,8 @@ public class UserTaskInstanceMeta {
                 ", potentialUsers=" + potentialUsers +
                 ", referenceName='" + referenceName + '\'' +
                 ", lastUpdate=" + lastUpdate +
+                ", comments=" + comments +
+                ", attachment=" + attachments +
                 '}';
     }
 

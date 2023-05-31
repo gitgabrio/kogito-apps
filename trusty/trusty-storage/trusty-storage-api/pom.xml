@@ -5,22 +5,43 @@
   <parent>
     <artifactId>trusty-storage</artifactId>
     <groupId>org.kie.kogito</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>trusty-storage-api</artifactId>
-  <name>Kogito :: Trusty Storage API</name>
+  <name>Kogito Apps :: Trusty Storage API</name>
 
   <dependencies>
     <dependency>
       <groupId>org.kie.kogito</groupId>
-      <artifactId>persistence-commons-api</artifactId>
+      <artifactId>explainability-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.kie.kogito</groupId>
-      <artifactId>tracing-decision-api</artifactId>
+      <artifactId>kogito-addons-tracing-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.kie.kogito</groupId>
+      <artifactId>kogito-addons-tracing-decision-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+    </dependency>
+
+    <!-- test -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
 </project>

@@ -1,9 +1,11 @@
 import React from 'react';
 import ProcessDetailsNodeTrigger from '../ProcessDetailsNodeTrigger';
-import { getWrapperAsync } from '@kogito-apps/common';
+import { mount } from 'enzyme';
 import { DropdownToggle, DropdownItem, FlexItem } from '@patternfly/react-core';
 import { act } from 'react-dom/test-utils';
 import axios from 'axios';
+import ProcessDetailsErrorModal from '../../../Atoms/ProcessDetailsErrorModal/ProcessDetailsErrorModal';
+import wait from 'waait';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
@@ -39,10 +41,15 @@ const mockTriggerableNodes = [
 
 const getNodeTriggerWrapper = async () => {
   mockedAxios.get.mockResolvedValue({ data: mockTriggerableNodes });
-  return getWrapperAsync(
-    <ProcessDetailsNodeTrigger processInstanceData={ProcessInstanceData} />,
-    'ProcessDetailsNodeTrigger'
-  );
+  let wrapper;
+  await act(async () => {
+    wrapper = mount(
+      <ProcessDetailsNodeTrigger processInstanceData={ProcessInstanceData} />
+    );
+    await wait(0);
+    wrapper = wrapper.update().find('ProcessDetailsNodeTrigger');
+  });
+  return wrapper;
 };
 
 describe('Process details node trigger component tests', () => {
@@ -54,30 +61,24 @@ describe('Process details node trigger component tests', () => {
   it('select a node test ', async () => {
     let wrapper = await getNodeTriggerWrapper();
     await act(async () => {
-      wrapper
-        .find(DropdownToggle)
-        .find('button')
-        .simulate('click');
+      wrapper.find(DropdownToggle).find('button').simulate('click');
     });
     wrapper = wrapper.update();
 
     await act(async () => {
-      wrapper
-        .find(DropdownItem)
-        .at(1)
-        .simulate('click');
+      wrapper.find(DropdownItem).at(1).simulate('click');
     });
     wrapper = wrapper.update();
     // snapshot with data displayed
     expect(wrapper).toMatchSnapshot();
     expect(wrapper.find(FlexItem).length).toEqual(3);
-    // //  Node name displayed
+    // Node name displayed
     expect(
       wrapper
         .find(FlexItem)
         .find('h6')
-        .children()
         .at(0)
+        .children()
         .contains('Node name : ')
     ).toBeTruthy();
     // Node type displayed
@@ -85,86 +86,80 @@ describe('Process details node trigger component tests', () => {
       wrapper
         .find(FlexItem)
         .find('h6')
-        .children()
         .at(1)
+        .children()
         .contains('Node type : ')
     ).toBeTruthy();
     // Node id displayed
     expect(
-      wrapper
-        .find(FlexItem)
-        .find('h6')
-        .children()
-        .at(2)
-        .contains('Node id : ')
+      wrapper.find(FlexItem).find('h6').at(2).children().contains('Node id : ')
     ).toBeTruthy();
   });
 
   it('Node trigger success tests', async () => {
     let wrapper = await getNodeTriggerWrapper();
     await act(async () => {
-      wrapper
-        .find(DropdownToggle)
-        .find('button')
-        .simulate('click');
+      wrapper.find(DropdownToggle).find('button').simulate('click');
     });
     wrapper = wrapper.update();
 
     await act(async () => {
-      wrapper
-        .find(DropdownItem)
-        .at(1)
-        .simulate('click');
+      wrapper.find(DropdownItem).at(1).simulate('click');
     });
     wrapper = wrapper.update();
     mockedAxios.post.mockResolvedValue({});
     await act(async () => {
-      wrapper
-        .find('#trigger')
-        .find('button')
-        .simulate('click');
+      wrapper.find('#trigger').find('button').simulate('click');
     });
     wrapper = wrapper.update();
-    wrapper = wrapper.find('ProcessListModal');
+    wrapper = wrapper.find('ProcessDetailsErrorModal');
     // takes snapshot of the success modal
     expect(wrapper).toMatchSnapshot();
     // check the modal content
-    expect(wrapper.find('ProcessListModal').props()['modalContent']).toEqual(
-      'The node Book was triggered successfully'
-    );
+    expect(
+      wrapper.find('ProcessDetailsErrorModal').props()['errorString']
+    ).toEqual('The node Book was triggered successfully');
   });
 
   it('Node trigger failure tests', async () => {
     let wrapper = await getNodeTriggerWrapper();
     await act(async () => {
-      wrapper
-        .find(DropdownToggle)
-        .find('button')
-        .simulate('click');
+      wrapper.find(DropdownToggle).find('button').simulate('click');
     });
     wrapper = wrapper.update();
 
     await act(async () => {
-      wrapper
-        .find(DropdownItem)
-        .at(1)
-        .simulate('click');
+      wrapper.find(DropdownItem).at(1).simulate('click');
     });
     wrapper = wrapper.update();
     mockedAxios.post.mockRejectedValue({ message: '403 error' });
     await act(async () => {
-      wrapper
-        .find('#trigger')
-        .find('button')
-        .simulate('click');
+      wrapper.find('#trigger').find('button').simulate('click');
     });
     wrapper = wrapper.update();
-    wrapper = wrapper.find('ProcessListModal');
+    wrapper = wrapper.find('ProcessDetailsErrorModal');
     // takes snapshot of the failed modal
     expect(wrapper).toMatchSnapshot();
     // check the modal content
-    expect(wrapper.find('ProcessListModal').props()['modalContent']).toEqual(
-      'The node Book trigger failed. ErrorMessage : "403 error"'
-    );
+    expect(
+      wrapper.find('ProcessDetailsErrorModal').props()['errorString']
+    ).toEqual('The node Book trigger failed. ErrorMessage : "403 error"');
+  });
+  it('failed to retrieve nodes', async () => {
+    mockedAxios.get.mockRejectedValue({ message: '404 error' });
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <ProcessDetailsNodeTrigger processInstanceData={ProcessInstanceData} />
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('ProcessDetailsNodeTrigger');
+    });
+    wrapper = wrapper.find(ProcessDetailsErrorModal);
+    expect(wrapper).toMatchSnapshot();
+    expect(wrapper.find(ProcessDetailsErrorModal).exists()).toBeTruthy();
+    expect(
+      wrapper.find(ProcessDetailsErrorModal).props()['errorString']
+    ).toEqual('Retrieval of nodes failed with error: 404 error');
   });
 });

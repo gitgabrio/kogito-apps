@@ -1,20 +1,34 @@
+/*
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.kie.kogito.explainability;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.mutiny.core.Vertx;
-import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.context.ThreadContext;
+import org.kie.kogito.explainability.api.HasNameValue;
+import org.kie.kogito.explainability.api.ModelIdentifier;
 import org.kie.kogito.explainability.model.Feature;
 import org.kie.kogito.explainability.model.Output;
 import org.kie.kogito.explainability.model.PredictionInput;
@@ -22,11 +36,16 @@ import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
 import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
-import org.kie.kogito.explainability.models.ExplainabilityRequest;
-import org.kie.kogito.explainability.models.ModelIdentifier;
 import org.kie.kogito.explainability.models.PredictInput;
+import org.kie.kogito.tracing.typedvalue.TypedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.ext.web.client.WebClient;
 
 import static java.util.stream.Collectors.toList;
 import static org.kie.kogito.explainability.ConversionUtils.toOutputList;
@@ -35,14 +54,21 @@ public class RemotePredictionProvider implements PredictionProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(RemotePredictionProvider.class);
 
-    private final ExplainabilityRequest request;
+    private final ModelIdentifier modelIdentifier;
+    private final Collection<? extends HasNameValue<TypedValue>> predictionOutputs;
     private final ThreadContext threadContext;
     private final Executor asyncExecutor;
     private final WebClient client;
 
-    public RemotePredictionProvider(ExplainabilityRequest request, Vertx vertx, ThreadContext threadContext, Executor asyncExecutor) {
-        this.request = request;
-        URI uri = URI.create(request.getServiceUrl());
+    public RemotePredictionProvider(String serviceUrl,
+            ModelIdentifier modelIdentifier,
+            Collection<? extends HasNameValue<TypedValue>> predictionOutputs,
+            Vertx vertx,
+            ThreadContext threadContext,
+            Executor asyncExecutor) {
+        this.modelIdentifier = modelIdentifier;
+        this.predictionOutputs = predictionOutputs;
+        URI uri = URI.create(serviceUrl);
         this.client = getClient(vertx, uri);
         this.threadContext = threadContext;
         this.asyncExecutor = asyncExecutor;
@@ -50,7 +76,7 @@ public class RemotePredictionProvider implements PredictionProvider {
 
     @Override
     public CompletableFuture<List<PredictionOutput>> predictAsync(List<PredictionInput> inputs) {
-        return sendPredictRequest(inputs, request.getModelIdentifier());
+        return sendPredictRequest(inputs, modelIdentifier);
     }
 
     protected WebClient getClient(Vertx vertx, URI uri) {
@@ -59,8 +85,7 @@ public class RemotePredictionProvider implements PredictionProvider {
                 .setDefaultHost(uri.getHost())
                 .setDefaultPort(port)
                 .setSsl("https".equalsIgnoreCase(uri.getScheme()))
-                .setLogActivity(true)
-        );
+                .setLogActivity(true));
     }
 
     protected PredictionOutput toPredictionOutput(JsonObject mainObj) {
@@ -70,6 +95,7 @@ public class RemotePredictionProvider implements PredictionProvider {
         }
         List<Output> resultOutputs = toOutputList(mainObj.getJsonObject("result"));
         List<String> resultOutputNames = resultOutputs.stream().map(Output::getName).collect(toList());
+        Map<String, TypedValue> mappedOutputs = predictionOutputs.stream().collect(Collectors.toMap(HasNameValue::getName, HasNameValue::getValue));
 
         // It's possible that some outputs are missing in the response from the prediction service
         // (e.g. when the generated perturbed inputs don't make sense and a decision is skipped).
@@ -80,11 +106,11 @@ public class RemotePredictionProvider implements PredictionProvider {
         // the explainer happy.
         List<Output> outputs = Stream.concat(
                 resultOutputs.stream()
-                        .filter(output -> request.getOutputs().containsKey(output.getName())),
-                request.getOutputs().keySet().stream()
+                        .filter(output -> mappedOutputs.containsKey(output.getName())),
+                mappedOutputs.keySet().stream()
                         .filter(key -> !resultOutputNames.contains(key))
-                        .map(key -> new Output(key, Type.UNDEFINED, new Value<>(null), 1d))
-        ).collect(toList());
+                        .map(key -> new Output(key, Type.UNDEFINED, new Value(null), 1d)))
+                .collect(toList());
 
         return new PredictionOutput(outputs);
     }
@@ -117,7 +143,8 @@ public class RemotePredictionProvider implements PredictionProvider {
         return map;
     }
 
-    protected CompletableFuture<List<PredictionOutput>> sendPredictRequest(List<PredictionInput> inputs, ModelIdentifier modelIdentifier) {
+    protected CompletableFuture<List<PredictionOutput>> sendPredictRequest(List<PredictionInput> inputs,
+            ModelIdentifier modelIdentifier) {
         List<PredictInput> piList = inputs.stream()
                 .map(input -> new PredictInput(modelIdentifier, toMap(input.getFeatures())))
                 .collect(toList());

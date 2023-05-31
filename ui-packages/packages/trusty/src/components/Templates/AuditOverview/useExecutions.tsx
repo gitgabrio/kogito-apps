@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
-  EXECUTIONS_PATH,
-  callOnceHandler
+  callOnceHandler,
+  EXECUTIONS_PATH
 } from '../../../utils/api/httpClient';
-import { RemoteData, Executions } from '../../../types';
+import { Executions, RemoteData, RemoteDataStatus } from '../../../types';
 import axios, { AxiosRequestConfig } from 'axios';
+import { TrustyContext } from '../TrustyApp/TrustyApp';
 
 type useExecutionsParameters = {
   searchString: string;
@@ -17,16 +18,19 @@ type useExecutionsParameters = {
 const useExecutions = (parameters: useExecutionsParameters) => {
   const { searchString, from, to, limit, offset } = parameters;
   const [executions, setExecutions] = useState<RemoteData<Error, Executions>>({
-    status: 'NOT_ASKED'
+    status: RemoteDataStatus.NOT_ASKED
   });
+
+  const baseUrl = useContext(TrustyContext).config.serverRoot;
 
   const getExecutions = useMemo(() => callOnceHandler(), []);
 
   const loadExecutions = useCallback(() => {
     let isMounted = true;
-    setExecutions({ status: 'LOADING' });
+    setExecutions({ status: RemoteDataStatus.LOADING });
 
     const config: AxiosRequestConfig = {
+      baseURL: baseUrl,
       url: EXECUTIONS_PATH,
       method: 'get',
       params: { search: searchString, from, to, limit, offset }
@@ -35,12 +39,15 @@ const useExecutions = (parameters: useExecutionsParameters) => {
     getExecutions(config)
       .then(response => {
         if (isMounted) {
-          setExecutions({ status: 'SUCCESS', data: response.data });
+          setExecutions({
+            status: RemoteDataStatus.SUCCESS,
+            data: response.data
+          });
         }
       })
       .catch(error => {
         if (!axios.isCancel(error)) {
-          setExecutions({ status: 'FAILURE', error });
+          setExecutions({ status: RemoteDataStatus.FAILURE, error });
         }
       });
     return () => {

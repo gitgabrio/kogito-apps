@@ -32,6 +32,7 @@ import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Filters.lt;
 import static com.mongodb.client.model.Filters.lte;
+import static com.mongodb.client.model.Filters.not;
 import static com.mongodb.client.model.Filters.or;
 import static com.mongodb.client.model.Filters.regex;
 import static java.util.stream.Collectors.toList;
@@ -67,7 +68,7 @@ public class QueryUtils {
             case BETWEEN:
                 List<?> value = (List<?>) filter.getValue();
                 return and(gte(filterFunction.apply(filter.getAttribute()), value.get(0)),
-                           lte(filterFunction.apply(filter.getAttribute()), value.get(1)));
+                        lte(filterFunction.apply(filter.getAttribute()), value.get(1)));
             case IN:
                 return in(filterFunction.apply(filter.getAttribute()), (List<?>) filter.getValue());
             case CONTAINS_ALL:
@@ -78,6 +79,8 @@ public class QueryUtils {
                 return or(((List<AttributeFilter<?>>) filter.getValue()).stream().map(f -> generateSingleQuery(f, filterFunction)).collect(toList()));
             case AND:
                 return and(((List<AttributeFilter<?>>) filter.getValue()).stream().map(f -> generateSingleQuery(f, filterFunction)).collect(toList()));
+            case NOT:
+                return not(generateSingleQuery((AttributeFilter<?>) filter.getValue(), filterFunction));
             default:
                 return null;
         }

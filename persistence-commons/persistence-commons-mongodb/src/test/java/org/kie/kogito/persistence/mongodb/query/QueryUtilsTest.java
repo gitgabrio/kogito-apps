@@ -20,10 +20,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.mongodb.client.model.Filters;
 import org.bson.conversions.Bson;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.persistence.mongodb.mock.MockMongoEntityMapper;
+
+import com.mongodb.client.model.Filters;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,6 +42,7 @@ import static org.kie.kogito.persistence.api.query.QueryFilterFactory.isNull;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.lessThan;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.lessThanEqual;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.like;
+import static org.kie.kogito.persistence.api.query.QueryFilterFactory.not;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.notNull;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.or;
 
@@ -141,5 +143,11 @@ class QueryUtilsTest {
     void testGenerateSingleQuery_and() {
         Bson result = QueryUtils.generateSingleQuery(and(List.of(contains("test", "testValue"))), new MockMongoEntityMapper()::convertToMongoAttribute);
         assertEquals(Filters.and(Filters.eq("test", "testValue")), result);
+    }
+
+    @Test
+    void testGenerateSingleQuery_not() {
+        Bson result = QueryUtils.generateSingleQuery(not(equalTo("test", "testValue")), new MockMongoEntityMapper()::convertToMongoAttribute);
+        assertEquals(Filters.not(Filters.eq("test", "testValue")), result);
     }
 }

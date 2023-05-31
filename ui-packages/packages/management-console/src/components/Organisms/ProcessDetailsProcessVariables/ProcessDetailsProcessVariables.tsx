@@ -8,7 +8,8 @@ import {
 } from '@patternfly/react-core';
 import React from 'react';
 import ReactJson from 'react-json-view';
-import { OUIAProps, componentOuiaProps } from '@kogito-apps/common';
+import { GraphQL } from '@kogito-apps/common';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 import './ProcessDetailsProcessVariables.css';
 
@@ -20,6 +21,10 @@ interface IOwnProps {
     updateJson: (variableJson: Record<string, unknown>) => void
   ) => void;
   updateJson: Record<string, unknown>;
+  processInstance: { __typename?: 'ProcessInstance' } & Pick<
+    GraphQL.ProcessInstance,
+    'state'
+  >;
 }
 
 const ProcessDetailsProcessVariables: React.FC<IOwnProps & OUIAProps> = ({
@@ -29,12 +34,18 @@ const ProcessDetailsProcessVariables: React.FC<IOwnProps & OUIAProps> = ({
   ouiaSafe,
   setDisplayLabel,
   setUpdateJson,
-  updateJson
+  updateJson,
+  processInstance
 }) => {
-  const handleVariablesChange = e => {
+  const handleVariablesChange = (e) => {
     setUpdateJson({ ...updateJson, ...e.updated_src });
     setDisplayLabel(true);
   };
+  const checkProcessStatus =
+    processInstance.state === GraphQL.ProcessInstanceState.Completed ||
+    processInstance.state === GraphQL.ProcessInstanceState.Aborted
+      ? false
+      : handleVariablesChange;
 
   return (
     <Card {...componentOuiaProps(ouiaId, 'process-variables', ouiaSafe)}>
@@ -67,9 +78,9 @@ const ProcessDetailsProcessVariables: React.FC<IOwnProps & OUIAProps> = ({
             <ReactJson
               src={updateJson}
               name={false}
-              onEdit={handleVariablesChange}
-              onAdd={handleVariablesChange}
-              onDelete={handleVariablesChange}
+              onEdit={checkProcessStatus}
+              onAdd={checkProcessStatus}
+              onDelete={checkProcessStatus}
             />
           </div>
         </TextContent>

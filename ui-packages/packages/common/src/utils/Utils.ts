@@ -1,6 +1,14 @@
 // tslint:disable: forin
 // tslint:disable: no-floating-promises
 
+import { isAuthEnabled } from './KeycloakClient';
+
+declare global {
+  interface Window {
+    TEST_USER_SYSTEM_ENABLED: boolean;
+  }
+}
+
 const nestedCheck = (ele, valueObj) => {
   for (const key in ele) {
     const temp = ele[key];
@@ -59,13 +67,13 @@ export const validateResponse = (obj, paramFields) => {
     const arr = [];
     if (obj[prop] === null) {
       const parentObj = {};
-      paramFields.map(params => {
+      paramFields.map((params) => {
         if (Object.prototype.hasOwnProperty.call(params, prop)) {
           arr.push(params);
         }
       });
       let valueObj = {};
-      arr.forEach(ele => {
+      arr.forEach((ele) => {
         valueObj = checkFunc(ele, valueObj);
       });
       parentObj[prop] = valueObj;
@@ -113,7 +121,7 @@ export const deleteKey = (testObj, pathArray) => {
   }, _obj);
   return _obj;
 };
-export const clearEmpties = obj => {
+export const clearEmpties = (obj) => {
   for (const key in obj) {
     if (!obj[key] || typeof obj[key] !== 'object') {
       continue;
@@ -127,7 +135,7 @@ export const clearEmpties = obj => {
 };
 
 // function adds new property to existing object
-export const set = (obj, path, val) => {
+export const constructObject = (obj, path, val) => {
   const keys = path.split(',');
   const lastKey = keys.pop();
   // tslint:disable-next-line: no-shadowed-variable
@@ -142,10 +150,18 @@ export const set = (obj, path, val) => {
 // function removes duplicate objects inside array
 export const removeDuplicates = (arr, comp) => {
   const unique = arr
-    .map(e => e[comp])
+    .map((e) => e[comp])
     .map((e, i, final) => final.indexOf(e) === i && i)
-    .filter(e => arr[e])
-    .map(e => arr[e]);
+    .filter((e) => arr[e])
+    .map((e) => arr[e]);
 
   return unique;
+};
+
+export const isTestUserSystemEnabled = () => {
+  const testSystemEnabled: boolean =
+    window.TEST_USER_SYSTEM_ENABLED ||
+    process.env.TEST_USER_SYSTEM_ENABLED === 'true';
+
+  return !isAuthEnabled() && testSystemEnabled;
 };

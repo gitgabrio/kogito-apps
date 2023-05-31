@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,37 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.kie.kogito.persistence.api;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
 
 import org.kie.kogito.persistence.api.query.Query;
+
+import io.smallrye.mutiny.Multi;
 
 public interface Storage<K, V> {
 
     /**
      * Adds a listener on the create events.
-     *
-     * @param consumer The listener.
      */
-    void addObjectCreatedListener(Consumer<V> consumer);
+    Multi<V> objectCreatedListener();
 
     /**
      * Adds a listener on the update events.
-     *
-     * @param consumer The listener.
      */
-    void addObjectUpdatedListener(Consumer<V> consumer);
+    Multi<V> objectUpdatedListener();
 
     /**
      * Adds a listener on the remove events.
-     *
-     * @param consumer The listener.
      */
-    void addObjectRemovedListener(Consumer<K> consumer);
+    Multi<K> objectRemovedListener();
 
     /**
      * Gets the `Query` object to query the storage.
@@ -63,7 +56,7 @@ public interface Storage<K, V> {
     /**
      * Puts an element with a key. If an element with the same key is already present in the storage, then it is replaced.
      *
-     * @param key   The key.
+     * @param key The key.
      * @param value The value.
      * @return The value.
      */
@@ -90,7 +83,7 @@ public interface Storage<K, V> {
      *
      * @return The key-value pair set of the elements in the storage.
      */
-    Set<Map.Entry<K, V>> entrySet();
+    Map<K, V> entries();
 
     /**
      * Erase all the elements in the storage.

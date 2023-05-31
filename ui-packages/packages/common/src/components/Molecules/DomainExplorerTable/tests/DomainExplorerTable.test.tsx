@@ -1,24 +1,17 @@
 import React from 'react';
-import { getWrapperAsync } from '../../../../utils/OuiaUtils';
+import { mount } from 'enzyme';
 
 import DomainExplorerTable from '../DomainExplorerTable';
 import { MockedProvider } from '@apollo/react-testing';
 import { BrowserRouter } from 'react-router-dom';
+import wait from 'waait';
+import { act } from 'react-dom/test-utils';
 
 global.Math.random = () => 0.7218415351930461;
 
 jest.mock('../../ItemDescriptor/ItemDescriptor');
 
 describe('Domain Explorer Table Component', () => {
-  let useEffect;
-  const mockUseEffect = () => {
-    useEffect.mockImplementationOnce(f => f());
-  };
-  beforeEach(() => {
-    useEffect = jest.spyOn(React, 'useEffect');
-    mockUseEffect();
-    mockUseEffect();
-  });
   const props = {
     columnFilters: [
       {
@@ -126,12 +119,16 @@ describe('Domain Explorer Table Component', () => {
     }
   };
   it('Snapshot test with default props', async () => {
-    const wrapper = await getWrapperAsync(
-      <MockedProvider>
-        <DomainExplorerTable {...props} />
-      </MockedProvider>,
-      'DomainExplorerTable'
-    );
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <MockedProvider>
+          <DomainExplorerTable {...props} />
+        </MockedProvider>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     expect(wrapper).toMatchSnapshot();
   });
@@ -228,12 +225,16 @@ describe('Domain Explorer Table Component', () => {
         }
       }
     ];
-    const wrapper = await getWrapperAsync(
-      <MockedProvider>
-        <DomainExplorerTable {...{ ...props, columnFilters }} />
-      </MockedProvider>,
-      'DomainExplorerTable'
-    );
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <MockedProvider>
+          <DomainExplorerTable {...{ ...props, columnFilters }} />
+        </MockedProvider>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     expect(
       wrapper.find('.kogito-management-console--domain-explorer__table')
@@ -303,34 +304,46 @@ describe('Domain Explorer Table Component', () => {
         }
       }
     ];
-    const wrapper = await getWrapperAsync(
-      <MockedProvider>
-        <DomainExplorerTable {...{ ...props, columnFilters, offset }} />
-      </MockedProvider>,
-      'DomainExplorerTable'
-    );
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <MockedProvider>
+          <DomainExplorerTable {...{ ...props, columnFilters, offset }} />
+        </MockedProvider>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     expect(wrapper.find('.kogito-common--domain-explorer__table')).toBeTruthy();
   });
   it('check false value of isLoadingMore', async () => {
     const isLoadingMore = false;
     const displayEmptyState = true;
-    const displayTable = false;
-    const wrapper = await getWrapperAsync(
-      <MockedProvider>
-        <DomainExplorerTable
-          {...{ ...props, displayTable, isLoadingMore, displayEmptyState }}
-        />
-      </MockedProvider>,
-      'DomainExplorerTable'
-    );
+    const displayTable = true;
+    const filterError = null;
+    const selected = ['metadata / processInstances / state: ACTIVE'];
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <MockedProvider>
+          <DomainExplorerTable
+            {...{
+              ...props,
+              displayTable,
+              isLoadingMore,
+              displayEmptyState,
+              filterError,
+              selected
+            }}
+          />
+        </MockedProvider>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
-    expect(
-      wrapper
-        .find('h5')
-        .first()
-        .text()
-    ).toEqual('No data available');
+    expect(wrapper.find('h5').first().text()).toEqual('No results found');
   });
   it('check null value for process instance attributes', async () => {
     const isLoadingMore = false;
@@ -399,21 +412,25 @@ describe('Domain Explorer Table Component', () => {
       }
     ];
     const tableLoading = true;
-    const wrapper = await getWrapperAsync(
-      <MockedProvider>
-        <DomainExplorerTable
-          {...{
-            ...props,
-            columnFilters,
-            isLoadingMore,
-            tableLoading,
-            offset,
-            displayEmptyState
-          }}
-        />
-      </MockedProvider>,
-      'DomainExplorerTable'
-    );
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <MockedProvider>
+          <DomainExplorerTable
+            {...{
+              ...props,
+              columnFilters,
+              isLoadingMore,
+              tableLoading,
+              offset,
+              displayEmptyState
+            }}
+          />
+        </MockedProvider>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     expect(wrapper).toMatchSnapshot();
   });
@@ -421,41 +438,63 @@ describe('Domain Explorer Table Component', () => {
     const isLoadingMore = false;
     const displayTable = false;
     const filterError = 'some error';
-    const wrapper = await getWrapperAsync(
-      <BrowserRouter>
-        <DomainExplorerTable
-          {...{ ...props, isLoadingMore, displayTable, filterError }}
-        />
-      </BrowserRouter>,
-      'DomainExplorerTable'
-    );
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <BrowserRouter>
+          <DomainExplorerTable
+            {...{ ...props, isLoadingMore, displayTable, filterError }}
+          />
+        </BrowserRouter>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     expect(wrapper.find('h1').text()).toEqual('Error fetching data');
   });
   it('check empty filter chip', async () => {
     const filterChips = [];
     const displayTable = false;
-    const wrapper = await getWrapperAsync(
-      <BrowserRouter>
-        <DomainExplorerTable {...{ ...props, displayTable, filterChips }} />
-      </BrowserRouter>,
-      'DomainExplorerTable'
-    );
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <BrowserRouter>
+          <DomainExplorerTable {...{ ...props, displayTable, filterChips }} />
+        </BrowserRouter>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     const event = {} as any;
-    wrapper
-      .find('button')
-      .at(0)
-      .props()
-      ['onClick'](event);
+    wrapper.find('button').at(0).props()['onClick'](event);
   });
   it('check sort functionality', async () => {
-    const wrapper = await getWrapperAsync(
-      <MockedProvider>
-        <DomainExplorerTable {...props} />
-      </MockedProvider>,
-      'DomainExplorerTable'
-    );
+    const isLoadingMore = false;
+    const displayEmptyState = true;
+    const displayTable = true;
+    const filterError = null;
+    const selected = ['metadata / processInstances / state: ACTIVE'];
+    let wrapper;
+    await act(async () => {
+      wrapper = mount(
+        <MockedProvider>
+          <DomainExplorerTable
+            {...{
+              ...props,
+              displayTable,
+              isLoadingMore,
+              displayEmptyState,
+              filterError,
+              selected
+            }}
+          />
+        </MockedProvider>
+      );
+      await wait(0);
+      wrapper = wrapper.update().find('DomainExplorerTable');
+    });
     wrapper.update();
     const obj = {
       target: {

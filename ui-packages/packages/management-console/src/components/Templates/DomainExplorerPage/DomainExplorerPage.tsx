@@ -4,12 +4,12 @@ import {
   Breadcrumb,
   BreadcrumbItem
 } from '@patternfly/react-core';
+import { DomainExplorer } from '@kogito-apps/common';
 import {
   componentOuiaProps,
-  DomainExplorer,
   ouiaPageTypeAndObjectId,
   OUIAProps
-} from '@kogito-apps/common';
+} from '@kogito-apps/ouia-tools';
 import { Link } from 'react-router-dom';
 import { Redirect, RouteComponentProps, StaticContext } from 'react-router';
 import './DomainExplorerPage.css';
@@ -22,19 +22,21 @@ interface IOwnProps {
 }
 
 interface MatchProps {
-  domainName: string;
+  domainName?: string;
 }
 
-interface LocationProps extends H.LocationState {
+export type LocationProps = H.LocationState & {
   parameters?: Record<string, unknown>[];
   selected?: string[];
   finalFilters?: Record<string, unknown>;
   filterChips?: string[];
-}
+};
 
-const DomainExplorerPage: React.FC<IOwnProps &
-  RouteComponentProps<MatchProps, StaticContext, LocationProps> &
-  OUIAProps> = ({ ouiaId, ouiaSafe, ...props }) => {
+const DomainExplorerPage: React.FC<
+  IOwnProps &
+    RouteComponentProps<MatchProps, StaticContext, LocationProps> &
+    OUIAProps
+> = ({ ouiaId, ouiaSafe, ...props }) => {
   const rememberedParams =
     (props.location.state && props.location.state.parameters) || [];
   const rememberedSelections =
@@ -45,7 +47,7 @@ const DomainExplorerPage: React.FC<IOwnProps &
     (props.location.state && props.location.state.filterChips) || [];
   const domainName = props.match.params.domainName;
   let BreadCrumb = props.location.pathname.split('/');
-  BreadCrumb = BreadCrumb.filter(item => {
+  BreadCrumb = BreadCrumb.filter((item) => {
     if (item !== '') {
       return item;
     }

@@ -16,14 +16,8 @@
 
 package org.kie.kogito.persistence.mongodb.storage;
 
-import java.util.Objects;
-
 import javax.inject.Inject;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,8 +26,14 @@ import org.kie.kogito.persistence.mongodb.client.MongoClientManager;
 import org.kie.kogito.persistence.mongodb.mock.MockMongoEntityMapper;
 import org.kie.kogito.testcontainers.quarkus.MongoDBQuarkusTestResource;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.kie.kogito.persistence.mongodb.mock.MockMongoEntityMapper.TEST_ATTRIBUTE;
 import static org.kie.kogito.persistence.mongodb.model.ModelUtils.MONGO_ID;
@@ -52,8 +52,7 @@ class MongoStorageIT {
     @BeforeEach
     void setup() {
         collection = mongoClientManager.getCollection("test", Document.class);
-        storage = new MongoStorage(collection, mongoClientManager.getReactiveCollection("test", Document.class),
-                                   String.class.getName(), new MockMongoEntityMapper());
+        storage = new MongoStorage(collection, String.class.getName(), new MockMongoEntityMapper());
     }
 
     @AfterEach
@@ -83,7 +82,7 @@ class MongoStorageIT {
         storage.put(testId, testValue);
         FindIterable<Document> findIterable = collection.find(new Document(MONGO_ID, testId));
         Document document = findIterable.first();
-        assertTrue(Objects.nonNull(document));
+        assertNotNull(document);
         assertEquals(testValue, document.get(TEST_ATTRIBUTE));
     }
 
@@ -93,8 +92,7 @@ class MongoStorageIT {
         String testValue = "testValue";
         collection.insertOne(new Document(MONGO_ID, testId).append(TEST_ATTRIBUTE, testValue));
         storage.clear();
-        FindIterable<Document> findIterable = collection.find();
-        assertFalse(findIterable.iterator().hasNext());
+        assertEquals(0, collection.countDocuments());
     }
 
     @Test
@@ -103,7 +101,6 @@ class MongoStorageIT {
         String testValue = "testValue";
         collection.insertOne(new Document(MONGO_ID, testId).append(TEST_ATTRIBUTE, testValue));
         storage.remove(testId);
-        FindIterable<Document> findIterable = collection.find(new Document(MONGO_ID, testId));
-        assertFalse(findIterable.iterator().hasNext());
+        assertEquals(0, collection.countDocuments());
     }
 }

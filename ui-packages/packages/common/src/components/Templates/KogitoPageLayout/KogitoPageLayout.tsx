@@ -3,30 +3,36 @@ import {
   PageSidebar,
   PageHeader,
   Brand,
-  PageHeaderTools,
-  OUIAProps
+  PageHeaderTools
 } from '@patternfly/react-core';
 import React, { useState, useEffect } from 'react';
 import PageToolbar from '../../Molecules/PageToolbar/PageToolbar';
 import { aboutLogoContext } from '../../contexts';
 import '../../styles.css';
 
-import { ouiaAttribute } from '../../../utils/OuiaUtils';
+import { ouiaAttribute } from '@kogito-apps/ouia-tools';
 
 interface IOwnProps {
   children: React.ReactNode;
   BrandSrc: string;
   PageNav: React.ReactNode;
+  pageNavOpen?: boolean;
   BrandAltText: string;
   BrandClick: () => void;
 }
 
-const KogitoPageLayout: React.FC<IOwnProps & OUIAProps> = ({
-  ouiaId,
-  ...props
+const KogitoPageLayout: React.FC<IOwnProps> = ({
+  children,
+  BrandSrc,
+  PageNav,
+  pageNavOpen,
+  BrandAltText,
+  BrandClick
 }) => {
   const pageId = 'main-content-page-layout-default-nav';
-  const [isNavOpen, setIsNavOpen] = useState(true);
+  const [isNavOpen, setIsNavOpen] = useState(
+    pageNavOpen != undefined ? pageNavOpen : true
+  );
   const onNavToggle = () => {
     setIsNavOpen(!isNavOpen);
   };
@@ -39,16 +45,10 @@ const KogitoPageLayout: React.FC<IOwnProps & OUIAProps> = ({
 
   const Header = (
     <PageHeader
-      logo={
-        <Brand
-          src={props.BrandSrc}
-          alt={props.BrandAltText}
-          onClick={props.BrandClick}
-        />
-      }
+      logo={<Brand src={BrandSrc} alt={BrandAltText} onClick={BrandClick} />}
       headerTools={
         <PageHeaderTools>
-          <aboutLogoContext.Provider value={props.BrandSrc}>
+          <aboutLogoContext.Provider value={BrandSrc}>
             <PageToolbar />
           </aboutLogoContext.Provider>
         </PageHeaderTools>
@@ -62,7 +62,7 @@ const KogitoPageLayout: React.FC<IOwnProps & OUIAProps> = ({
 
   const Sidebar = (
     <PageSidebar
-      nav={props.PageNav}
+      nav={PageNav}
       isNavOpen={isNavOpen}
       theme="dark"
       {...ouiaAttribute('data-ouia-navigation', 'true')}
@@ -77,7 +77,7 @@ const KogitoPageLayout: React.FC<IOwnProps & OUIAProps> = ({
         sidebar={Sidebar}
         className="kogito-common--PageLayout"
       >
-        {props.children}
+        {children}
       </Page>
     </React.Fragment>
   );

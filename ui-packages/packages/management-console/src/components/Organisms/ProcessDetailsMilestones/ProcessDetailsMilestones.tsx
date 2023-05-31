@@ -10,7 +10,8 @@ import {
   Text,
   Tooltip
 } from '@patternfly/react-core';
-import { componentOuiaProps, OUIAProps, GraphQL } from '@kogito-apps/common';
+import { GraphQL } from '@kogito-apps/common';
+import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 import './ProcessDetailsMilestones.css';
 import Milestone = GraphQL.Milestone;
@@ -23,7 +24,7 @@ const ProcessDetailsMilestones: React.FC<IOwnProps & OUIAProps> = ({
   ouiaSafe,
   milestones
 }) => {
-  const handleStatus = status => {
+  const handleStatus = (status) => {
     switch (status) {
       case 'AVAILABLE':
         return <Label icon={<InfoCircleIcon />}>Available</Label>;

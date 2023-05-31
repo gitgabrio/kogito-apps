@@ -11,7 +11,7 @@ import {
   Split,
   SplitItem
 } from '@patternfly/react-core';
-import { OUIAProps, componentOuiaProps } from '../../../utils/OuiaUtils';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 import '../../styles.css';
 import { CheckIcon } from '@patternfly/react-icons';
 
@@ -101,7 +101,10 @@ const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
                       {isLoadingMore ? (
                         <>
                           Loading...
-                          <Spinner size="md" className="pf-u-ml-sm" />{' '}
+                          <Spinner
+                            size="md"
+                            className="kogito-common__load-more-spinner"
+                          />{' '}
                         </>
                       ) : (
                         `Load ${loadMoreValue} more`

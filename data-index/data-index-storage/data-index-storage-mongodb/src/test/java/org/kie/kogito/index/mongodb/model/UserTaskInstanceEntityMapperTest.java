@@ -17,17 +17,21 @@
 package org.kie.kogito.index.mongodb.model;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.kie.kogito.index.model.Attachment;
+import org.kie.kogito.index.model.Comment;
 import org.kie.kogito.index.model.UserTaskInstance;
+import org.kie.kogito.persistence.mongodb.model.ModelUtils;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.kie.kogito.persistence.mongodb.model.ModelUtils.MAPPER;
+import static org.kie.kogito.persistence.mongodb.model.ModelUtils.MONGO_ID;
 import static org.kie.kogito.persistence.mongodb.model.ModelUtils.jsonNodeToDocument;
 import static org.kie.kogito.persistence.mongodb.model.ModelUtils.zonedDateTimeToInstant;
 
@@ -58,10 +62,31 @@ class UserTaskInstanceEntityMapperTest {
         String processId = "testProcessId";
         String rootProcessId = "testRootProcessId";
         String rootProcessInstanceId = "testRootProcessInstanceId";
-        Map<String, String> object = new HashMap<>();
+        ObjectNode object = MAPPER.createObjectNode();
         object.put("test", "testValue");
-        JsonNode inputs = MAPPER.valueToTree(object);
-        JsonNode outputs = MAPPER.valueToTree(object);
+        ObjectNode inputs = object;
+        ObjectNode outputs = object;
+        String commentId = "testCommentId";
+        String comment_content = "testCommentContent";
+        String comment_updatedBy = "testCommentUpdatedBy";
+        Comment comment = Comment.builder().id(commentId).updatedAt(time).updatedBy(comment_updatedBy).content(comment_content).build();
+        UserTaskInstanceEntity.CommentEntity commentEntity = new UserTaskInstanceEntity.CommentEntity();
+        commentEntity.setId(commentId);
+        commentEntity.setContent(comment_content);
+        commentEntity.setUpdatedAt(zonedDateTimeToInstant(time));
+        commentEntity.setUpdatedBy(comment_updatedBy);
+
+        String attachmentId = "testAttachmentId";
+        String attachment_name = "testCommentName";
+        String attachment_content = "testCommentContent";
+        String attachment_updatedBy = "testCommentUpdatedBy";
+        Attachment attachment = Attachment.builder().id(attachmentId).updatedAt(time).updatedBy(attachment_updatedBy)
+                .content(attachment_content).name(attachment_name).build();
+        UserTaskInstanceEntity.AttachmentEntity attachmentEntity = new UserTaskInstanceEntity.AttachmentEntity();
+        attachmentEntity.setId(commentId);
+        attachmentEntity.setContent(comment_content);
+        attachmentEntity.setUpdatedAt(zonedDateTimeToInstant(time));
+        attachmentEntity.setUpdatedBy(comment_updatedBy);
 
         userTaskInstance = new UserTaskInstance();
         userTaskInstance.setId(testId);
@@ -85,6 +110,8 @@ class UserTaskInstanceEntityMapperTest {
         userTaskInstance.setRootProcessInstanceId(rootProcessInstanceId);
         userTaskInstance.setInputs(inputs);
         userTaskInstance.setOutputs(outputs);
+        userTaskInstance.setComments(List.of(comment));
+        userTaskInstance.setAttachments(List.of(attachment));
 
         userTaskInstanceEntity = new UserTaskInstanceEntity();
         userTaskInstanceEntity.setId(testId);
@@ -108,6 +135,8 @@ class UserTaskInstanceEntityMapperTest {
         userTaskInstanceEntity.setRootProcessInstanceId(rootProcessInstanceId);
         userTaskInstanceEntity.setInputs(jsonNodeToDocument(inputs));
         userTaskInstanceEntity.setOutputs(jsonNodeToDocument(outputs));
+        userTaskInstanceEntity.setComments(List.of(commentEntity));
+        userTaskInstanceEntity.setAttachments(List.of(attachmentEntity));
     }
 
     @Test
@@ -125,5 +154,33 @@ class UserTaskInstanceEntityMapperTest {
     void testMapToModel() {
         UserTaskInstance result = userTaskInstanceEntityMapper.mapToModel(userTaskInstanceEntity);
         assertEquals(userTaskInstance, result);
+    }
+
+    @Test
+    void testConvertToMongoAttribute() {
+        assertEquals(MONGO_ID, userTaskInstanceEntityMapper.convertToMongoAttribute(ModelUtils.ID));
+
+        assertEquals(UserTaskInstanceEntityMapper.MONGO_COMMENTS_ID_ATTRIBUTE,
+                userTaskInstanceEntityMapper.convertToMongoAttribute(UserTaskInstanceEntityMapper.COMMENTS_ID_ATTRIBUTE));
+
+        assertEquals(UserTaskInstanceEntityMapper.MONGO_ATTACHMENTS_ID_ATTRIBUTE,
+                userTaskInstanceEntityMapper.convertToMongoAttribute(UserTaskInstanceEntityMapper.ATTACHMENTS_ID_ATTRIBUTE));
+
+        String testAttribute = "testAttribute";
+        assertEquals(testAttribute, userTaskInstanceEntityMapper.convertToMongoAttribute(testAttribute));
+    }
+
+    @Test
+    void testConvertToModelAttribute() {
+        assertEquals(ModelUtils.ID, userTaskInstanceEntityMapper.convertToModelAttribute(MONGO_ID));
+
+        assertEquals(ModelUtils.ID,
+                userTaskInstanceEntityMapper.convertToModelAttribute(UserTaskInstanceEntityMapper.MONGO_COMMENTS_ID_ATTRIBUTE));
+
+        assertEquals(ModelUtils.ID,
+                userTaskInstanceEntityMapper.convertToModelAttribute(UserTaskInstanceEntityMapper.MONGO_ATTACHMENTS_ID_ATTRIBUTE));
+
+        String testAttribute = "test.attribute.go";
+        assertEquals("go", userTaskInstanceEntityMapper.convertToModelAttribute(testAttribute));
     }
 }

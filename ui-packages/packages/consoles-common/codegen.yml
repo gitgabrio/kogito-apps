@@ -1,0 +1,29 @@
+overwrite: true
+schema: "http://localhost:8180/graphql"
+documents: './src/graphql/queries.tsx'
+generates:
+  ./src/graphql/types.tsx:
+    plugins:
+      - add:
+          content:
+          - '/* eslint-disable */'
+      - add:
+          content:
+          - ''
+          - 'export namespace GraphQL {'
+      - add:
+          placement: 'append'
+          content: '}'
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+    config:
+      withHOC: false
+      withHooks: true
+      withComponent: false
+      apolloReactHooksImportFrom: '@apollo/react-hooks'
+      apolloReactCommonImportFrom: '@apollo/react-common'
+      gqlImport: graphql-tag
+  ./src/graphql/graphql.schema.json:
+    plugins:
+      - "introspection"

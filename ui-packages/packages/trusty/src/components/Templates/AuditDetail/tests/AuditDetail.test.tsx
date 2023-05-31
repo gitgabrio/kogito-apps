@@ -3,8 +3,14 @@ import { mount } from 'enzyme';
 import AuditDetail from '../AuditDetail';
 import useExecutionInfo from '../useExecutionInfo';
 import useDecisionOutcomes from '../useDecisionOutcomes';
-import { Execution, Outcome, RemoteData } from '../../../../types';
+import {
+  Execution,
+  Outcome,
+  RemoteData,
+  RemoteDataStatus
+} from '../../../../types';
 import { MemoryRouter } from 'react-router';
+import { TrustyContext } from '../../TrustyApp/TrustyApp';
 
 jest.mock('../useExecutionInfo');
 jest.mock('../useDecisionOutcomes');
@@ -19,19 +25,15 @@ jest.mock('react-router-dom', () => ({
   })
 }));
 
-describe('AuditDetail', () => {
-  test('renders loading animation while fetching data', () => {
-    const execution = {
-      status: 'LOADING'
-    } as RemoteData<Error, Execution>;
-    const outcomes = {
-      status: 'LOADING'
-    } as RemoteData<Error, Outcome[]>;
-
-    (useExecutionInfo as jest.Mock).mockReturnValue(execution);
-    (useDecisionOutcomes as jest.Mock).mockReturnValue(outcomes);
-
-    const wrapper = mount(
+const setupWrapper = (
+  outcomes: RemoteData<Error, Outcome[]>,
+  counterfactualEnabled: boolean,
+  explanationEnabled: boolean
+) => {
+  return mount(
+    <TrustyContext.Provider
+      value={{ config: { counterfactualEnabled, explanationEnabled } }}
+    >
       <MemoryRouter
         initialEntries={[
           {
@@ -42,7 +44,46 @@ describe('AuditDetail', () => {
       >
         <AuditDetail />
       </MemoryRouter>
-    );
+    </TrustyContext.Provider>
+  );
+};
+
+const setupMockExecution = () => {
+  const execution = {
+    status: RemoteDataStatus.SUCCESS,
+    data: {
+      executionId: 'b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000',
+      executionDate: '2020-08-12T12:54:53.933Z',
+      executionType: 'DECISION',
+      executedModelName: 'fraud-score',
+      executionSucceeded: true,
+      executorName: 'Technical User'
+    }
+  } as RemoteData<Error, Execution>;
+  const outcomes = {
+    status: RemoteDataStatus.SUCCESS,
+    data: [] as Outcome[]
+  } as RemoteData<Error, Outcome[]>;
+
+  (useExecutionInfo as jest.Mock).mockReturnValue(execution);
+  (useDecisionOutcomes as jest.Mock).mockReturnValue(outcomes);
+
+  return outcomes;
+};
+
+describe('AuditDetail', () => {
+  test('renders loading animation while fetching data', () => {
+    const execution = {
+      status: RemoteDataStatus.LOADING
+    } as RemoteData<Error, Execution>;
+    const outcomes = {
+      status: RemoteDataStatus.LOADING
+    } as RemoteData<Error, Outcome[]>;
+
+    (useExecutionInfo as jest.Mock).mockReturnValue(execution);
+    (useDecisionOutcomes as jest.Mock).mockReturnValue(outcomes);
+
+    const wrapper = setupWrapper(outcomes, false, true);
 
     expect(useExecutionInfo).toHaveBeenCalledWith(
       'b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000'
@@ -75,7 +116,7 @@ describe('AuditDetail', () => {
 
   test('renders correctly an execution', () => {
     const execution = {
-      status: 'SUCCESS',
+      status: RemoteDataStatus.SUCCESS,
       data: {
         executionId: 'b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000',
         executionDate: '2020-08-12T12:54:53.933Z',
@@ -86,7 +127,7 @@ describe('AuditDetail', () => {
       }
     } as RemoteData<Error, Execution>;
     const outcomes = {
-      status: 'SUCCESS',
+      status: RemoteDataStatus.SUCCESS,
       data: [
         {
           outcomeId: '_12268B68-94A1-4960-B4C8-0B6071AFDE58',
@@ -94,7 +135,7 @@ describe('AuditDetail', () => {
           evaluationStatus: 'SUCCEEDED',
           outcomeResult: {
             name: 'Mortgage Approval',
-            typeRef: 'boolean',
+            type: 'boolean',
             value: true,
             components: []
           },
@@ -107,7 +148,7 @@ describe('AuditDetail', () => {
           evaluationStatus: 'SUCCEEDED',
           outcomeResult: {
             name: 'Risk Score',
-            typeRef: 'number',
+            type: 'number',
             value: 21.7031851958099,
             components: []
           },
@@ -120,18 +161,7 @@ describe('AuditDetail', () => {
     (useExecutionInfo as jest.Mock).mockReturnValue(execution);
     (useDecisionOutcomes as jest.Mock).mockReturnValue(outcomes);
 
-    const wrapper = mount(
-      <MemoryRouter
-        initialEntries={[
-          {
-            pathname: '/audit/decision/b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000',
-            key: 'audit-detail'
-          }
-        ]}
-      >
-        <AuditDetail />
-      </MemoryRouter>
-    );
+    const wrapper = setupWrapper(outcomes, false, true);
 
     expect(wrapper.find('ExecutionHeader')).toHaveLength(1);
     expect(wrapper.find('ExecutionHeader').prop('execution')).toStrictEqual(
@@ -150,7 +180,7 @@ describe('AuditDetail', () => {
         .find('NavItem a')
         .at(1)
         .text()
-    ).toMatch('Outcomes Details');
+    ).toMatch('Outcomes details');
     expect(wrapper.find('Switch Route')).toHaveLength(1);
     expect(wrapper.find('Switch Route').prop('path')).toMatch(
       '/audit/decision/b2b0ed8d-c1e2-46b5-3ac54ff4beae-1000/outcomes'
@@ -160,4 +190,25 @@ describe('AuditDetail', () => {
       outcomes
     );
   });
+
+  test('does not contain the counterfactual section when it is disabled', () => {
+    const outcomes = setupMockExecution();
+    const wrapper = setupWrapper(outcomes, false, true);
+    assertCounterfactualComponents(wrapper, false);
+  });
+
+  test('does contain the counterfactual section when it is enabled', () => {
+    const outcomes = setupMockExecution();
+    const wrapper = setupWrapper(outcomes, true, true);
+    assertCounterfactualComponents(wrapper, true);
+  });
+
+  const assertCounterfactualComponents = (wrapper, counterfactualEnabled) => {
+    expect(wrapper.find('CounterfactualUnsupportedBanner')).toHaveLength(
+      counterfactualEnabled ? 1 : 0
+    );
+    expect(
+      wrapper.find('li[data-ouia-component-id="counterfactual-analysis"]')
+    ).toHaveLength(counterfactualEnabled ? 1 : 0);
+  };
 });

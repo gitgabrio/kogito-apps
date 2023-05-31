@@ -7,7 +7,8 @@ import {
   ToolbarToggleGroup,
   Toolbar,
   ToolbarItem,
-  ToolbarFilter
+  ToolbarFilter,
+  Divider
 } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 import { useApolloClient } from 'react-apollo';
@@ -30,7 +31,7 @@ import useGetQueryTypesQuery = GraphQL.useGetQueryTypesQuery;
 import useGetQueryFieldsQuery = GraphQL.useGetQueryFieldsQuery;
 import useGetColumnPickerAttributesQuery = GraphQL.useGetColumnPickerAttributesQuery;
 import useGetInputFieldsFromQueryQuery = GraphQL.useGetInputFieldsFromQueryQuery;
-import { OUIAProps, componentOuiaProps } from '../../../utils/OuiaUtils';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 interface IOwnProps {
   domainName: string;
   rememberedParams: Record<string, unknown>[];
@@ -108,14 +109,14 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
   const getPicker = useGetColumnPickerAttributesQuery({
     variables: { columnPickerType: domainName }
   });
-  const onAddColumnFilters = _columnFilter => {
+  const onAddColumnFilters = (_columnFilter) => {
     setColumnFilters(_columnFilter);
     setLimit(_columnFilter.length);
   };
   const domainArg =
     !getQuery.loading &&
     getQuery.data &&
-    getQuery.data.__type.fields.find(item => {
+    getQuery.data.__type.fields.find((item) => {
       if (item.name === domainName) {
         return item;
       }
@@ -142,7 +143,7 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
   !getPicker.loading &&
     getPicker.data &&
     getPicker.data.__type &&
-    getPicker.data.__type.fields.filter(i => {
+    getPicker.data.__type.fields.filter((i) => {
       if (i.type.kind === 'SCALAR') {
         tempArray.push(i);
       } else {
@@ -151,18 +152,18 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
     });
   data = tempArray.concat(data);
   const fields: any = [];
-  data.filter(field => {
+  data.filter((field) => {
     if (field.type.fields !== null) {
       const obj = {};
       obj[`${field.name}`] = field.type.fields;
       fields.push(obj);
     }
   });
-  fields.map(obj => {
+  fields.map((obj) => {
     let value: any = Object.values(obj);
     const key = Object.keys(obj);
     value = value.flat();
-    value.filter(item => {
+    value.filter((item) => {
       /* istanbul ignore else */
       if (item.type.kind !== 'OBJECT') {
         const tempObj = {};
@@ -183,17 +184,23 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
       setFinalFilters(rememberedFilters);
       setFilterChips(rememberedChips);
     } else {
-      setParameters(prev => [...defaultParams, ...prev]);
+      setParameters((prev) => [...defaultParams, ...prev]);
       setSelected(selections);
     }
   }, [columnPickerType, selections.length > 0]);
 
+  useEffect(() => {
+    if (filterChips.length === 0) {
+      setDisplayTable(false);
+    }
+  }, [filterChips]);
+
   const onDeleteChip = (type = '', id = '') => {
     if (type) {
-      setFilterChips(prev => prev.filter(item => item !== id));
+      setFilterChips((prev) => prev.filter((item) => item !== id));
       const chipText = id.split(':');
       let removeString = chipText[0].split('/');
-      removeString = removeString.map(stringEle => stringEle.trim());
+      removeString = removeString.map((stringEle) => stringEle.trim());
       let tempObj = finalFilters;
       tempObj = deleteKey(tempObj, removeString);
       const FinalObj = clearEmpties(tempObj);
@@ -247,7 +254,7 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
           const respKeys = Object.keys(resp)[0];
           const tableContent = resp[respKeys];
           const finalResp = [];
-          tableContent.map(content => {
+          tableContent.map((content) => {
             const finalObject = validateResponse(content, parameters);
             finalResp.push(finalObject);
           });
@@ -302,6 +309,7 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
                     deleteChip={onDeleteChip}
                   >
                     <DomainExplorerFilterOptions
+                      filterArgument={filterArgument}
                       filterChips={filterChips}
                       finalFilters={finalFilters}
                       getQueryTypes={getQueryTypes}
@@ -370,6 +378,7 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
   return (
     <>
       {renderToolbar()}
+      <Divider />
       <Card
         className="kogito-common--domain-explorer__table-OverFlow"
         {...componentOuiaProps(
@@ -378,7 +387,7 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
           ouiaSafe ? ouiaSafe : !tableLoading && !isLoadingMore
         )}
       >
-        {!tableLoading || isLoadingMore ? (
+        {columnFilters.length > 0 ? (
           <>
             <DomainExplorerTable
               columnFilters={columnFilters}
@@ -405,7 +414,8 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
               !displayEmptyState &&
               !filterError &&
               filterChips.length > 0 &&
-              (limit === pageSize || isLoadingMore) && (
+              (limit === pageSize || isLoadingMore) &&
+              !tableLoading && (
                 <LoadMore
                   offset={offset}
                   setOffset={setOffset}
@@ -418,7 +428,7 @@ const DomainExplorer: React.FC<IOwnProps & OUIAProps> = ({
           </>
         ) : (
           <Bullseye>
-            <KogitoSpinner spinnerText="Loading domain data..." />
+            <KogitoSpinner spinnerText="Loading domain explorer..." />
           </Bullseye>
         )}
       </Card>

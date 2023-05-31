@@ -14,7 +14,6 @@ module.exports = {
       favicon: 'src/favicon.ico'
     }),
     new webpack.EnvironmentPlugin({
-      KOGITO_DATAINDEX_HTTP_URL: 'http://localhost:4000/graphql',
       KOGITO_APP_VERSION: 'DEV',
       KOGITO_APP_NAME: 'Management Console'
     })
@@ -54,7 +53,7 @@ module.exports = {
           ),
           path.resolve('./src/static'),
           path.resolve(
-            '../../node_modules/@kogito-apps/common/dist/src/static'
+            '../../node_modules/@kogito-apps/common/dist/static'
           ),
         ],
         use: {
@@ -110,8 +109,14 @@ module.exports = {
             '../../node_modules/@patternfly/react-table/node_modules/@patternfly/react-styles/css/assets/images'
           ),
           path.resolve(
-            '../../node_modules/@kogito-apps/common/dist/src/static'
+            '../../node_modules/@kogito-apps/common/dist/static'
           ),
+          path.resolve(
+            '../../node_modules/@kogito-apps/form-displayer/dist/static'
+          ),
+          path.resolve(
+            '../../node_modules/@kogito-apps/components-common/dist/src/static'
+        )
         ],
         use: [
           {

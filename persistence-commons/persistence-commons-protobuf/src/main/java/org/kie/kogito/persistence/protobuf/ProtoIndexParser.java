@@ -47,6 +47,8 @@ class ProtoIndexParser implements AnnotationMetadataCreator<EntityIndexDescripto
     static final String FIELD_STORE_ATTRIBUTE = "store";
     static final String FIELD_INDEX_NULL_AS_ATTRIBUTE = "indexNullAs";
 
+    static final String SORTABLE_ANNOTATION = "SortableField";
+
     static final String INDEX_YES = "Index.YES";
     static final String INDEX_NO = "Index.NO";
 
@@ -80,7 +82,8 @@ class ProtoIndexParser implements AnnotationMetadataCreator<EntityIndexDescripto
                 .attribute(FIELD_INDEX_NULL_AS_ATTRIBUTE)
                 .type(AnnotationElement.AttributeType.STRING)
                 .allowedValues(DO_NOT_INDEX_NULL, DEFAULT_NULL_TOKEN)
-                .defaultValue(DO_NOT_INDEX_NULL);
+                .defaultValue(DO_NOT_INDEX_NULL)
+                .annotation(SORTABLE_ANNOTATION, AnnotationElement.AnnotationTarget.FIELD);
         return builder;
     }
 
@@ -109,7 +112,7 @@ class ProtoIndexParser implements AnnotationMetadataCreator<EntityIndexDescripto
         return new EntityIndexDescriptor(name, indexes, fields);
     }
 
-    static Map<String, EntityIndexDescriptor> createEntityIndexeDescriptors(FileDescriptor desc, Map<String, EntityIndexDescriptor> entityIndexes) {
+    static Map<String, EntityIndexDescriptor> createEntityIndexDescriptors(FileDescriptor desc, Map<String, EntityIndexDescriptor> entityIndexes) {
         desc.getMessageTypes().forEach(mDesc -> {
             String typeName = mDesc.getFullName();
             EntityIndexDescriptor entityIndex = entityIndexes.get(typeName);

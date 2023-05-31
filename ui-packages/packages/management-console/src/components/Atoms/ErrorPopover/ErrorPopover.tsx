@@ -1,13 +1,14 @@
 import React from 'react';
 import { Popover, Button } from '@patternfly/react-core';
 import { ProcessInstanceIconCreator } from '../../../utils/Utils';
-import { GraphQL, OUIAProps, componentOuiaProps } from '@kogito-apps/common';
+import { GraphQL } from '@kogito-apps/common';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 import ProcessInstance = GraphQL.ProcessInstance;
 
 interface IOwnProps {
   processInstanceData: ProcessInstance;
-  onSkipClick: () => void;
-  onRetryClick: () => void;
+  onSkipClick: (processInstance: GraphQL.ProcessInstance) => Promise<void>;
+  onRetryClick: (processInstance: GraphQL.ProcessInstance) => Promise<void>;
 }
 const ErrorPopover: React.FC<IOwnProps & OUIAProps> = ({
   processInstanceData,
@@ -35,7 +36,7 @@ const ErrorPopover: React.FC<IOwnProps & OUIAProps> = ({
             key="confirm1"
             id="skip-button"
             variant="secondary"
-            onClick={onSkipClick}
+            onClick={() => onSkipClick(processInstanceData)}
             className="pf-u-mr-sm"
           >
             Skip
@@ -44,7 +45,7 @@ const ErrorPopover: React.FC<IOwnProps & OUIAProps> = ({
             key="confirm2"
             variant="secondary"
             id="retry-button"
-            onClick={onRetryClick}
+            onClick={() => onRetryClick(processInstanceData)}
             className="pf-u-mr-sm"
           >
             Retry

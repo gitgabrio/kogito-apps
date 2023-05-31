@@ -26,6 +26,8 @@ The application is now runnable using:
 java -jar target/task-console-8.0.0-SNAPSHOT-runner.jar
 ```
 
+> Note: task-console requires keycloak server to be initialied for authentication.
+
 ## Creating a native executable
 
 You can create a native executable using: 
@@ -78,7 +80,50 @@ You should be able to access your Keycloak Server at [localhost:8280/auth](http:
 and verify keycloak server is running properly: log in as the admin user to access the Keycloak Administration Console. 
 Username should be admin and password admin.
 
+The following are the users available in keycloak
+
+| Login         | Password   | Roles               |
+| ------------- | ---------- | ------------------- |
+|    admin      |   admin    | *admin*, *managers* |
+|    alice      |   alice    | *user*              |
+|    jdoe       |   jdoe     | *managers*          |
+
 To change any of this client configuration access to http://localhost:8280/auth/admin/master/console/#/realms/kogito.
+
+### Working with Task Console features
+
+The task console shows a list of user tasks which are available for a process. Each column contains detailed information about the user task which are - *Name*, *Process*, *Priority*, *Status*, *Started* and *Last update*. The columns are sortable.
+
+![Task Console](./docs/taskconsole.png?raw=true "TaskConsole")
+
+The task console consist of filters, which can be used to narrow down the search on a user task. There are two filters available
+
+- A filter based on the status(dropdown)
+- A filter based on the task name(text search)
+
+![Filters](./docs/filters.png?raw=true "Filters")
+
+The *Status* filter can be dropped down to view the and select the states available
+
+![States](./docs/states.png?raw=true "States")
+
+A *refresh* button is available to refresh the list of user tasks
+
+A *Reset to default* button is available to reset the filters to its initial state.
+
+The user task list also supports pagination.
+
+Clicking on the name of the user task will navigate to another screen, which consist of the auto generated forms.
+
+### Task details
+
+The task details page consist of an auto generated forms and buttons to perform corresponding action on the user tasks.
+
+![Forms](./docs/forms.png?raw=true "Forms")
+
+The task details page also contains a *View details* button, to view more details about the task.
+
+![Details](./docs/details.png?raw=true "Details")
 
 ### Starting Kogito Task Console in dev mode
 
@@ -86,5 +131,5 @@ Start the task console at port 8380, (the keycloak client 'kogito-console-quarku
 and enabling auth:
 
 ```
-mvn clean compile quarkus:dev -Dquarkus.http.port=8380 -Dquarkus.profile=keycloak
+mvn clean compile quarkus:dev -Dquarkus.http.port=8380
 ```

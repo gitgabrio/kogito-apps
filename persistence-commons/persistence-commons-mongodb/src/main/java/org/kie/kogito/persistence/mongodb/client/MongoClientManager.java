@@ -19,12 +19,12 @@ package org.kie.kogito.persistence.mongodb.client;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import org.bson.Document;
+import org.eclipse.microprofile.config.ConfigProvider;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import io.quarkus.mongodb.reactive.ReactiveMongoClient;
-import org.bson.Document;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 @ApplicationScoped
 public class MongoClientManager {
@@ -35,9 +35,6 @@ public class MongoClientManager {
 
     @Inject
     MongoClient mongoClient;
-
-    @Inject
-    ReactiveMongoClient reactiveMongoClient;
 
     public MongoClientManager() {
         database = ConfigProvider.getConfig().getValue(DATABASE_PROPERTY, String.class);
@@ -51,19 +48,7 @@ public class MongoClientManager {
         return getMongoDatabase().getCollection(collection);
     }
 
-    public <E> com.mongodb.reactivestreams.client.MongoCollection<E> getReactiveCollection(String collection, Class<E> type) {
-        return getReactiveMongoDatabase().getCollection(collection, type);
-    }
-
-    public com.mongodb.reactivestreams.client.MongoCollection<Document> getReactiveCollection(String collection) {
-        return getReactiveMongoDatabase().getCollection(collection);
-    }
-
     private MongoDatabase getMongoDatabase() {
         return mongoClient.getDatabase(database);
-    }
-
-    private com.mongodb.reactivestreams.client.MongoDatabase getReactiveMongoDatabase() {
-        return reactiveMongoClient.unwrap().getDatabase(database);
     }
 }

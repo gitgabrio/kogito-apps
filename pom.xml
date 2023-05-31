@@ -7,7 +7,8 @@
   <parent>
     <groupId>org.kie.kogito</groupId>
     <artifactId>kogito-build-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
+    <relativePath/>
   </parent>
   <artifactId>kogito-apps</artifactId>
   <packaging>pom</packaging>
@@ -15,94 +16,79 @@
   <name>Kogito Apps</name>
   <description>Kogito Apps</description>
 
-  <properties>
-    <version.frontend.plugin>1.9.1</version.frontend.plugin>
-    <version.node>v12.16.2</version.node>
-    <version.npm>6.10.3</version.npm>
-    <version.yarn>v1.19.1</version.yarn>
-    <maven.compiler.release>11</maven.compiler.release>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <version.maven-remote-resources-plugin>1.7.0</version.maven-remote-resources-plugin>
-
-    <version.org.infinispan.image>10.1.5.Final</version.org.infinispan.image>
-
-    <!-- containers used for testing -->
-    <container.image.infinispan>quay.io/infinispan/server:${version.org.infinispan.image}</container.image.infinispan>
-    <container.image.jobs-service>org.kie.kogito/jobs-service:${project.version}</container.image.jobs-service>
-  </properties>
-
   <repositories>
     <!-- Bootstrap repository to locate the parent pom when the parent pom has not been build locally. -->
     <repository>
-      <id>jboss-public-repository-group</id>
-      <name>JBoss Public Repository Group</name>
-      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-      <layout>default</layout>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>never</updatePolicy>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-      </snapshots>
+        <id>jboss-public-repository-group</id>
+        <name>JBoss Public Repository Group</name>
+        <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+        <layout>default</layout>
+        <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>daily</updatePolicy>
+        </snapshots>
     </repository>
   </repositories>
 
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>com.github.eirslett</groupId>
-          <artifactId>frontend-maven-plugin</artifactId>
-          <version>${version.frontend.plugin}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-remote-resources-plugin</artifactId>
-          <version>${version.maven-remote-resources-plugin}</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.kie.kogito</groupId>
-        <artifactId>kogito-bom</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-bom</artifactId>
-        <version>${version.io.quarkus}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.kie.kogito</groupId>
-        <artifactId>kogito-apps-ui-packages</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
-  <modules>
-    <module>persistence-commons</module>
-    <module>jobs-service</module>
-    <module>data-index</module>
-    <module>ui-packages</module>
-    <module>security-commons</module>
-    <module>management-console</module>
-    <module>trusty-ui</module>
-    <module>task-console</module>
-    <module>explainability</module>
-    <module>trusty</module>
-    <module>integration-tests</module>
-  </modules>
+  <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>kogito-apps-bom</module>
+        <module>kogito-apps-build-parent</module>
+        <module>persistence-commons</module>
+        <module>jobs-service</module>
+        <module>data-index</module>
+        <module>ui-packages</module>
+        <module>security-commons</module>
+        <module>management-console</module>
+        <module>trusty-ui</module>
+        <module>task-console</module>
+        <module>explainability</module>
+        <module>trusty</module>
+        <module>jitexecutor</module>
+        <module>apps-integration-tests</module>
+        <module>runtime-tools-quarkus-extension-parent</module>
+        <module>kogito-quarkus-serverless-workflow-devui-parent</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>productized</id>
+      <activation>
+        <property>
+          <name>productized</name>
+        </property>
+      </activation>
+      <modules>
+        <module>kogito-apps-bom</module>
+        <module>kogito-apps-build-parent</module>
+        <module>persistence-commons</module>
+        <module>data-index</module>
+        <module>ui-packages</module>
+        <module>kogito-quarkus-serverless-workflow-devui-parent</module>
+        <module>jobs-service</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>optaplanner-downstream</id>
+      <activation>
+        <property>
+          <name>optaplanner</name>
+        </property>
+      </activation>
+      <modules>
+        <module>kogito-apps-bom</module>
+        <module>kogito-apps-build-parent</module>
+        <module>explainability</module>
+        <module>trusty</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>

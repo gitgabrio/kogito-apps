@@ -1,17 +1,17 @@
 const faker = require('faker');
-//const inputDataWithScores = require('./mocks/inputDataWithScores');
 const inputData = require('./mocks/inputData');
 const outcomeData = require('./mocks/outcomes');
 const outcomeDetailData = require('./mocks/outcomeDetail');
 const modelData = require('./mocks/modelData');
 const salienciesData = require('./mocks/saliencies');
-const executionIdBase = require('./mocks/executionIdBase');
+const executionIds = require('./mocks/executionIds');
+const cfData = require('./mocks/counterfactuals');
 
 let generateFakeAPIs = () => {
   let decisionsList = [];
 
   decisionsList.push({
-    executionId: executionIdBase + 1000,
+    executionId: executionIds[0],
     executionDate: faker.date.recent(),
     executionType: 'DECISION',
     executedModelName: 'fraud-score',
@@ -19,11 +19,11 @@ let generateFakeAPIs = () => {
     executorName: 'Technical User'
   });
 
-  for (let id = 1001; id < 1010; id++) {
+  for (let i = 1; i < 10; i++) {
     let executionDate = faker.date.past();
 
     decisionsList.push({
-      executionId: executionIdBase + id,
+      executionId: executionIds[i],
       executionDate: executionDate,
       executionType: 'DECISION',
       executedModelName: 'fraud-score',
@@ -46,7 +46,8 @@ let generateFakeAPIs = () => {
     outcomes: outcomeData,
     outcomeDetail: outcomeDetailData,
     models: modelData,
-    saliencies: salienciesData
+    saliencies: salienciesData,
+    counterfactuals: cfData
   };
 };
 

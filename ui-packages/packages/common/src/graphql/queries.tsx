@@ -3,11 +3,13 @@ import gql from 'graphql-tag';
 const GET_PROCESS_INSTANCES = gql`
   query getProcessInstances(
     $where: ProcessInstanceArgument
+    $orderBy: ProcessInstanceOrderBy
     $offset: Int
     $limit: Int
   ) {
     ProcessInstances(
       where: $where
+      orderBy: $orderBy
       pagination: { offset: $offset, limit: $limit }
     ) {
       id
@@ -337,8 +339,40 @@ const GET_JOBS_BY_PROC_INST_ID = gql`
       scheduledId
       retries
       lastUpdate
-      expirationTime
       endpoint
+      nodeInstanceId
+      executionCounter
+    }
+  }
+`;
+
+const GET_JOBS_WITH_FILTERS = gql`
+  query getJobsWithFilters(
+    $values: [JobStatus]
+    $orderBy: JobOrderBy
+    $offset: Int
+    $limit: Int
+  ) {
+    Jobs(
+      where: { status: { in: $values } }
+      orderBy: $orderBy
+      pagination: { offset: $offset, limit: $limit }
+    ) {
+      id
+      processId
+      processInstanceId
+      rootProcessId
+      status
+      expirationTime
+      priority
+      callbackEndpoint
+      repeatInterval
+      repeatLimit
+      scheduledId
+      retries
+      lastUpdate
+      endpoint
+      executionCounter
     }
   }
 `;

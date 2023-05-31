@@ -1,6 +1,7 @@
 import React from 'react';
 import { shallow, mount } from 'enzyme';
 import ProcessDetailsProcessVariables from '../ProcessDetailsProcessVariables';
+import { GraphQL } from '@kogito-apps/common';
 // tslint:disable: no-string-literal
 // tslint:disable: no-unexpected-multiline
 
@@ -8,14 +9,15 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 jest.mock('react-json-view', () =>
-  jest.fn(_props => <MockedComponent {..._props} />)
+  jest.fn((_props) => <MockedComponent {..._props} />)
 );
-jest.mock('@patternfly/react-icons', () => ({
-  ...jest.requireActual('@patternfly/react-icons'),
-  InfoCircleIcon: () => {
-    return <MockedComponent />;
-  }
-}));
+jest.mock('@patternfly/react-icons', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-icons'), {
+    InfoCircleIcon: () => {
+      return <MockedComponent />;
+    }
+  })
+);
 const props = {
   setUpdateJson: jest.fn(),
   displayLabel: false,
@@ -29,7 +31,10 @@ const props = {
     }
   },
   setDisplayLabel: jest.fn(),
-  displaySuccess: false
+  displaySuccess: false,
+  processInstance: {
+    state: GraphQL.ProcessInstanceState.Completed
+  }
 };
 
 const props2 = {
@@ -45,7 +50,10 @@ const props2 = {
     }
   },
   setDisplayLabel: jest.fn(),
-  displaySuccess: true
+  displaySuccess: true,
+  processInstance: {
+    state: GraphQL.ProcessInstanceState.Active
+  }
 };
 describe('ProcessVariables component tests', () => {
   it('snapshot testing without variables', () => {
@@ -71,11 +79,7 @@ describe('ProcessVariables component tests', () => {
         }
       }
     };
-    wrapper
-      .find('mockConstructor')
-      .first()
-      .props()
-      ['onEdit'](obj);
+    wrapper.find('mockConstructor').first().props()['onEdit'](obj);
     expect(props2.setUpdateJson).toHaveBeenCalled();
     expect(props2.setDisplayLabel).toHaveBeenCalled();
   });

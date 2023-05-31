@@ -9,11 +9,16 @@ import {
 import '../../styles.css';
 import { aboutLogoContext } from '../../contexts';
 import aboutPageBackground from '../../../static/kogitoAbout.png';
-import { OUIAProps, componentOuiaProps } from '../../../utils/OuiaUtils';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 
 export interface IOwnProps {
   isOpenProp: boolean;
   handleModalToggleProp: any;
+}
+declare global {
+  interface Window {
+    DATA_INDEX_ENDPOINT: string;
+  }
 }
 const AboutModalBox: React.FC<IOwnProps & OUIAProps> = ({
   isOpenProp,
@@ -22,7 +27,6 @@ const AboutModalBox: React.FC<IOwnProps & OUIAProps> = ({
   ouiaSafe
 }) => {
   const dataIndexURL =
-    // @ts-ignore
     window.DATA_INDEX_ENDPOINT || process.env.KOGITO_DATAINDEX_HTTP_URL;
   const logoSrc = useContext(aboutLogoContext);
   return (
@@ -46,11 +50,11 @@ const AboutModalBox: React.FC<IOwnProps & OUIAProps> = ({
           <TextListItem component="dt">License information: </TextListItem>
           <TextListItem component="dd">
             <a
-              href="https://github.com/kiegroup/kogito-runtimes/blob/master/LICENSE"
+              href="https://github.com/kiegroup/kogito-runtimes/blob/main/LICENSE"
               target="_blank"
               rel="noreferrer"
             >
-              https://github.com/kiegroup/kogito-runtimes/blob/master/LICENSE
+              https://github.com/kiegroup/kogito-runtimes/blob/main/LICENSE
             </a>
           </TextListItem>
           <TextListItem component="dt">Report a bug: </TextListItem>

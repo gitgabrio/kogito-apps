@@ -1,9 +1,21 @@
 import * as KeycloakClient from '../KeycloakClient';
+import * as Utils from '../Utils';
 import axios from 'axios';
 import { TestUserContextImpl } from '../../environment/auth/TestUserContext';
 import { KeycloakUserContext } from '../../environment/auth/KeycloakUserContext';
+import { ANONYMOUS_USER } from '../../environment/auth/Auth';
+
+declare global {
+  interface Window {
+    KOGITO_AUTH_ENABLED: boolean;
+  }
+}
 
 const isAuthEnabledMock = jest.spyOn(KeycloakClient, 'isAuthEnabled');
+const isTestUserSystemEnabledMock = jest.spyOn(
+  Utils,
+  'isTestUserSystemEnabled'
+);
 
 describe('Tests for keycloak client functions', () => {
   const mockUserContext = {
@@ -14,25 +26,56 @@ describe('Tests for keycloak client functions', () => {
 
   beforeEach(() => {
     isAuthEnabledMock.mockReturnValue(true);
+    isTestUserSystemEnabledMock.mockReturnValue(false);
+  });
+
+  describe('Wrong API usage tests', () => {
+    test('getLoadedSecurityContext called before login - with auth', () => {
+      expect(() => KeycloakClient.getLoadedSecurityContext()).toThrowError(
+        'Cannot load security context! Please reload screen and log in again.'
+      );
+    });
+
+    test('getLoadedSecurityContext called before login - without auth anonymous', () => {
+      isAuthEnabledMock.mockReturnValue(false);
+
+      const context = KeycloakClient.getLoadedSecurityContext();
+
+      expect(context).not.toBeInstanceOf(TestUserContextImpl);
+      expect(context.getCurrentUser()).toBe(ANONYMOUS_USER);
+    });
   });
 
   it('Test isAuthEnabled with processEnv function', () => {
-    // @ts-ignore
-    window.KOGITO_AUTH_ENABLED = 'true';
+    window.KOGITO_AUTH_ENABLED = true;
     expect(KeycloakClient.isAuthEnabled()).toEqual(true);
   });
 
-  it('Test getLoadedSecurityContext - without auth', () => {
+  it('Test getLoadedSecurityContext - without auth anonymous', async () => {
     isAuthEnabledMock.mockReturnValue(false);
 
-    KeycloakClient.loadSecurityContext(() => {
-      const context = KeycloakClient.getLoadedSecurityContext();
+    // eslint-disable-next-line
+    await KeycloakClient.loadSecurityContext(() => {});
 
-      expect(context).toBeInstanceOf(TestUserContextImpl);
-      expect(context.getCurrentUser().id).toEqual('john');
-      expect(context.getCurrentUser().groups).toHaveLength(1);
-      expect(context.getCurrentUser().groups).toContain('employees');
-    });
+    const context = KeycloakClient.getLoadedSecurityContext();
+
+    expect(context).not.toBeInstanceOf(TestUserContextImpl);
+    expect(context.getCurrentUser()).toBe(ANONYMOUS_USER);
+  });
+
+  it('Test getLoadedSecurityContext - without auth test user system enabled', async () => {
+    isAuthEnabledMock.mockReturnValue(false);
+    isTestUserSystemEnabledMock.mockReturnValue(true);
+
+    // eslint-disable-next-line
+    await KeycloakClient.loadSecurityContext(() => {});
+
+    const context = KeycloakClient.getLoadedSecurityContext();
+
+    expect(context).toBeInstanceOf(TestUserContextImpl);
+    expect(context.getCurrentUser().id).toEqual('john');
+    expect(context.getCurrentUser().groups).toHaveLength(1);
+    expect(context.getCurrentUser().groups).toContain('employees');
   });
 
   it('Test getLoadedSecurityContext - with auth Not logged', () => {
@@ -45,25 +88,37 @@ describe('Tests for keycloak client functions', () => {
     });
   });
 
-  it('Test getLoadedSecurityContext - with auth', () => {
+  it('Test getLoadedSecurityContext - with auth', async () => {
     const getMock = jest.spyOn(axios, 'get');
     getMock.mockResolvedValue({ data: mockUserContext });
 
-    KeycloakClient.loadSecurityContext(() => {
-      expect(KeycloakClient.getLoadedSecurityContext()).toBeInstanceOf(
-        KeycloakUserContext
-      );
+    // eslint-disable-next-line
+    await KeycloakClient.loadSecurityContext(() => {});
 
-      const context = KeycloakClient.getLoadedSecurityContext() as KeycloakUserContext;
-      expect(context.getCurrentUser().id).toEqual('jdoe');
-      expect(context.getCurrentUser().groups).toHaveLength(1);
-      expect(context.getCurrentUser().groups).toContain('role1');
-      expect(context.getToken()).toEqual('testToken');
-    });
+    expect(KeycloakClient.getLoadedSecurityContext()).toBeInstanceOf(
+      KeycloakUserContext
+    );
+
+    const context =
+      KeycloakClient.getLoadedSecurityContext() as KeycloakUserContext;
+    expect(context.getCurrentUser().id).toEqual('jdoe');
+    expect(context.getCurrentUser().groups).toHaveLength(1);
+    expect(context.getCurrentUser().groups).toContain('role1');
+    expect(context.getToken()).toEqual('testToken');
   });
 
   it('Test handleLogout function', () => {
     KeycloakClient.handleLogout();
+  });
+
+  it('Test getToken function', async () => {
+    const getMock = jest.spyOn(axios, 'get');
+    getMock.mockResolvedValue({ data: mockUserContext });
+
+    // eslint-disable-next-line
+    await KeycloakClient.loadSecurityContext(() => {});
+
+    expect(KeycloakClient.getToken()).toEqual('testToken');
   });
 
   it('Test appRenderWithoutAuthenticationEnabled function', () => {
@@ -81,22 +136,21 @@ describe('Tests for keycloak client functions', () => {
     KeycloakClient.appRenderWithAxiosInterceptorConfig(renderMock);
 
     expect(
-      // @ts-ignore
-      // tslint:disable-next-line:no-floating-promises
-      axios.interceptors.response.handlers[0].rejected({
+      (axios.interceptors.response as any).handlers[0].rejected({
         response: {
           status: 401,
           config: 'http://originalRequest'
         }
       })
     ).rejects.toMatchObject({
-      status: 401,
-      config: 'http://originalRequest'
+      response: {
+        status: 401,
+        config: 'http://originalRequest'
+      }
     });
 
     expect(
-      // @ts-ignore
-      axios.interceptors.request.handlers[0].fulfilled({
+      (axios.interceptors.request as any).handlers[0].fulfilled({
         headers: { Authorization: 'Bearer No token' }
       })
     ).toMatchObject({

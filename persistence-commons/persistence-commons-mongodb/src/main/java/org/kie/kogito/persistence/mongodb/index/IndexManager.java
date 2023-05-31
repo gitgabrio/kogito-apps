@@ -31,18 +31,20 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
+import org.bson.Document;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.kie.kogito.persistence.api.schema.EntityIndexDescriptor;
+import org.kie.kogito.persistence.api.schema.IndexDescriptor;
+import org.kie.kogito.persistence.api.schema.SchemaRegisteredEvent;
+import org.kie.kogito.persistence.api.schema.SchemaRegistrationException;
+import org.kie.kogito.persistence.mongodb.client.MongoClientManager;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimaps;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexModel;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
-import org.bson.Document;
-import org.kie.kogito.persistence.api.schema.EntityIndexDescriptor;
-import org.kie.kogito.persistence.api.schema.IndexDescriptor;
-import org.kie.kogito.persistence.api.schema.SchemaRegisteredEvent;
-import org.kie.kogito.persistence.api.schema.SchemaRegistrationException;
-import org.kie.kogito.persistence.mongodb.client.MongoClientManager;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -70,16 +72,24 @@ public class IndexManager {
     @Inject
     Instance<MongoClientManager> mongoClientManager;
 
+    @ConfigProperty(name = "kogito.apps.persistence.indexing", defaultValue = "true")
+    Boolean indexEnabled;
+
     public void onSchemaRegisteredEvent(@Observes SchemaRegisteredEvent event) {
         if (schemaAcceptor.accept(event.getSchemaType())) {
             indexes.putAll(event.getSchemaDescriptor().getEntityIndexDescriptors());
-            updateIndexes(event.getSchemaDescriptor().getEntityIndexDescriptors().values());
+            if (indexEnabled) {
+                updateIndexes(event.getSchemaDescriptor().getEntityIndexDescriptors().values());
+            }
 
             event.getSchemaDescriptor().getProcessDescriptor().ifPresent(processDescriptor -> processIndexEvent.fire(new ProcessIndexEvent(processDescriptor)));
         }
     }
 
     public void onIndexCreateOrUpdateEvent(@Observes IndexCreateOrUpdateEvent event) {
+        if (!indexEnabled) {
+            return;
+        }
         String indexType = collectionIndexMapping.put(event.getCollection(), event.getIndex());
         if (!event.getIndex().equals(indexType)) {
             MongoCollection<Document> collection = this.getCollection(event.getCollection());
@@ -89,9 +99,8 @@ public class IndexManager {
     }
 
     void updateIndexes(Collection<EntityIndexDescriptor> entityIndexDescriptorList) {
-        entityIndexDescriptorList.forEach(entityIndexDescriptor ->
-                                                  this.getCollectionsWithIndex(entityIndexDescriptor.getName())
-                                                          .forEach(col -> this.updateCollection(this.getCollection(col), entityIndexDescriptor)));
+        entityIndexDescriptorList.forEach(entityIndexDescriptor -> this.getCollectionsWithIndex(entityIndexDescriptor.getName())
+                .forEach(col -> this.updateCollection(this.getCollection(col), entityIndexDescriptor)));
     }
 
     void updateCollection(MongoCollection<Document> collection, EntityIndexDescriptor index) {

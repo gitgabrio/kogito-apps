@@ -12,16 +12,14 @@ import {
   PageSidebar,
   PageHeader,
   PageHeaderTools,
-  Avatar,
   Brand
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { aboutLogoContext } from '../../contexts';
 import PageToolbar from '../PageToolbar/PageToolbar';
-import userImage from '../../../static/avatar.svg';
 import '../../styles.css';
-import { OUIAProps, componentOuiaProps } from '../../../utils/OuiaUtils';
+import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
 
 interface IOwnProps {
   alt: string;
@@ -46,7 +44,6 @@ const ServerUnavailable: React.FC<IOwnProps & OUIAProps> = ({
           <aboutLogoContext.Provider value={props.src}>
             <PageToolbar />
           </aboutLogoContext.Provider>
-          <Avatar src={userImage} alt="Kogito Logo" />
         </PageHeaderTools>
       }
       showNavToggle

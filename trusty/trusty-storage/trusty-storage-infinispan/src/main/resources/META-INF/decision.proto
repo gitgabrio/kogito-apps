@@ -1,164 +1,20 @@
-package org.kie.kogito.trusty.storage.api.model;
-
-option indexed_by_default = true;
+package org.kie.kogito.trusty.storage.api.model.decision;
 
 /* @Indexed */
 message Decision {
 
     /* @Field(store = Store.YES) */
-    optional string executionType = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string executionId = 2;
-
-    /* @Field(store = Store.YES) */
-    optional string sourceUrl = 3;
-
-    /* @Field(store = Store.YES) 
-     * @SortableField
-     */
-    optional int64 executionTimestamp = 4;
-
-    /* @Field(store = Store.YES) */
-    optional bool hasSucceeded = 5;
-
-    /* @Field(store = Store.YES) */
-    optional string executorName = 6;
-
-    /* @Field(store = Store.YES) */
-    optional string executedModelName = 7;
-
-    /* @Field(store = Store.YES) */
-    optional string executedModelNamespace = 8;
-
-    /* @Field(store = Store.YES) */
-    repeated DecisionInput inputs = 9;
-
-    /* @Field(store = Store.YES) */
-    repeated DecisionOutcome outcomes = 10;
-}
-
-/* @Indexed */
-message DecisionInput {
-    /* @Field(store = Store.YES) */
-    optional string id = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string name = 2;
-
-    /* @Field(store = Store.YES) */
-    optional TypedVariable value = 3;
-}
-
-/* @Indexed */
-message DecisionOutcome {
-    /* @Field(store = Store.YES) */
-    optional string outcomeId = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string outcomeName = 2;
-
-    /* @Field(store = Store.YES) */
-    optional string evaluationStatus = 3;
-
-    /* @Field(store = Store.YES) */
-    optional TypedVariable outcomeResult = 4;
-
-    /* @Field(store = Store.YES) */
-    repeated TypedVariable outcomeInputs = 5;
-
-    /* @Field(store = Store.YES) */
-    repeated ExecutionMessage messages = 6;
-}
-
-/*
-  This definition corresponds to org.kie.kogito.trusty.storage.api.model.Message model,
-  but it's not named Message as a workaround for an error in infinispan protostream library:
-  using the Message name throws an exception during serialization.
- */
-/* @Indexed */
-message ExecutionMessage {
-    /* @Field(store = Store.YES) */
-    optional string level = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string category = 2;
-
-    /* @Field(store = Store.YES) */
-    optional string type = 3;
-
-    /* @Field(store = Store.YES) */
-    optional string sourceId = 4;
-
-    /* @Field(store = Store.YES) */
-    optional string text = 5;
-
-    /* @Field(store = Store.YES) */
-    optional MessageExceptionField exception = 6;
-}
-
-/* @Indexed */
-message ExplainabilityResult {
-    /* @Field(store = Store.YES) */
     optional string executionId = 1;
 
-    /* @Field(store = Store.YES) */
-    optional string status = 2;
+    /* @Field(store = Store.YES)
+     * @SortableField
+     */
+    optional int64 executionTimestamp = 2;
 
-    /* @Field(store = Store.YES) */
-    optional string statusDetails = 3;
-
-    /* @Field(store = Store.YES) */
-    repeated Saliency saliencies = 4;
+    optional string rawObject = 3;
 }
 
 /* @Indexed */
-message FeatureImportance {
-    /* @Field(store = Store.YES) */
-    optional string featureName = 1;
-
-    /* @Field(store = Store.YES) */
-    optional double score = 2;
-}
-
-/* @Indexed */
-message MessageExceptionField {
-    /* @Field(store = Store.YES) */
-    optional string className = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string message = 2;
-
-    /* @Field(store = Store.YES) */
-    optional MessageExceptionField cause = 3;
-}
-
-/* @Indexed */
-message Saliency {
-    /* @Field(store = Store.YES) */
-    optional string outcomeId = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string outcomeName = 2;
-
-    /* @Field(store = Store.YES) */
-    repeated FeatureImportance featureImportance = 3;
-}
-
-/* @Indexed */
-message TypedVariable {
-    /* @Field(store = Store.YES) */
-    optional string kind = 1;
-
-    /* @Field(store = Store.YES) */
-    optional string name = 2;
-
-    /* @Field(store = Store.YES) */
-    optional string typeRef = 3;
-
-    /* @Field(store = Store.YES) */
-    optional string value = 4;
-
-    /* @Field(store = Store.YES) */
-    repeated TypedVariable components = 5;
+message DMNModelWithMetadata {
+    optional string rawObject = 1;
 }

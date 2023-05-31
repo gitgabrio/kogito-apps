@@ -1,0 +1,92 @@
+{
+  "name": "@kogito-apps/task-console-webapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kiegroup/kogito-apps.git"
+  },
+  "scripts": {
+    "precommit": "lint-staged",
+    "build:prod": "yarn run lint && webpack --config webpack.prod.js && locktt",
+    "start": "webpack-dev-server --color --config webpack.dev.js",
+    "test:report": "yarn test --ci --reporters=jest-junit",
+    "test": "jest --runInBand --ci --reporters=default --reporters=jest-junit",
+    "update-snapshot": "jest --updateSnapshot",
+    "test:coverage": "rimraf coverage && yarn test --coverage",
+    "lint": "eslint './src/**/*.ts{,x}'",
+    "dev": "concurrently 'yarn run start' 'yarn run dev:server'",
+    "dev-remote-dataindex": "yarn start --env KOGITO_DATAINDEX_HTTP_URL='http://localhost:8180/graphql'",
+    "dev:server": "nodemon ./server/app.js",
+    "format": "prettier --config ../../.prettierrc --check --write './{src,server}/**/*.{tsx,ts,js,html}'",
+    "build:bundle-profile": "webpack --config webpack.prod.js --profile --json > stats.json",
+    "bundle-profile:analyze": "yarn build:bundle-profile && webpack-bundle-analyzer ./stats.json",
+    "clean": "rimraf dist",
+    "codegen": "graphql-codegen",
+    "cypress:run": "cypress run",
+    "cypress:open": "cypress open"
+  },
+  "dependencies": {
+    "@kogito-apps/components-common": "^1.0.0",
+    "@kogito-apps/consoles-common": "^1.0.0",
+    "@kogito-apps/patternfly-base": "^1.0.0",
+    "@kogito-apps/task-details": "1.0.0",
+    "@kogito-apps/form-displayer": "^1.0.0",
+    "@kogito-apps/task-form": "^1.0.0",
+    "@kogito-apps/task-inbox": "^1.0.0"
+  },
+  "devDependencies": {
+    "@kogito-apps/ouia-tools": "^1.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest/presets/js-with-ts",
+    "setupFiles": [
+      "../../config/Jest-config/test-shim.js",
+      "../../config/Jest-config/test-setup.js"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "coverageReporters": [
+      [
+        "lcov",
+        {
+          "projectRoot": "../../"
+        }
+      ]
+    ],
+    "globals": {
+      "ts-jest": {
+        "isolatedModules": true
+      }
+    },
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ],
+    "transformIgnorePatterns": [],
+    "transform": {
+      "^.+\\.jsx?$": "../../config/Jest-config/babel-jest-wrapper.js",
+      "^.+\\.(ts|tsx)$": "ts-jest",
+      "\\.(jpg|jpeg|png|svg)$": "../../config/Jest-config/fileMocks.js"
+    },
+    "testMatch": [
+      "**/tests/*.(ts|tsx|js)"
+    ],
+    "moduleNameMapper": {
+      "\\.(scss|sass|css)$": "identity-obj-proxy"
+    },
+    "testPathIgnorePatterns": [
+      "./src/index.tsx"
+    ]
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "yarn run format",
+      "yarn run lint"
+    ]
+  }
+}

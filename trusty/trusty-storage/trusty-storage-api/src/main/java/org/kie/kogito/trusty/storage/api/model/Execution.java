@@ -16,29 +16,49 @@
 
 package org.kie.kogito.trusty.storage.api.model;
 
+import java.util.Objects;
+
+import javax.validation.constraints.NotNull;
+
+import org.kie.kogito.ModelDomain;
+import org.kie.kogito.trusty.storage.api.model.decision.Decision;
+import org.kie.kogito.trusty.storage.api.model.process.Process;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * An execution.
+ * Base abstract class for <b>Execution</b>
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "@type", visible = true)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Decision.class, name = "DECISION"),
+        @JsonSubTypes.Type(value = Process.class, name = "PROCESS")
+})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Execution {
 
-    public final static String EXECUTION_ID_FIELD = "executionId";
-    public final static String SOURCE_URL_FIELD = "sourceUrl";
-    public final static String EXECUTION_TIMESTAMP_FIELD = "executionTimestamp";
-    public final static String HAS_SUCCEEDED_FIELD = "hasSucceeded";
-    public final static String EXECUTOR_NAME_FIELD = "executorName";
-    public final static String EXECUTED_MODEL_NAME_FIELD = "executedModelName";
-    public final static String EXECUTED_MODEL_NAMESPACE_FIELD = "executedModelNamespace";
-    public final static String EXECUTION_TYPE_FIELD = "executionType";
+    public static final String EXECUTION_ID_FIELD = "executionId";
+    public static final String SOURCE_URL_FIELD = "sourceUrl";
+    public static final String SERVICE_URL_FIELD = "serviceUrl";
+    public static final String EXECUTION_TIMESTAMP_FIELD = "executionTimestamp";
+    public static final String HAS_SUCCEEDED_FIELD = "hasSucceeded";
+    public static final String EXECUTOR_NAME_FIELD = "executorName";
+    public static final String EXECUTED_MODEL_NAME_FIELD = "executedModelName";
+    public static final String EXECUTED_MODEL_NAMESPACE_FIELD = "executedModelNamespace";
+    public static final String EXECUTION_TYPE_FIELD = "executionType";
 
     @JsonProperty(EXECUTION_ID_FIELD)
+    @NotNull(message = "executionId must be provided.")
     private String executionId;
 
     @JsonProperty(SOURCE_URL_FIELD)
     private String sourceUrl;
+
+    @JsonProperty(SERVICE_URL_FIELD)
+    private String serviceUrl;
 
     @JsonProperty(EXECUTION_TIMESTAMP_FIELD)
     private Long executionTimestamp;
@@ -52,30 +72,36 @@ public class Execution {
     @JsonProperty(EXECUTED_MODEL_NAME_FIELD)
     private String executedModelName;
 
-    @JsonProperty(EXECUTED_MODEL_NAMESPACE_FIELD)
-    private String executedModelNamespace;
-
     @JsonProperty(EXECUTION_TYPE_FIELD)
-    private ExecutionType executionType;
+    private ModelDomain executionType;
+
+    @JsonProperty("@type")
+    private ModelDomain modelDomain;
 
     public Execution() {
     }
 
-    public Execution(ExecutionType executionType) {
-        this.executionType = executionType;
+    public Execution(ModelDomain modelDomain) {
+        this.executionType = modelDomain;
+        this.modelDomain = modelDomain;
     }
 
-    public Execution(String executionId, String sourceUrl, Long executionTimestamp, Boolean hasSucceeded,
-                     String executorName, String executedModelName, String executedModelNamespace,
-                     ExecutionType executionType) {
-        this.executionId = executionId;
+    public Execution(@NotNull String executionId,
+            String sourceUrl,
+            String serviceUrl,
+            Long executionTimestamp,
+            Boolean hasSucceeded,
+            String executorName,
+            String executedModelName,
+            ModelDomain modelDomain) {
+        this(modelDomain);
+        this.executionId = Objects.requireNonNull(executionId);
         this.sourceUrl = sourceUrl;
+        this.serviceUrl = serviceUrl;
         this.executionTimestamp = executionTimestamp;
         this.hasSucceeded = hasSucceeded;
         this.executorName = executorName;
         this.executedModelName = executedModelName;
-        this.executedModelNamespace = executedModelNamespace;
-        this.executionType = executionType;
     }
 
     /**
@@ -97,21 +123,39 @@ public class Execution {
     }
 
     /**
-     * Gets the source URL of the service where the execution happened.
+     * Gets the source URL of the Cloud Event where the execution happened.
      *
-     * @return The service URL.
+     * @return The source URL.
      */
     public String getSourceUrl() {
         return sourceUrl;
     }
 
     /**
-     * Sets the source URL of the service where the execution happened.
+     * Sets the source URL of the Cloud Event where the execution happened.
      *
-     * @param sourceUrl The service URL.
+     * @param sourceUrl The source URL.
      */
     public void setSourceUrl(String sourceUrl) {
         this.sourceUrl = sourceUrl;
+    }
+
+    /**
+     * Gets the source URL of the service where the execution happened.
+     *
+     * @return The service URL.
+     */
+    public String getServiceUrl() {
+        return serviceUrl;
+    }
+
+    /**
+     * Sets the service URL of the service where the execution happened.
+     *
+     * @param serviceUrl The service URL.
+     */
+    public void setServiceUrl(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
     }
 
     /**
@@ -178,29 +222,11 @@ public class Execution {
     }
 
     /**
-     * Gets the namespace of the executed model.
-     *
-     * @return The namespace of the executed model.
-     */
-    public String getExecutedModelNamespace() {
-        return executedModelNamespace;
-    }
-
-    /**
-     * Sets the executed model namespace.
-     *
-     * @param executedModelNamespace The executed model namespace.
-     */
-    public void setExecutedModelNamespace(String executedModelNamespace) {
-        this.executedModelNamespace = executedModelNamespace;
-    }
-
-    /**
      * Gets the execution type.
      *
      * @return The execution type.
      */
-    public ExecutionType getExecutionType() {
+    public ModelDomain getExecutionType() {
         return executionType;
     }
 
@@ -209,7 +235,7 @@ public class Execution {
      *
      * @param executionType The execution type.
      */
-    public void setExecutionType(ExecutionType executionType) {
+    public void setExecutionType(ModelDomain executionType) {
         this.executionType = executionType;
     }
 

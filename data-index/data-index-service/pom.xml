@@ -5,15 +5,42 @@
   <parent>
     <groupId>org.kie.kogito</groupId>
     <artifactId>data-index</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>data-index-service</artifactId>
-  <name>Kogito :: Data Index Service</name>
+  <name>Kogito Apps :: Data Index Service</name>
   <packaging>pom</packaging>
 
   <modules>
     <module>data-index-service-common</module>
-    <module>data-index-service-infinispan</module>
-    <module>data-index-service-mongodb</module>
+    <module>data-index-service-inmemory</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <property>
+          <name>!productized</name>
+        </property>
+      </activation>
+      <modules>
+        <module>data-index-service-infinispan</module>
+        <module>data-index-service-mongodb</module>
+        <module>data-index-service-oracle</module>
+        <module>data-index-service-postgresql</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>native</id>
+      <activation>
+        <property>
+          <name>native</name>
+        </property>
+      </activation>
+      <properties>
+        <quarkus.package.type>jar</quarkus.package.type>
+      </properties>
+    </profile>
+  </profiles>
 </project>

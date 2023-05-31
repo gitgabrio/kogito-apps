@@ -22,9 +22,9 @@ import { OutlinedMehIcon } from '@patternfly/react-icons';
 import {
   InputRow,
   ItemObject,
-  isItemObjectArray,
-  isItemObjectMultiArray,
-  RemoteData
+  ItemObjectValue,
+  RemoteData,
+  RemoteDataStatus
 } from '../../../types';
 import './InputDataBrowser.scss';
 
@@ -42,26 +42,27 @@ const InputDataBrowser = ({ inputData }: InputDataBrowserProps) => {
   };
 
   useEffect(() => {
-    if (inputData.status === 'SUCCESS' && inputData.data.length > 0) {
+    if (
+      inputData.status === RemoteDataStatus.SUCCESS &&
+      inputData.data.length > 0
+    ) {
       const items: ItemObject[] = [];
       const categoryList = [];
       const rootSection: ItemObject = {
         name: 'Root',
-        typeRef: 'root',
-        value: null,
-        components: []
+        value: { kind: 'STRUCTURE', type: 'root', value: {} }
       };
       for (const item of inputData.data) {
-        if (item.value) {
+        if (item.value.kind === 'UNIT') {
           // collecting inputs with values at root level (not containing components)
-          rootSection.components!.push(item);
+          rootSection.value.value[item.name] = item.value;
         } else {
           items.push(item);
           categoryList.push(item.name);
         }
       }
-      if (rootSection.components!.length) {
-        // if the root section as something inside it, than add the root section as first one
+      if (Object.entries(rootSection.value.value).length !== 0) {
+        // if the root section is not empty, than add the root section as first one
         items.unshift(rootSection);
         categoryList.unshift('Root');
       }
@@ -70,11 +71,11 @@ const InputDataBrowser = ({ inputData }: InputDataBrowserProps) => {
       // open the fist section as default
       setViewSection(0);
     }
-  }, [inputData.status]);
+  }, [inputData]);
 
   return (
     <div className="input-browser">
-      {inputData.status === 'LOADING' && (
+      {inputData.status === RemoteDataStatus.LOADING && (
         <>
           <div className="input-browser__section-list">
             <SkeletonFlexStripes
@@ -86,91 +87,104 @@ const InputDataBrowser = ({ inputData }: InputDataBrowserProps) => {
           <SkeletonDataList rowsCount={4} colsCount={6} hasHeader={true} />
         </>
       )}
-      {inputData.status === 'SUCCESS' && inputData.data.length > 0 && (
-        <>
-          <div className="input-browser__section-list">
-            <Split>
-              <SplitItem>
-                <span className="input-browser__section-list__label">
-                  Browse Sections
-                </span>
-              </SplitItem>
-              <SplitItem>
-                {categories.map((item, index) => (
-                  <Button
-                    type={'button'}
-                    variant={index === viewSection ? 'primary' : 'control'}
-                    isActive={index === viewSection}
-                    key={`section-${index}`}
-                    onClick={() => handleSectionSwitch(index)}
-                  >
-                    {item}
-                  </Button>
-                ))}
-              </SplitItem>
-            </Split>
-          </div>
-          <DataList
-            aria-label="Input Data"
-            className="input-browser__data-list"
-          >
-            <DataListItem
-              aria-labelledby="header"
-              key="header"
-              className="input-browser__header"
+      {inputData.status === RemoteDataStatus.SUCCESS &&
+        inputData.data.length > 0 && (
+          <>
+            <div className="input-browser__section-list">
+              <Split>
+                <SplitItem>
+                  <span className="input-browser__section-list__label">
+                    Browse sections
+                  </span>
+                </SplitItem>
+                <SplitItem>
+                  {categories.map((item, index) => (
+                    <Button
+                      type={'button'}
+                      variant={index === viewSection ? 'primary' : 'control'}
+                      isActive={index === viewSection}
+                      key={`section-${index}`}
+                      onClick={() => handleSectionSwitch(index)}
+                    >
+                      {item}
+                    </Button>
+                  ))}
+                </SplitItem>
+              </Split>
+            </div>
+            <DataList
+              aria-label="Input Data"
+              className="input-browser__data-list"
             >
-              <DataListItemRow>
-                <DataListItemCells
-                  dataListCells={[
-                    <DataListCell width={3} key="Input Data">
-                      <span>Input Data</span>
-                    </DataListCell>,
-                    <DataListCell width={3} key="Value">
-                      <span>Value</span>
-                    </DataListCell>,
-                    <DataListCell width={3} key="Distribution">
-                      <></>
-                    </DataListCell>
-                  ]}
-                />
-              </DataListItemRow>
-            </DataListItem>
-            {inputs && renderItem(inputs[viewSection])}
-          </DataList>
-        </>
-      )}
-      {inputData.status === 'SUCCESS' && inputData.data.length === 0 && (
-        <EmptyState variant={EmptyStateVariant.full}>
-          <EmptyStateIcon icon={OutlinedMehIcon} />
-          <Title headingLevel="h5" size="lg">
-            No input data
-          </Title>
-          <EmptyStateBody>No inputs available to display.</EmptyStateBody>
-        </EmptyState>
-      )}
+              <DataListItem
+                aria-labelledby="header"
+                key="header"
+                className="input-browser__header"
+              >
+                <DataListItemRow>
+                  <DataListItemCells
+                    dataListCells={[
+                      <DataListCell width={3} key="Input Data">
+                        <span>Input data</span>
+                      </DataListCell>,
+                      <DataListCell width={3} key="Value">
+                        <span>Value</span>
+                      </DataListCell>,
+                      <DataListCell width={3} key="Distribution">
+                        <></>
+                      </DataListCell>
+                    ]}
+                  />
+                </DataListItemRow>
+              </DataListItem>
+              {inputs &&
+                renderItem(inputs[viewSection].name, inputs[viewSection].value)}
+            </DataList>
+          </>
+        )}
+      {inputData.status === RemoteDataStatus.SUCCESS &&
+        inputData.data.length === 0 && (
+          <EmptyState variant={EmptyStateVariant.full}>
+            <EmptyStateIcon icon={OutlinedMehIcon} />
+            <Title headingLevel="h5" size="lg">
+              No input data
+            </Title>
+            <EmptyStateBody>No inputs available to display.</EmptyStateBody>
+          </EmptyState>
+        )}
     </div>
   );
 };
 
 const ItemsSubList = (props: {
-  itemsList: ItemObject[];
+  name: string;
+  value: ItemObjectValue;
   listCategory: string;
 }) => {
-  const { itemsList, listCategory } = props;
+  const { name, value, listCategory } = props;
 
   return (
     <DataListItem aria-labelledby="" className={'category__sublist'}>
       <DataList aria-label="" className={'category__sublist__item'}>
-        {itemsList.map(item => (
+        {value.kind === 'UNIT' && (
           <InputValue
-            inputLabel={item.name}
-            inputValue={item.value}
-            hasEffect={item.impact}
-            score={item.score}
-            key={item.name}
+            inputLabel={name}
+            inputValue={value}
+            key={name}
             category={listCategory}
           />
-        ))}
+        )}
+        {value.kind === 'STRUCTURE' &&
+          Object.entries(value.value).map(([key, value]) => {
+            return (
+              <InputValue
+                key={key}
+                inputLabel={key}
+                inputValue={value}
+                category={listCategory}
+              />
+            );
+          })}
       </DataList>
     </DataListItem>
   );
@@ -199,10 +213,8 @@ const CategoryLine = (props: { categoryLabel: string }) => {
 };
 
 const InputValue = (props: InputRow) => {
-  const { inputValue, inputLabel, category, hasEffect } = props;
-  const effectItemClass = hasEffect
-    ? 'input-data--affecting'
-    : 'input-data--ignored';
+  const { inputValue, inputLabel, category } = props;
+  const effectItemClass = 'input-data--ignored';
   const dataListCells = [];
   dataListCells.push(
     <DataListCell width={3} key="primary content" className="input-data__wrap">
@@ -213,7 +225,7 @@ const InputValue = (props: InputRow) => {
   dataListCells.push(
     <DataListCell width={3} key="secondary content">
       <span>
-        <FormattedValue value={inputValue} />
+        <FormattedValue value={inputValue.value} />
       </span>
     </DataListCell>
   );
@@ -239,66 +251,65 @@ const InputValue = (props: InputRow) => {
 let itemCategory = '';
 
 const renderItem = (
-  singleItem: ItemObject,
+  name: string,
+  value: ItemObjectValue,
   categoryName?: string
 ): JSX.Element => {
   const renderedItems: JSX.Element[] = [];
 
   const elaborateRender = (
-    item: ItemObject,
+    name: string,
+    value: ItemObjectValue,
     category?: string
   ): JSX.Element => {
-    if (item.value !== null) {
+    if (value.kind === 'UNIT') {
       return (
         <InputValue
-          inputLabel={item.name}
-          inputValue={item.value}
-          hasEffect={item.impact}
-          score={item.score}
+          inputLabel={name}
+          inputValue={value}
           category={itemCategory}
-          key={item.name}
+          key={name}
         />
       );
     }
 
-    if (item.components.length) {
-      itemCategory = category ? `${itemCategory} / ${category}` : item.name;
-      const categoryLabel =
-        itemCategory.length > 0 ? `${itemCategory}` : item.name;
+    if (value.kind === 'STRUCTURE' || value.kind === 'COLLECTION') {
+      itemCategory = category ? `${itemCategory} / ${category}` : name;
+      const categoryLabel = itemCategory.length > 0 ? `${itemCategory}` : name;
 
-      if (item.components) {
-        if (isItemObjectArray(item.components)) {
-          for (const subItem of item.components) {
-            renderedItems.push(renderItem(subItem, subItem.name));
-          }
-        } else if (isItemObjectMultiArray(item.components)) {
-          for (const subItem of item.components) {
-            renderedItems.push(
-              <ItemsSubList
-                itemsList={subItem}
-                key={uuid()}
-                listCategory={categoryLabel}
-              />
-            );
-          }
-        }
-        return (
-          <React.Fragment key={categoryLabel}>
-            <div className="category">
-              <CategoryLine
-                categoryLabel={categoryLabel}
-                key={`category-${categoryLabel}`}
-              />
-            </div>
-            {renderedItems}
-          </React.Fragment>
-        );
+      if (value.kind === 'STRUCTURE') {
+        Object.entries(value.value).forEach(([key, value]) => {
+          renderedItems.push(renderItem(key, value, key));
+        });
+      } else if (value.kind === 'COLLECTION') {
+        value.value.forEach(value => {
+          renderedItems.push(
+            <ItemsSubList
+              name={name}
+              value={value}
+              key={uuid()}
+              listCategory={categoryLabel}
+            />
+          );
+        });
       }
+
+      return (
+        <React.Fragment key={categoryLabel}>
+          <div className="category">
+            <CategoryLine
+              categoryLabel={categoryLabel}
+              key={`category-${categoryLabel}`}
+            />
+          </div>
+          {renderedItems}
+        </React.Fragment>
+      );
     }
     return <></>;
   };
 
-  return elaborateRender(singleItem, categoryName);
+  return elaborateRender(name, value, categoryName);
 };
 
 export default InputDataBrowser;

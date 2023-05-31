@@ -5,12 +5,12 @@
   <parent>
     <artifactId>data-index-service</artifactId>
     <groupId>org.kie.kogito</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>data-index-service-infinispan</artifactId>
-  <name>Kogito :: Data Index Service with Infinispan</name>
+  <name>Kogito Apps :: Data Index Service with Infinispan</name>
 
   <dependencies>
     <dependency>
@@ -21,7 +21,21 @@
       <groupId>org.kie.kogito</groupId>
       <artifactId>data-index-storage-infinispan</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-reactive-messaging-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-container-image-jib</artifactId>
+    </dependency>
 
+    <dependency>
+      <groupId>org.kie.kogito</groupId>
+      <artifactId>data-index-common</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.kie.kogito</groupId>
       <artifactId>data-index-service-common</artifactId>
@@ -45,13 +59,23 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>net.javacrumbs.json-unit</groupId>
+      <artifactId>json-unit-assertj</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.kie.kogito</groupId>
-      <artifactId>kogito-test-utils</artifactId>
+      <artifactId>kogito-quarkus-test-utils</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -64,6 +88,16 @@
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.smallrye.reactive</groupId>
+      <artifactId>smallrye-reactive-messaging-in-memory</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock-jre8</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -72,7 +106,7 @@
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
         <configuration>
-          <uberJar>true</uberJar>
+          <skipOriginalJarRename>true</skipOriginalJarRename>
         </configuration>
         <executions>
           <execution>
@@ -85,113 +119,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>**/*Native*IT.java</exclude>
-          </excludes>
-          <systemProperties>
-            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-            <container.image.infinispan>${container.image.infinispan}</container.image.infinispan>
-            <container.image.keycloak>${container.image.keycloak}</container.image.keycloak>
-          </systemProperties>
-        </configuration>
         <executions>
           <execution>
-            <id>infinispan-default</id>
+            <id>integration-test</id>
             <goals>
               <goal>integration-test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/Infinispan*IT.java</include>
-              </includes>
-              <excludes combine.children="append"> <!-- Add the exclude to existing ones -->
-                <exclude>**/*Keycloak*IT.java</exclude> <!-- Separate execution for this one -->
-              </excludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>infinispan-testWithKeycloak</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/InfinispanKeycloak*IT.java</include>
-              </includes>
-              <systemProperties>
-                <quarkus.test.profile>keycloak-test</quarkus.test.profile>
-                <quarkus.http.auth.policy.role-policy1.roles-allowed>confidential</quarkus.http.auth.policy.role-policy1.roles-allowed>
-                <quarkus.http.auth.permission.roles1.paths>/*</quarkus.http.auth.permission.roles1.paths>
-                <quarkus.http.auth.permission.roles1.policy>role-policy1</quarkus.http.auth.permission.roles1.policy>
-              </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
-            <id>verify</id>
-            <goals>
               <goal>verify</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>native</id>
-      <activation>
-        <property>
-          <name>native</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-maven-plugin</artifactId>
-            <configuration>
-              <uberJar>true</uberJar>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>build</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>infinispan-native-tests</id>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-                <configuration>
-                  <includes>
-                    <include>**/InfinispanNative*IT.java</include>
-                  </includes>
-                  <systemProperties>
-                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-                  </systemProperties>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

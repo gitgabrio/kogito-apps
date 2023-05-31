@@ -1,11 +1,19 @@
 import React from 'react';
 import InputDataBrowser from '../InputDataBrowser';
-import { shallow, mount } from 'enzyme';
-import { ItemObject, RemoteData } from '../../../../types';
+import { mount, shallow } from 'enzyme';
+import {
+  ItemObject,
+  ItemObjectUnit,
+  RemoteData,
+  RemoteDataStatus
+} from '../../../../types';
 
 describe('InputDataBrowser', () => {
   test('renders a loading animation while fetching data', () => {
-    const inputData = { status: 'LOADING' } as RemoteData<Error, ItemObject[]>;
+    const inputData = { status: RemoteDataStatus.LOADING } as RemoteData<
+      Error,
+      ItemObject[]
+    >;
     const wrapper = shallow(<InputDataBrowser inputData={inputData} />);
 
     expect(wrapper).toMatchSnapshot();
@@ -13,27 +21,37 @@ describe('InputDataBrowser', () => {
 
   test('renders a list of inputs', () => {
     const inputData = {
-      status: 'SUCCESS',
+      status: RemoteDataStatus.SUCCESS,
       data: [
-        { name: 'Asset Score', typeRef: 'number', value: 738, components: [] },
+        {
+          name: 'Asset Score',
+          value: {
+            kind: 'UNIT',
+            type: 'number',
+            value: 738
+          }
+        },
         {
           name: 'Asset Amount',
-          typeRef: 'number',
-          value: 700,
-          components: []
+          value: {
+            kind: 'UNIT',
+            type: 'number',
+            value: 700
+          }
         },
         {
           name: 'Property',
-          typeRef: 'tProperty',
-          value: null,
-          components: [
-            {
-              name: 'Purchase Price',
-              typeRef: 'number',
-              value: 34000,
-              components: []
+          value: {
+            kind: 'STRUCTURE',
+            type: 'tProperty',
+            value: {
+              'Purchase Price': {
+                kind: 'UNIT',
+                type: 'number',
+                value: 34000
+              }
             }
-          ]
+          }
         }
       ]
     } as RemoteData<Error, ItemObject[]>;
@@ -60,16 +78,16 @@ describe('InputDataBrowser', () => {
     expect(dataList.find('CategoryLine').prop('categoryLabel')).toMatch('Root');
     expect(dataList.find('InputValue')).toHaveLength(2);
     expect(
-      dataList
+      (dataList
         .find('InputValue')
         .at(0)
-        .prop('inputValue')
+        .prop('inputValue') as ItemObjectUnit).value
     ).toBe(738);
     expect(
-      dataList
+      (dataList
         .find('InputValue')
         .at(1)
-        .prop('inputValue')
+        .prop('inputValue') as ItemObjectUnit).value
     ).toBe(700);
 
     wrapper
@@ -87,6 +105,9 @@ describe('InputDataBrowser', () => {
     );
 
     expect(propertyDataList.find('InputValue')).toHaveLength(1);
-    expect(propertyDataList.find('InputValue').prop('inputValue')).toBe(34000);
+    expect(
+      (propertyDataList.find('InputValue').prop('inputValue') as ItemObjectUnit)
+        .value
+    ).toBe(34000);
   });
 });

@@ -1,60 +1,76 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
+import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+  DropdownPosition,
+  DropdownToggle,
+  DropdownToggleCheckbox
+} from '@patternfly/react-core/dist/js/components/Dropdown';
 import {
   Toolbar,
   ToolbarItem,
   ToolbarContent,
   ToolbarFilter,
   ToolbarToggleGroup,
-  ToolbarGroup,
-  Button,
-  Select,
-  SelectOption,
-  SelectVariant,
-  InputGroup,
-  TextInput,
-  Tooltip,
+  ToolbarGroup
+} from '@patternfly/react-core/dist/js/components/Toolbar';
+import {
+  OverflowMenu,
   OverflowMenuContent,
   OverflowMenuControl,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
-  OverflowMenu,
-  OverflowMenuItem,
-  DropdownPosition,
-  DropdownToggle,
-  DropdownToggleCheckbox
-} from '@patternfly/react-core';
-import { FilterIcon, SyncIcon } from '@patternfly/react-icons';
+  OverflowMenuItem
+} from '@patternfly/react-core/dist/js/components/OverflowMenu';
+import { Tooltip } from '@patternfly/react-core/dist/js/components/Tooltip';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import {
+  Select,
+  SelectOption,
+  SelectVariant
+} from '@patternfly/react-core/dist/js/components/Select';
+import { TextInput } from '@patternfly/react-core/dist/js/components/TextInput';
+import { InputGroup } from '@patternfly/react-core/dist/js/components/InputGroup';
+import { FilterIcon } from '@patternfly/react-icons/dist/js/icons/filter-icon';
+import { SyncIcon } from '@patternfly/react-icons/dist/js/icons/sync-icon';
 import _ from 'lodash';
+import {
+  ProcessInstance,
+  ProcessInstanceState,
+  ProcessInstanceFilter
+} from '@kogito-apps/management-console-shared/dist/types';
 import {
   BulkListType,
   IOperationResults,
-  IOperations,
-  OperationType,
-  ProcessInstance,
-  ProcessInstanceState,
-  ProcessInfoModal,
-  setTitle
-} from '@kogito-apps/management-console-shared';
-import { ProcessInstanceFilter, ProcessListDriver } from '../../../api';
+  IOperations
+} from '@kogito-apps/management-console-shared/dist/components/BulkList';
+import { setTitle } from '@kogito-apps/management-console-shared/dist/utils/Utils';
+import { ProcessInfoModal } from '@kogito-apps/management-console-shared/dist/components/ProcessInfoModal';
+import { ProcessListDriver } from '../../../api';
 import '../styles.css';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import { formatForBulkListProcessInstance } from '../utils/ProcessListUtils';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 
 enum Category {
   STATUS = 'Status',
@@ -108,9 +124,9 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
   singularProcessLabel,
   pluralProcessLabel,
   isWorkflow,
-  isTriggerCloudEventEnabled= false,
+  isTriggerCloudEventEnabled = false,
   ouiaId,
-  ouiaSafe,
+  ouiaSafe
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [businessKeyInput, setBusinessKeyInput] = useState<string>('');
@@ -489,10 +505,10 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
   };
 
   const onOpenCloudEventClick = useCallback(() => {
-    if(isTriggerCloudEventEnabled) {
+    if (isTriggerCloudEventEnabled) {
       driver.openTriggerCloudEvent();
     }
-  }, [driver])
+  }, [driver]);
 
   const statusMenuItems: JSX.Element[] = [
     <SelectOption key="ACTIVE" value="ACTIVE" />,
@@ -531,6 +547,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
   const dropdownItemsProcesManagementButtons = () => {
     return [
       <DropdownItem
+        data-testid="multi-abort"
         key="abort"
         onClick={operations[OperationType.ABORT].functions.perform}
         isDisabled={selectedInstances.length === 0}
@@ -538,6 +555,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
         Abort selected
       </DropdownItem>,
       <DropdownItem
+        data-testid="multi-skip"
         key="skip"
         onClick={operations[OperationType.SKIP].functions.perform}
         isDisabled={selectedInstances.length === 0}
@@ -545,6 +563,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
         Skip selected
       </DropdownItem>,
       <DropdownItem
+        data-testid="multi-retry"
         key="retry"
         onClick={operations[OperationType.RETRY].functions.perform}
         isDisabled={selectedInstances.length === 0}
@@ -648,6 +667,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
             isOpen={isExpanded}
             placeholderText="Status"
             id="status-select"
+            data-testid="status-select"
           >
             {statusMenuItems}
           </Select>
@@ -661,6 +681,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
             <TextInput
               name="businessKey"
               id="businessKey"
+              data-testid="businesskey"
               type="search"
               aria-label="business key"
               onChange={setBusinessKeyInput}
@@ -674,7 +695,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
           <Button
             variant="primary"
             onClick={onApplyFilter}
-            id="apply-filter-button"
+            data-testid="apply-filter-button"
           >
             Apply filter
           </Button>
@@ -697,25 +718,26 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
       <ToolbarGroup variant="icon-button-group">
         <ToolbarItem>
           <Tooltip content={'Refresh'}>
-            <Button variant="plain" onClick={refresh} id="refresh">
+            <Button variant="plain" onClick={refresh} data-testid="refresh">
               <SyncIcon />
             </Button>
           </Tooltip>
         </ToolbarItem>
       </ToolbarGroup>
-      {
-          isTriggerCloudEventEnabled && <ToolbarGroup>
-            <ToolbarItem variant="separator"/>
-            <ToolbarItem>
-              <Button
-                  variant="primary"
-                  onClick={() => onOpenCloudEventClick()}
-              >
-                Trigger Cloud Event
-              </Button>
-            </ToolbarItem>
-          </ToolbarGroup>
-      }
+      {isTriggerCloudEventEnabled && (
+        <ToolbarGroup>
+          <ToolbarItem variant="separator" />
+          <ToolbarItem>
+            <Button
+              variant="primary"
+              onClick={() => onOpenCloudEventClick()}
+              data-testid="trigger-cloud-event"
+            >
+              Trigger Cloud Event
+            </Button>
+          </ToolbarItem>
+        </ToolbarGroup>
+      )}
     </React.Fragment>
   );
 
@@ -730,7 +752,7 @@ const ProcessListToolbar: React.FC<ProcessListToolbarProps & OUIAProps> = ({
         ouiaId="operation-result"
       />
       <Toolbar
-        id="data-toolbar-with-filter"
+        data-testid="data-toolbar-with-filter"
         className="pf-m-toggle-group-container kogito-management-console__state-dropdown-list"
         collapseListedFiltersBreakpoint="xl"
         clearAllFilters={resetAllFilters}

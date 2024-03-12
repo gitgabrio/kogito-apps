@@ -1,21 +1,23 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import axios from 'axios';
-import { GraphQL } from '@kogito-apps/consoles-common';
+import { GraphQL } from '@kogito-apps/consoles-common/dist/graphql';
 import wait from 'waait';
 import {
   getCustomDashboard,
@@ -47,12 +49,11 @@ import {
   BulkProcessInstanceActionResponse,
   MilestoneStatus,
   NodeInstance,
-  OperationType,
   ProcessInstanceState
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 import { processInstance } from '../../ProcessList/tests/ProcessListGatewayApi.test';
-import { Form } from '@kogito-apps/form-details';
-import { FormType } from '@kogito-apps/forms-list';
+import { Form, FormType } from '@kogito-apps/components-common/dist';
 import * as SwaggerParser from '@apidevtools/swagger-parser';
 import {
   CloudEventMethod,
@@ -893,15 +894,19 @@ describe('custom forms section', () => {
 });
 
 describe('process definitions section', () => {
-  it('swager parser success', async () => {
+  it('swagger parser success', async () => {
     SwaggerParser.parse['mockImplementation'](() =>
       Promise.resolve({
         paths: {
-          '/hiring/schema': {
+          '/hiring-process/some-task/schema': {
             get: {},
             post: {}
           },
-          '/hiring': {
+          '/hiring-process/schema': {
+            get: {},
+            post: {}
+          },
+          '/hiring-process': {
             get: {},
             post: {}
           }
@@ -913,7 +918,10 @@ describe('process definitions section', () => {
       '/docs/openapi.json'
     );
     expect(result).toStrictEqual([
-      { processName: 'hiring', endpoint: 'http://localhost:8080/hiring' }
+      {
+        processName: 'hiring-process',
+        endpoint: 'http://localhost:8080/hiring-process'
+      }
     ]);
   });
   it('start process instance success', async () => {
@@ -1030,6 +1038,56 @@ describe('custom dashboard section', () => {
 });
 
 describe('swf custom form tests', () => {
+  it('get custom custom workflow schema from post schema- success ', async () => {
+    const schemaPost = {
+      schema: {
+        title: 'Expression',
+        description: 'Schema for expression test',
+        required: ['numbers'],
+        type: 'object',
+        properties: {
+          numbers: {
+            description: 'The array of numbers to be operated with',
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                x: {
+                  type: 'number'
+                },
+                y: {
+                  type: 'number'
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    SwaggerParser.parse['mockImplementation'](() =>
+      Promise.resolve({
+        paths: {
+          ['/expression']: {
+            post: {
+              requestBody: {
+                content: {
+                  ['application/json']: schemaPost
+                }
+              }
+            }
+          }
+        }
+      })
+    );
+    const result = await getCustomWorkflowSchema(
+      'http://localhost:8080',
+      '/q/openapi.json',
+      'expression'
+    );
+    expect(result.type).toEqual('object');
+    expect(result.properties.numbers.type).toEqual('array');
+  });
   it('get custom custom workflow schema - success - no workflowdata', async () => {
     SwaggerParser.parse['mockImplementation'](() =>
       Promise.resolve({
@@ -1042,13 +1100,17 @@ describe('swf custom form tests', () => {
     );
     const result = await getCustomWorkflowSchema(
       'http://localhost:8080',
-      '/q/openapi.json'
+      '/q/openapi.json',
+      'expression'
     );
     expect(result).toEqual(null);
   });
 
   it('get custom workflow schema - success - with workflowdata', async () => {
     const schema = {
+      components: {
+        schemas: {}
+      },
       type: 'object',
       properties: {
         name: {
@@ -1061,7 +1123,7 @@ describe('swf custom form tests', () => {
       Promise.resolve({
         components: {
           schemas: {
-            [workflowName]: { ...schema }
+            [workflowName + '_input']: { ...schema }
           }
         }
       })

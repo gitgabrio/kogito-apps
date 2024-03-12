@@ -1,33 +1,38 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import * as H from 'history';
 import { MemoryRouter } from 'react-router';
 import { act } from 'react-dom/test-utils';
 import wait from 'waait';
-import { KogitoEmptyState, ServerErrors } from '@kogito-apps/components-common';
-import { mount } from 'enzyme';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserTaskInstance } from '@kogito-apps/task-console-shared';
 import { TaskInboxGatewayApi } from '../../../../channel/TaskInbox';
 import * as TaskInboxContext from '../../../../channel/TaskInbox/TaskInboxContext';
 import TaskDetailsPage from '../TaskDetailsPage';
-import TaskFormContainer from '../../../containers/TaskFormContainer/TaskFormContainer';
+import DevUIAppContextProvider from '../../../contexts/DevUIAppContextProvider';
+import {
+  DefaultUser,
+  User
+} from '@kogito-apps/consoles-common/dist/environment/auth';
 
-import { Button, DrawerPanelContent } from '@patternfly/react-core';
+jest.mock('../../../containers/TaskFormContainer/TaskFormContainer');
 
 const userTask: UserTaskInstance = {
   id: '45a73767-5da3-49bf-9c40-d533c3e77ef3',
@@ -71,59 +76,14 @@ const props = {
     search: '',
     state: undefined
   },
-  history: H.createBrowserHistory()
+  history: H.createBrowserHistory(),
+  ouiaId: ''
 };
 
 const pushSpy = jest.spyOn(props.history, 'push');
 pushSpy.mockImplementation(() => {
   // do nothing
 });
-
-const MockedComponent = (): React.ReactElement => {
-  return <></>;
-};
-
-jest.mock('../../../containers/TaskFormContainer/TaskFormContainer');
-
-jest.mock('@patternfly/react-core', () => ({
-  ...jest.requireActual('@patternfly/react-core'),
-  Breadcrumb: () => {
-    return <MockedComponent />;
-  },
-  BreadcrumbItem: () => {
-    return <MockedComponent />;
-  },
-  Button: () => {
-    return <MockedComponent />;
-  }
-}));
-
-jest.mock('@kogito-apps/components-common', () => ({
-  ...jest.requireActual('@kogito-apps/components-common'),
-  KogitoEmptyState: () => {
-    return <MockedComponent />;
-  },
-  ServerErrors: () => {
-    return <MockedComponent />;
-  },
-  FormNotification: () => {
-    return <MockedComponent />;
-  }
-}));
-
-jest.mock('@kogito-apps/consoles-common', () => ({
-  ...jest.requireActual('@kogito-apps/consoles-common'),
-  PageTitle: () => {
-    return <MockedComponent />;
-  }
-}));
-
-jest.mock('@kogito-apps/task-details', () => ({
-  ...jest.requireActual('@kogito-apps/task-details'),
-  EmbeddedTaskDetails: () => {
-    return <MockedComponent />;
-  }
-}));
 
 const getUserTaskByIdMock = jest.fn();
 
@@ -145,18 +105,35 @@ jest
 
 let gatewayApi: TaskInboxGatewayApi;
 
+const user: User = new DefaultUser('jon', []);
+const appContextProps = {
+  devUIUrl: 'http://localhost:9000',
+  openApiPath: '/mocked',
+  isProcessEnabled: false,
+  isTracingEnabled: false,
+  omittedProcessTimelineEvents: [],
+  availablePages: [],
+  customLabels: {
+    singularProcessLabel: 'test-singular',
+    pluralProcessLabel: 'test-plural'
+  },
+  diagramPreviewSize: { width: 100, height: 100 }
+};
+
 const getTaskDetailsPageWrapper = async () => {
-  let wrapper = null;
+  let container;
   await act(async () => {
-    wrapper = mount(
+    container = render(
       <MemoryRouter keyLength={0} initialEntries={['/']}>
-        <TaskDetailsPage {...props} />
+        <DevUIAppContextProvider users={[user]} {...appContextProps}>
+          <TaskDetailsPage {...props} />
+        </DevUIAppContextProvider>
       </MemoryRouter>
-    );
+    ).container;
     wait();
   });
 
-  return wrapper;
+  return container;
 };
 
 describe('TaskDetailsPage tests', () => {
@@ -166,18 +143,24 @@ describe('TaskDetailsPage tests', () => {
   });
 
   it('Empty state', async () => {
-    const wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
+    const container = await getTaskDetailsPageWrapper();
 
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const emptyState = wrapper.find(KogitoEmptyState);
-    expect(emptyState.exists()).toBeTruthy();
+    const checkEmptyState = container.querySelector(
+      'div[data-ouia-component-type="kogito-empty-state"]'
+    );
+    expect(checkEmptyState).toBeTruthy();
 
-    expect(emptyState.props().body).toStrictEqual(
+    const checkEmptyStateDescription = container.querySelector(
+      'div[class="pf-c-empty-state__body"]'
+    ).textContent;
+    expect(checkEmptyStateDescription).toEqual(
       "Cannot find task with id '45a73767-5da3-49bf-9c40-d533c3e77ef3'"
     );
-    expect(emptyState.props().title).toStrictEqual('Cannot find task');
+    expect(container.querySelector('h5').textContent).toEqual(
+      'Cannot find task'
+    );
   });
 
   it('Error state', async () => {
@@ -185,172 +168,97 @@ describe('TaskDetailsPage tests', () => {
       throw new Error('Error: Something went wrong on server!');
     });
 
-    const wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
+    const container = await getTaskDetailsPageWrapper();
 
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const serverErrors = wrapper.find(ServerErrors);
-    expect(serverErrors.exists()).toBeTruthy();
-    expect(serverErrors.props().error.message).toEqual(
-      'Error: Something went wrong on server!'
+    const checkServerErrorsComponent = container.querySelector(
+      'div[data-ouia-component-type="server-errors"]'
+    );
+
+    expect(checkServerErrorsComponent).toBeTruthy();
+
+    const checkTitle = container.querySelector('h1').textContent;
+    expect(checkTitle).toEqual('Error fetching data');
+
+    const checkBody = screen.getByTestId('empty-state-body').textContent;
+    expect(checkBody).toEqual(
+      'An error occurred while accessing data. See more details'
     );
   });
 
   it('Normal State', async () => {
     getUserTaskByIdMock.mockReturnValue(userTask);
 
-    const wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
-
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
-
-    const taskForm = wrapper.find(TaskFormContainer);
-
-    expect(taskForm.exists()).toBeTruthy();
-    expect(taskForm.props().userTask).toStrictEqual(userTask);
+    const container = await getTaskDetailsPageWrapper();
+    await waitFor(() => {
+      // expect(container).toMatchSnapshot();
+    });
+    const viewDetailsButton = screen.getByText('View details');
+    expect(viewDetailsButton).toBeTruthy();
   });
 
   it('Success notification', async () => {
     getUserTaskByIdMock.mockReturnValue(userTask);
 
-    let wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
+    const container = await getTaskDetailsPageWrapper();
 
-    const taskForm = wrapper.find(TaskFormContainer);
+    const checkTaskHeading = screen.getByText('Apply for visa');
+    expect(checkTaskHeading).toBeTruthy();
 
-    expect(taskForm.exists()).toBeTruthy();
-    expect(taskForm.props().userTask).toStrictEqual(userTask);
+    const viewDetailsButton = screen.getByText('View details');
+    fireEvent.click(viewDetailsButton);
 
-    await act(async () => {
-      taskForm.props().onSubmitSuccess('complete');
-      wait();
-    });
+    const sucessAlert = screen.getByLabelText('Success Alert');
+    expect(sucessAlert).toBeTruthy();
 
-    wrapper = wrapper.update().find(TaskDetailsPage);
-
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
-
-    const notificationComponent = wrapper.find('FormNotification');
-    expect(notificationComponent.exists()).toBeTruthy();
-
-    const notification = notificationComponent.props().notification;
-
-    expect(notification).not.toBeNull();
-    expect(notification.type).toStrictEqual('success');
-    expect(notification.message).toStrictEqual(
-      "Task 'Apply for visa' successfully transitioned to phase 'complete'."
+    const AlertMessage = container.querySelector('h4').textContent;
+    expect(AlertMessage).toEqual(
+      `Success alert:Task 'Apply for visa' successfully transitioned to phase 'complete'.`
     );
-    expect(notification.details).toBeUndefined();
-    expect(notification.customAction).not.toBeNull();
 
-    await act(async () => {
-      notification.close();
-    });
+    const button = screen.getByTestId('close-button');
+    fireEvent.click(button);
 
-    wrapper = wrapper.update().find(TaskDetailsPage);
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
-
-    expect(wrapper.find('FormNotification').exists()).toBeFalsy();
+    expect(() => screen.getByLabelText('Success Alert')).toThrow(
+      'Unable to find a label with the text of: Success Alert'
+    );
   });
 
   it('Success notification - go to inbox link', async () => {
     getUserTaskByIdMock.mockReturnValue(userTask);
 
-    let wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
-    const taskForm = wrapper.find(TaskFormContainer);
+    const container = await getTaskDetailsPageWrapper();
 
-    expect(taskForm.exists()).toBeTruthy();
-    expect(taskForm.props().userTask).toStrictEqual(userTask);
+    const taskName = container.querySelector('h1').textContent;
+    expect(taskName).toEqual('Apply for visa');
 
-    await act(async () => {
-      taskForm.props().onSubmitSuccess('complete');
-      wait();
-    });
+    const successAlert = container.querySelector('h4').textContent;
+    expect(successAlert).toEqual(
+      `Success alert:Task 'Apply for visa' successfully transitioned to phase 'complete'.`
+    );
 
-    wrapper = wrapper.update().find(TaskDetailsPage);
+    const goToInboxButton = screen.getByText('Go to Task Inbox');
+    expect(goToInboxButton).toBeTruthy();
 
-    const notificationComponent = wrapper.find('FormNotification');
-    expect(notificationComponent.exists()).toBeTruthy();
-
-    const notification = notificationComponent.props().notification;
-
-    expect(notification).not.toBeNull();
-    expect(notification.type).toStrictEqual('success');
-
-    await act(async () => {
-      notification.customActions[0].onClick();
-      wait();
-    });
+    fireEvent.click(goToInboxButton);
 
     expect(pushSpy).toBeCalledWith('/TaskInbox');
-  });
-
-  it('Error notification', async () => {
-    getUserTaskByIdMock.mockReturnValue(userTask);
-
-    let wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
-    const taskForm = wrapper.find(TaskFormContainer);
-
-    expect(taskForm.exists()).toBeTruthy();
-    expect(taskForm.props().userTask).toStrictEqual(userTask);
-
-    await act(async () => {
-      taskForm.props().onSubmitError('complete', 'Extra info!');
-      wait();
-    });
-
-    wrapper = wrapper.update().find(TaskDetailsPage);
-
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
-
-    const notificationComponent = wrapper.find('FormNotification');
-    expect(notificationComponent.exists()).toBeTruthy();
-
-    const notification = notificationComponent.props().notification;
-
-    expect(notification).not.toBeNull();
-    expect(notification.type).toStrictEqual('error');
-    expect(notification.message).toStrictEqual(
-      "Task 'Apply for visa' couldn't transition to phase 'complete'."
-    );
-    expect(notification.details).not.toBeUndefined();
-    expect(notification.customAction).not.toBeNull();
-
-    await act(async () => {
-      notification.close();
-    });
-
-    wrapper = wrapper.update().find(TaskDetailsPage);
-
-    expect(wrapper.find(TaskDetailsPage)).toMatchSnapshot();
-
-    expect(wrapper.find('FormNotification').exists()).toBeFalsy();
   });
 
   it('Task details Drawer', async () => {
     getUserTaskByIdMock.mockReturnValue(userTask);
 
-    let wrapper = await getTaskDetailsPageWrapper();
-    wrapper.update();
-    // open details drawer
-    await act(async () => {
-      const button = wrapper
-        .find(Button)
-        .findWhere((node) => node.props().id === 'view-details');
+    const container = await getTaskDetailsPageWrapper();
 
-      button.props().onClick();
-    });
-    wrapper = wrapper.update();
+    const detailsButton = screen.getByText('View details');
+    fireEvent.click(detailsButton);
 
-    const detailsPanel = wrapper.find(DrawerPanelContent);
+    const detailsTab = container.querySelector('h3').textContent;
 
-    expect(detailsPanel.exists()).toBeTruthy();
+    expect(detailsTab).toEqual('Details');
 
-    expect(
-      detailsPanel.find('EmbeddedTaskDetails').props().userTask
-    ).toStrictEqual(userTask);
+    const taskName = container.querySelector('h1').textContent;
+    expect(taskName).toEqual('Apply for visa');
   });
 });

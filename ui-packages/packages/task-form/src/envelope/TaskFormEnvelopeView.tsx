@@ -1,36 +1,41 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
   useState
 } from 'react';
-import { MessageBusClientApi } from '@kogito-tooling/envelope-bus/dist/api';
+import { MessageBusClientApi } from '@kie-tools-core/envelope-bus/dist/api';
 import { UserTaskInstance } from '@kogito-apps/task-console-shared';
 import { TaskFormChannelApi, TaskFormInitArgs, User } from '../api';
-import { Bullseye } from '@patternfly/react-core';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+import { Bullseye } from '@patternfly/react-core/dist/js/layouts/Bullseye';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
 import {
   KogitoEmptyState,
-  KogitoEmptyStateType,
-  KogitoSpinner
-} from '@kogito-apps/components-common';
-import { CustomForm } from '../types';
+  KogitoEmptyStateType
+} from '@kogito-apps/components-common/dist/components/KogitoEmptyState';
+import { Form } from '@kogito-apps/components-common/dist/types';
 import { TaskFormEnvelopeViewDriver } from './TaskFormEnvelopeViewDriver';
 import CustomTaskFormDisplayer from './components/CustomTaskFormDisplayer/CustomTaskFormDisplayer';
 import TaskForm from './components/TaskForm/TaskForm';
@@ -43,12 +48,13 @@ export interface TaskFormEnvelopeViewApi {
 
 interface Props {
   channelApi: MessageBusClientApi<TaskFormChannelApi>;
+  targetOrigin: string;
 }
 
 export const TaskFormEnvelopeView = React.forwardRef<
   TaskFormEnvelopeViewApi,
   Props & OUIAProps
->(({ channelApi, ouiaId, ouiaSafe }, forwardedRef) => {
+>(({ channelApi, targetOrigin, ouiaId, ouiaSafe }, forwardedRef) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isEnvelopeConnectedToChannel, setEnvelopeConnectedToChannel] =
     useState<boolean>(false);
@@ -56,7 +62,7 @@ export const TaskFormEnvelopeView = React.forwardRef<
   const [user, setUser] = useState<User>();
   const [taskFormSchema, setTaskFormSchema] =
     useState<Record<string, any>>(null);
-  const [customForm, setCustomForm] = useState<CustomForm>(null);
+  const [customForm, setCustomForm] = useState<Form>(null);
 
   const [driver] = useState<TaskFormEnvelopeViewDriver>(
     new TaskFormEnvelopeViewDriver(channelApi)
@@ -138,6 +144,7 @@ export const TaskFormEnvelopeView = React.forwardRef<
           customForm={customForm}
           user={user}
           driver={driver}
+          targetOrigin={targetOrigin}
         />
       );
     }

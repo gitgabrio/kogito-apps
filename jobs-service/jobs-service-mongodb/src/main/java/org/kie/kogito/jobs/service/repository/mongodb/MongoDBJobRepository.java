@@ -1,27 +1,25 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package org.kie.kogito.jobs.service.repository.mongodb;
 
 import java.time.ZonedDateTime;
 import java.util.concurrent.CompletionStage;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
 
 import org.bson.Document;
 import org.bson.json.JsonWriterSettings;
@@ -32,7 +30,7 @@ import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.kie.kogito.jobs.service.repository.impl.BaseReactiveJobRepository;
 import org.kie.kogito.jobs.service.repository.marshaller.JobDetailsMarshaller;
-import org.kie.kogito.jobs.service.stream.JobStreams;
+import org.kie.kogito.jobs.service.stream.JobEventPublisher;
 
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 
@@ -43,6 +41,10 @@ import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -56,6 +58,7 @@ import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
+import static mutiny.zero.flow.adapters.AdaptersToReactiveStreams.publisher;
 import static org.bson.Document.parse;
 import static org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams.fromPublisher;
 
@@ -84,10 +87,10 @@ public class MongoDBJobRepository extends BaseReactiveJobRepository implements R
     }
 
     @Inject
-    public MongoDBJobRepository(Vertx vertx, JobStreams jobStreams, ReactiveMongoClient mongoClient,
+    public MongoDBJobRepository(Vertx vertx, JobEventPublisher jobEventPublisher, ReactiveMongoClient mongoClient,
             @ConfigProperty(name = DATABASE_PROPERTY) String database,
             JobDetailsMarshaller jobDetailsMarshaller) {
-        super(vertx, jobStreams);
+        super(vertx, jobEventPublisher);
         this.jobDetailsMarshaller = jobDetailsMarshaller;
         this.collection = mongoClient.getDatabase(database).getCollection(JOB_DETAILS_COLLECTION);
     }
@@ -142,17 +145,17 @@ public class MongoDBJobRepository extends BaseReactiveJobRepository implements R
 
     @Override
     public PublisherBuilder<JobDetails> findAll() {
-        return fromPublisher(collection.find()
+        return fromPublisher(publisher(collection.find()
                 .map(document -> documentToJson(document))
                 .map(jobDetailsMarshaller::unmarshall)
                 .emitOn(Infrastructure.getDefaultExecutor())
                 .convert()
-                .toPublisher());
+                .toPublisher()));
     }
 
     @Override
     public PublisherBuilder<JobDetails> findByStatusBetweenDatesOrderByPriority(ZonedDateTime from, ZonedDateTime to, JobStatus... status) {
-        return fromPublisher(
+        return fromPublisher(publisher(
                 collection.find(
                         and(
                                 in(STATUS_COLUMN, stream(status).map(Enum::name).collect(toList())),
@@ -163,7 +166,7 @@ public class MongoDBJobRepository extends BaseReactiveJobRepository implements R
                         .map(jobDetailsMarshaller::unmarshall)
                         .emitOn(Infrastructure.getDefaultExecutor())
                         .convert()
-                        .toPublisher());
+                        .toPublisher()));
     }
 
     static JsonObject documentToJson(Document document) {

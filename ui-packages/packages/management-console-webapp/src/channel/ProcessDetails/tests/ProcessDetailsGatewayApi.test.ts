@@ -1,19 +1,21 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import { ProcessDetailsQueries } from '../ProcessDetailsQueries';
 import {
   Job,
@@ -22,24 +24,15 @@ import {
   ProcessInstance,
   ProcessInstanceState,
   TriggerableNode
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
 import {
   OnOpenProcessInstanceDetailsListener,
   ProcessDetailsGatewayApi,
   ProcessDetailsGatewayApiImpl
 } from '../ProcessDetailsGatewayApi';
-import { GraphQL } from '@kogito-apps/consoles-common';
-import {
-  handleJobReschedule,
-  jobCancel,
-  getSvg,
-  handleProcessAbort,
-  getTriggerableNodes,
-  handleNodeTrigger,
-  handleProcessVariableUpdate
-} from '../../../apis/apis';
+import { GraphQL } from '@kogito-apps/consoles-common/dist/graphql';
 
-jest.mock('../../../apis/apis', () => ({
+jest.mock('@kogito-apps/runtime-gateway-api', () => ({
   handleJobReschedule: jest.fn(),
   jobCancel: jest.fn(),
   getSvg: jest.fn(),
@@ -70,10 +63,32 @@ export const JobData: Job = {
 
 const getJobsMock = jest.fn();
 const getProcessDetailsMock = jest.fn();
+const handleProcessSkipMock = jest.fn();
+const handleProcessAbortMock = jest.fn();
+const handleProcessRetryMock = jest.fn();
+const getSVGMock = jest.fn();
+const jobCancelMock = jest.fn();
+const rescheduleJobMock = jest.fn();
+const getTriggerableNodesMock = jest.fn();
+const handleNodeTriggerMock = jest.fn();
+const handleProcessVariableUpdateMock = jest.fn();
+const handleNodeInstanceCancelMock = jest.fn();
+const handleNodeInstanceRetriggerMock = jest.fn();
 
 const MockProcessDetailsQueries = jest.fn<ProcessDetailsQueries, []>(() => ({
   getProcessDetails: getProcessDetailsMock,
-  getJobs: getJobsMock
+  getJobs: getJobsMock,
+  handleProcessSkip: handleProcessSkipMock,
+  handleProcessAbort: handleProcessAbortMock,
+  handleProcessRetry: handleProcessRetryMock,
+  getSVG: getSVGMock,
+  jobCancel: jobCancelMock,
+  rescheduleJob: rescheduleJobMock,
+  getTriggerableNodes: getTriggerableNodesMock,
+  handleNodeTrigger: handleNodeTriggerMock,
+  handleProcessVariableUpdate: handleProcessVariableUpdateMock,
+  handleNodeInstanceCancel: handleNodeInstanceCancelMock,
+  handleNodeInstanceRetrigger: handleNodeInstanceRetriggerMock
 }));
 
 let queries: ProcessDetailsQueries;
@@ -165,26 +180,23 @@ describe('ProcessDetailsGatewayApi tests', () => {
   it('getProcessDiagram', () => {
     gatewayApi.getProcessDiagram(data);
 
-    expect(getSvg).toHaveBeenCalledWith(data);
+    expect(getSVGMock).toHaveBeenCalledWith(data);
   });
 
   it('cancelJob', async () => {
     const modalTitle = 'failure';
     const modalContent =
       'The job: eff4ee-11qw23-6675-pokau97-qwedjut45a0fj_0 failed to cancel. Error message: Network Error';
-    (jobCancel as jest.Mock).mockReturnValueOnce({ modalTitle, modalContent });
+    jobCancelMock.mockReturnValueOnce({ modalTitle, modalContent });
     const result = await gatewayApi.cancelJob(job);
-    expect(jobCancel).toHaveBeenCalledWith(job);
+    expect(jobCancelMock).toHaveBeenCalledWith(job);
     expect(result).toStrictEqual({ modalTitle, modalContent });
   });
 
   it('rescheduleJob', async () => {
     const modalTitle = 'success';
     const modalContent = `Reschedule of job: 'eff4ee-11qw23-6675-pokau97-qwedjut45a0fj_0' is successful`;
-    (handleJobReschedule as jest.Mock).mockReturnValueOnce({
-      modalTitle,
-      modalContent
-    });
+    rescheduleJobMock.mockReturnValueOnce({ modalTitle, modalContent });
     const repeatInterval = 0;
     const repeatLimit = 0;
     const scheduleDate = new Date('2021-08-27T03:35:50.147Z');
@@ -194,7 +206,7 @@ describe('ProcessDetailsGatewayApi tests', () => {
       repeatLimit,
       scheduleDate
     );
-    expect(handleJobReschedule).toHaveBeenCalledWith(
+    expect(rescheduleJobMock).toHaveBeenCalledWith(
       job,
       repeatInterval,
       repeatLimit,
@@ -208,12 +220,12 @@ describe('ProcessDetailsGatewayApi tests', () => {
 
   it('handleProcessAbort', async () => {
     await gatewayApi.handleProcessAbort(data);
-    expect(handleProcessAbort).toHaveBeenCalledWith(data);
+    expect(handleProcessAbortMock).toHaveBeenCalledWith(data);
   });
 
   it('get triggerable node', () => {
     gatewayApi.getTriggerableNodes(data);
-    expect(getTriggerableNodes).toHaveBeenCalledWith(data);
+    expect(getTriggerableNodesMock).toHaveBeenCalledWith(data);
   });
 
   it('handle node trigger test', () => {
@@ -225,12 +237,12 @@ describe('ProcessDetailsGatewayApi tests', () => {
       nodeDefinitionId: '_aabfr245kgtgiy'
     };
     gatewayApi.handleNodeTrigger(data, node);
-    expect(handleNodeTrigger).toHaveBeenCalledWith(data, node);
+    expect(handleNodeTriggerMock).toHaveBeenCalledWith(data, node);
   });
 
   it('handleProcessVariableUpdate', async () => {
     await gatewayApi.handleProcessVariableUpdate(data, {});
-    expect(handleProcessVariableUpdate).toHaveBeenCalledWith(data, {});
+    expect(handleProcessVariableUpdateMock).toHaveBeenCalledWith(data, {});
   });
 
   it('processDetailsQuery- success response', () => {

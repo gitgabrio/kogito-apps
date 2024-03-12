@@ -1,21 +1,23 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import axios from 'axios';
-import { GraphQL } from '@kogito-apps/consoles-common';
+import { GraphQL } from '@kogito-apps/consoles-common/dist/graphql';
 import wait from 'waait';
 import {
   getSvg,
@@ -34,11 +36,11 @@ import {
 } from '../apis';
 import {
   BulkProcessInstanceActionResponse,
-  OperationType,
   ProcessInstanceState,
   MilestoneStatus,
   NodeInstance
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 import { processInstance } from '../../channel/ProcessList/tests/ProcessListGatewayApi.test';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;

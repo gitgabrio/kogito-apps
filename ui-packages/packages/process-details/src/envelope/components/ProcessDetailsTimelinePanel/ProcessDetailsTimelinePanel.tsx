@@ -1,47 +1,53 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import Moment from 'react-moment';
+import {
+  Dropdown,
+  KebabToggle,
+  DropdownItem
+} from '@patternfly/react-core/dist/js/components/Dropdown';
+import { Split, SplitItem } from '@patternfly/react-core/dist/js/layouts/Split';
+import { Stack } from '@patternfly/react-core/dist/js/layouts/Stack';
+import {
+  Text,
+  TextContent,
+  TextVariants
+} from '@patternfly/react-core/dist/js/components/Text';
+import { Title } from '@patternfly/react-core/dist/js/components/Title';
+import { Tooltip } from '@patternfly/react-core/dist/js/components/Tooltip';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
 import {
   Card,
   CardBody,
-  CardHeader,
-  Title,
-  Text,
-  TextContent,
-  TextVariants,
-  Split,
-  SplitItem,
-  Stack,
-  Dropdown,
-  KebabToggle,
-  DropdownItem,
-  Tooltip,
-  Button
-} from '@patternfly/react-core';
-import {
-  UserIcon,
-  CheckCircleIcon,
-  ErrorCircleOIcon,
-  OnRunningIcon,
-  OutlinedClockIcon
-} from '@patternfly/react-icons';
+  CardHeader
+} from '@patternfly/react-core/dist/js/components/Card';
+import { UserIcon } from '@patternfly/react-icons/dist/js/icons/user-icon';
+import { CheckCircleIcon } from '@patternfly/react-icons/dist/js/icons/check-circle-icon';
+import { ErrorCircleOIcon } from '@patternfly/react-icons/dist/js/icons/error-circle-o-icon';
+import { OnRunningIcon } from '@patternfly/react-icons/dist/js/icons/on-running-icon';
+import { OutlinedClockIcon } from '@patternfly/react-icons/dist/js/icons/outlined-clock-icon';
 import React, { useCallback, useState } from 'react';
 import '../styles.css';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import {
   setTitle,
   ProcessInfoModal,
@@ -179,6 +185,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
             ...options,
             <DropdownItem
               key="job-details"
+              data-testid="job-details"
               id="job-details"
               component="button"
               onClick={() => handleJobDetails(job)}
@@ -187,6 +194,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
             </DropdownItem>,
             <DropdownItem
               key="job-reschedule"
+              data-testid="job-reschedule"
               id="job-reschedule"
               component="button"
               onClick={() => handleJobRescheduleBySelected(job)}
@@ -195,6 +203,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
             </DropdownItem>,
             <DropdownItem
               key="job-cancel"
+              data-testid="job-cancel"
               id="job-cancel"
               component="button"
               onClick={() => handleCancelAction(job)}
@@ -233,6 +242,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
     ) {
       const options = [
         <DropdownItem
+          data-testid="retry"
           key="retry"
           component="button"
           onClick={() =>
@@ -257,6 +267,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
           Retry
         </DropdownItem>,
         <DropdownItem
+          data-testid="skip"
           key="skip"
           component="button"
           onClick={() =>
@@ -286,6 +297,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
     } else if (node.exit === null && !ignoredNodeTypes.includes(node.type)) {
       const options = [
         <DropdownItem
+          data-testid="retrigger"
           key="retrigger"
           component="button"
           onClick={() =>
@@ -311,6 +323,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
           Retrigger node
         </DropdownItem>,
         <DropdownItem
+          data-testid="cancel"
           key="cancel"
           component="button"
           onClick={() =>
@@ -360,6 +373,7 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
                 onKebabToggle(isOpen, 'timeline-kebab-toggle-' + index)
               }
               id={'timeline-kebab-toggle-' + index}
+              data-testid={'timeline-kebab-toggle-' + index}
             />
           }
           position="right"
@@ -372,19 +386,23 @@ const ProcessDetailsTimelinePanel: React.FC<IOwnProps & OUIAProps> = ({
   };
 
   const renderTimerIcon = (id: string): JSX.Element => {
-    return jobs.map((job, idx) => {
-      if (id === job.nodeInstanceId) {
-        return (
-          <Tooltip content={'Node has job'} key={idx}>
-            <OutlinedClockIcon
-              className="pf-u-ml-sm"
-              color="var(--pf-global--icon--Color--dark)"
-              onClick={() => handleJobDetails(job)}
-            />
-          </Tooltip>
-        );
-      }
-    })[0];
+    return jobs.length > 0 ? (
+      jobs.map((job, idx) => {
+        if (id === job.nodeInstanceId) {
+          return (
+            <Tooltip content={'Node has job'} key={idx}>
+              <OutlinedClockIcon
+                className="pf-u-ml-sm"
+                color="var(--pf-global--icon--Color--dark)"
+                onClick={() => handleJobDetails(job)}
+              />
+            </Tooltip>
+          );
+        }
+      })[0]
+    ) : (
+      <></>
+    );
   };
 
   const detailsAction: JSX.Element[] = [

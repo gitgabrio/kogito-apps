@@ -1,31 +1,33 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import {
+  ApiNotificationConsumers,
   MessageBusClientApi,
-  NotificationPropertyNames,
   RequestPropertyNames
-} from '@kogito-tooling/envelope-bus/dist/api';
-import { MessageBusServer } from '@kogito-tooling/envelope-bus/dist/api';
-import { EnvelopeBusMessageManager } from '@kogito-tooling/envelope-bus/dist/common';
-import { EnvelopeBusController } from '@kogito-tooling/envelope-bus/dist/envelope';
+} from '@kie-tools-core/envelope-bus/dist/api';
+import { MessageBusServer } from '@kie-tools-core/envelope-bus/dist/api';
+import { EnvelopeBusMessageManager } from '@kie-tools-core/envelope-bus/dist/common';
+import { EnvelopeClient } from '@kie-tools-core/envelope-bus/dist/envelope';
 import { UserTaskInstance } from '@kogito-apps/task-console-shared';
 import { TaskFormChannelApi, TaskFormEnvelopeApi } from '../../../api';
 import { TaskFormEnvelopeViewApi } from '../../TaskFormEnvelopeView';
-import { CustomForm, FormType } from '../../../types';
+import { Form, FormType } from '@kogito-apps/components-common/dist';
 
 export const testUserTask: UserTaskInstance = {
   id: '45a73767-5da3-49bf-9c40-d533c3e77ef3',
@@ -54,7 +56,7 @@ export const testUserTask: UserTaskInstance = {
     'http://localhost:8080/travels/9ae7ce3b-d49c-4f35-b843-8ac3d22fa427/VisaApplication/45a73767-5da3-49bf-9c40-d533c3e77ef3'
 };
 
-export const customForm: CustomForm = {
+export const customForm: Form = {
   formInfo: {
     type: FormType.HTML,
     name: 'travels_VisaApplication',
@@ -84,7 +86,7 @@ export const MockedApiRequests = jest.fn<
 }));
 
 export const MockedApiNotifications = jest.fn<
-  Pick<TaskFormChannelApi, NotificationPropertyNames<TaskFormChannelApi>>,
+  ApiNotificationConsumers<TaskFormChannelApi>,
   []
 >(() => ({}));
 
@@ -95,7 +97,8 @@ export const MockedMessageBusClientApi = jest.fn<
   requests: new MockedApiRequests(),
   notifications: new MockedApiNotifications(),
   subscribe: jest.fn(),
-  unsubscribe: jest.fn()
+  unsubscribe: jest.fn(),
+  shared: jest.fn()
 }));
 
 export const MockedMessageBusServer = jest.fn<
@@ -130,7 +133,7 @@ export const MockedEnvelopeBusMessageManager = jest.fn<
 }));
 
 export const MockedEnvelopeBusControllerDefinition = jest.fn<
-  Partial<EnvelopeBusController<TaskFormEnvelopeApi, TaskFormChannelApi>>,
+  Partial<EnvelopeClient<TaskFormEnvelopeApi, TaskFormChannelApi>>,
   []
 >(() => ({
   bus: jest.fn(),
@@ -146,8 +149,8 @@ export const MockedEnvelopeBusControllerDefinition = jest.fn<
   receive: jest.fn()
 }));
 
-export const MockedEnvelopeBusController =
-  new MockedEnvelopeBusControllerDefinition() as EnvelopeBusController<
+export const MockedEnvelopeClient =
+  new MockedEnvelopeBusControllerDefinition() as EnvelopeClient<
     TaskFormEnvelopeApi,
     TaskFormChannelApi
   >;

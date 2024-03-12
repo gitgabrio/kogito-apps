@@ -1,20 +1,22 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
-import { EnvelopeApiFactoryArgs } from '@kogito-tooling/envelope';
+import { EnvelopeApiFactoryArgs } from '@kie-tools-core/envelope';
 import {
   Association,
   RuntimeToolsDevUIChannelApi,
@@ -27,6 +29,7 @@ import { RuntimeToolsDevUIEnvelopeViewApi } from './RuntimeToolsDevUIEnvelopeVie
 export class RuntimeToolsDevUIEnvelopeApiImpl
   implements RuntimeToolsDevUIEnvelopeApi
 {
+  private view: () => RuntimeToolsDevUIEnvelopeViewApi;
   private capturedInitRequestYet = false;
 
   constructor(
@@ -50,40 +53,36 @@ export class RuntimeToolsDevUIEnvelopeApiImpl
     association: Association,
     initArgs: RuntimeToolsDevUIInitArgs
   ): Promise<void> => {
-    this.args.envelopeBusController.associate(
+    if (this.hasCapturedInitRequestYet()) {
+      return;
+    }
+    this.args.envelopeClient.associate(
       association.origin,
       association.envelopeServerId
     );
 
-    if (this.hasCapturedInitRequestYet()) {
-      return;
-    }
-
     this.ackCapturedInitRequest();
-
-    this.args.view().setDataIndexUrl(initArgs.dataIndexUrl);
-    this.args.view().setTrustyServiceUrl(initArgs.trustyServiceUrl);
-    this.args.view().setUsers(initArgs.users);
-    this.args.view().navigateTo(initArgs.page);
-    this.args.view().setDevUIUrl &&
-      this.args.view().setDevUIUrl(initArgs.devUIUrl);
-    this.args.view().setOpenApiPath &&
-      this.args.view().setOpenApiPath(initArgs.openApiPath);
-    this.args.view().setAvailablePages &&
-      this.args.view().setAvailablePages(initArgs.availablePages);
-    this.args.view().setCustomLabels &&
-      this.args.view().setCustomLabels(initArgs.customLabels);
-    this.args.view().setOmittedProcessTimelineEvents &&
-      this.args
-        .view()
-        .setOmittedProcessTimelineEvents(initArgs.omittedProcessTimelineEvents);
-    this.args.view().setDiagramPreviewSize &&
-      this.args.view().setDiagramPreviewSize(initArgs.diagramPreviewSize);
-    this.args.view().setIsStunnerEnabled &&
-      this.args.view().setIsStunnerEnabled(initArgs.isStunnerEnabled);
+    this.view = await this.args.viewDelegate();
+    this.view().setDataIndexUrl(initArgs.dataIndexUrl);
+    this.view().setTrustyServiceUrl(initArgs.trustyServiceUrl);
+    this.view().setUsers(initArgs.users);
+    this.view().navigateTo(initArgs.page);
+    this.view().setDevUIUrl && this.view().setDevUIUrl(initArgs.devUIUrl);
+    this.view().setOpenApiPath &&
+      this.view().setOpenApiPath(initArgs.openApiPath);
+    this.view().setAvailablePages &&
+      this.view().setAvailablePages(initArgs.availablePages);
+    this.view().setCustomLabels &&
+      this.view().setCustomLabels(initArgs.customLabels);
+    this.view().setOmittedProcessTimelineEvents &&
+      this.view().setOmittedProcessTimelineEvents(
+        initArgs.omittedProcessTimelineEvents
+      );
+    this.view().setDiagramPreviewSize &&
+      this.view().setDiagramPreviewSize(initArgs.diagramPreviewSize);
     // Ensure these are set last. This is a workaround to ensure views are corrected configured with other properties
     // from the DevUIAppContext before they are rendered. i.e. use of DevUIAppContext is not responsive to updates.
-    this.args.view().setProcessEnabled(initArgs.isDataIndexAvailable);
-    this.args.view().setTracingEnabled(initArgs.isTracingEnabled);
+    this.view().setProcessEnabled(initArgs.isDataIndexAvailable);
+    this.view().setTracingEnabled(initArgs.isTracingEnabled);
   };
 }

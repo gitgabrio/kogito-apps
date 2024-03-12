@@ -1,40 +1,34 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import {
+  ProcessInstance,
+  ProcessInstanceState,
   OrderBy,
   ProcessInstanceFilter,
-  SortBy
-} from '@kogito-apps/process-list';
-import {
-  OperationType,
-  ProcessInstance,
-  ProcessInstanceState
-} from '@kogito-apps/management-console-shared';
+  ProcessListSortBy
+} from '@kogito-apps/management-console-shared/dist/types';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 import {
   ProcessListGatewayApi,
   ProcessListGatewayApiImpl
 } from '../ProcessListGatewayApi';
 import { ProcessListQueries } from '../ProcessListQueries';
-import {
-  handleProcessAbort,
-  handleProcessMultipleAction,
-  handleProcessRetry,
-  handleProcessSkip
-} from '../../../apis/apis';
 
 export const processInstance: ProcessInstance = {
   id: 'a1e139d5-4e77-48c9-84ae-34578e904e5a',
@@ -71,7 +65,7 @@ export const processInstance: ProcessInstance = {
   childProcessInstances: []
 };
 
-jest.mock('../../../apis/apis', () => ({
+jest.mock('@kogito-apps/runtime-gateway-api', () => ({
   handleProcessSkip: jest.fn(),
   handleProcessRetry: jest.fn(),
   handleProcessAbort: jest.fn(),
@@ -80,10 +74,18 @@ jest.mock('../../../apis/apis', () => ({
 
 const getProcessInstancesMock = jest.fn();
 const getChildProcessInstancesMock = jest.fn();
+const handleProcessSkipMock = jest.fn();
+const handleProcessAbortMock = jest.fn();
+const handleProcessRetryMock = jest.fn();
+const handleProcessMultipleActionMock = jest.fn();
 
 const MockProcessListQueries = jest.fn<ProcessListQueries, []>(() => ({
   getProcessInstances: getProcessInstancesMock,
-  getChildProcessInstances: getChildProcessInstancesMock
+  getChildProcessInstances: getChildProcessInstancesMock,
+  handleProcessSkip: handleProcessSkipMock,
+  handleProcessAbort: handleProcessAbortMock,
+  handleProcessMultipleAction: handleProcessMultipleActionMock,
+  handleProcessRetry: handleProcessRetryMock
 }));
 
 let queries: ProcessListQueries;
@@ -92,7 +94,7 @@ const processListFilters: ProcessInstanceFilter = {
   status: [ProcessInstanceState.Active],
   businessKey: []
 };
-const sortBy: SortBy = { lastUpdate: OrderBy.DESC };
+const sortBy: ProcessListSortBy = { lastUpdate: OrderBy.DESC };
 const rootProcessInstanceId: string = 'a1e139d5-4e77-48c9-84ae-34578e904e5a';
 describe('ProcessListChannelApiImpl tests', () => {
   beforeEach(() => {
@@ -101,6 +103,9 @@ describe('ProcessListChannelApiImpl tests', () => {
     gatewayApi = new ProcessListGatewayApiImpl(queries);
     getProcessInstancesMock.mockReturnValue(Promise.resolve([]));
     getChildProcessInstancesMock.mockReturnValue(Promise.resolve([]));
+    handleProcessSkipMock.mockReturnValue(Promise.resolve());
+    handleProcessAbortMock.mockReturnValue(Promise.resolve());
+    handleProcessMultipleActionMock.mockReturnValue(Promise.resolve());
   });
 
   it('Initial load', () => {
@@ -125,17 +130,17 @@ describe('ProcessListChannelApiImpl tests', () => {
 
   it('handleProcessSkip', async () => {
     await gatewayApi.handleProcessSkip(processInstance);
-    expect(handleProcessSkip).toHaveBeenCalledWith(processInstance);
+    expect(handleProcessSkipMock).toHaveBeenCalledWith(processInstance);
   });
 
   it('handleProcessRetry', async () => {
     await gatewayApi.handleProcessRetry(processInstance);
-    expect(handleProcessRetry).toHaveBeenCalledWith(processInstance);
+    expect(handleProcessRetryMock).toHaveBeenCalledWith(processInstance);
   });
 
   it('handleProcessAbort', async () => {
     await gatewayApi.handleProcessAbort(processInstance);
-    expect(handleProcessAbort).toHaveBeenCalledWith(processInstance);
+    expect(handleProcessAbortMock).toHaveBeenCalledWith(processInstance);
   });
 
   it('handle multi action', async () => {
@@ -143,7 +148,7 @@ describe('ProcessListChannelApiImpl tests', () => {
       [processInstance],
       OperationType.ABORT
     );
-    expect(handleProcessMultipleAction).toHaveBeenCalledWith(
+    expect(handleProcessMultipleActionMock).toHaveBeenCalledWith(
       [processInstance],
       OperationType.ABORT
     );

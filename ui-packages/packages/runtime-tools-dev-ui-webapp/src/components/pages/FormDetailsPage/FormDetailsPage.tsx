@@ -1,35 +1,44 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect, useState } from 'react';
+import { Card } from '@patternfly/react-core/dist/js/components/Card';
+import { PageSection } from '@patternfly/react-core/dist/js/components/Page';
+import { Label } from '@patternfly/react-core/dist/js/components/Label';
 import {
-  Card,
-  Label,
-  PageSection,
   Text,
   TextVariants
-} from '@patternfly/react-core';
-import { OUIAProps, ouiaPageTypeAndObjectId } from '@kogito-apps/ouia-tools';
+} from '@patternfly/react-core/dist/js/components/Text';
+import {
+  OUIAProps,
+  ouiaPageTypeAndObjectId
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import FormDetailsContainer from '../../containers/FormDetailsContainer/FormDetailsContainer';
 import '../../styles.css';
 import { useHistory } from 'react-router-dom';
-import { FormInfo } from '@kogito-apps/forms-list';
-import { PageTitle } from '@kogito-apps/consoles-common';
-import { FormNotification, Notification } from '@kogito-apps/components-common';
+import { FormInfo } from '@kogito-apps/components-common/dist/types';
+import { PageTitle } from '@kogito-apps/consoles-common/dist/components/layout/PageTitle';
+import {
+  FormNotification,
+  Notification
+} from '@kogito-apps/components-common/dist/components/FormNotification';
 import Moment from 'react-moment';
+import { useDevUIAppContext } from '../../contexts/DevUIAppContext';
 const FormDetailsPage: React.FC<OUIAProps> = () => {
   const [notification, setNotification] = useState<Notification>();
 
@@ -76,6 +85,8 @@ const FormDetailsPage: React.FC<OUIAProps> = () => {
     }
   };
 
+  const appContext = useDevUIAppContext();
+
   return (
     <React.Fragment>
       <PageSection variant="light">
@@ -99,6 +110,7 @@ const FormDetailsPage: React.FC<OUIAProps> = () => {
             formData={formData}
             onSuccess={onSuccess}
             onError={onError}
+            targetOrigin={appContext.getDevUIUrl()}
           />
         </Card>
       </PageSection>

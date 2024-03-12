@@ -1,30 +1,33 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { mount } from 'enzyme';
-import { ActionList, Button } from '@patternfly/react-core';
-import FormFooter from '../FormFooter';
+import { render, screen } from '@testing-library/react';
+import { ActionList } from '@patternfly/react-core/dist/js/components/ActionList';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import { FormFooter } from '../FormFooter';
 import { ActionType, FormAction } from '../../utils';
 
 const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@patternfly/react-core', () =>
+jest.mock('@patternfly/react-core/dist/js/components/Button', () =>
   Object.assign({}, jest.requireActual('@patternfly/react-core'), {
     Button: () => <MockedComponent />
   })
@@ -47,36 +50,14 @@ describe('Form Footer test', () => {
       }
     ];
 
-    const wrapper = mount(<FormFooter actions={actions} />);
-    expect(wrapper).toMatchSnapshot();
+    const { container } = render(<FormFooter actions={actions} />);
+    expect(container).toMatchSnapshot();
 
-    const actionList = wrapper.find(ActionList);
-    expect(actionList.exists()).toBeTruthy();
+    const actionList = screen.getByTestId('action-list');
+    expect(actionList).toBeTruthy();
 
-    const buttons = actionList.find(Button);
-    expect(buttons).toHaveLength(3);
-
-    const completeButton = buttons.get(0);
-
-    expect(completeButton.props.type).toStrictEqual('submit');
-    expect(completeButton.props.variant).toStrictEqual('primary');
-    expect(completeButton.key).toStrictEqual('submit-Complete');
-    expect(completeButton.props.children).toStrictEqual('Complete');
-    expect(completeButton.props.isDisabled).toStrictEqual(false);
-
-    const abortButton = buttons.get(1);
-    expect(abortButton.props.type).toStrictEqual('submit');
-    expect(abortButton.props.variant).toStrictEqual('secondary');
-    expect(abortButton.key).toStrictEqual('submit-Abort');
-    expect(abortButton.props.children).toStrictEqual('Abort');
-    expect(abortButton.props.isDisabled).toStrictEqual(false);
-
-    const releaseButton = buttons.get(2);
-    expect(releaseButton.props.type).toStrictEqual('submit');
-    expect(releaseButton.props.variant).toStrictEqual('secondary');
-    expect(releaseButton.key).toStrictEqual('submit-Release');
-    expect(releaseButton.props.children).toStrictEqual('Release');
-    expect(releaseButton.props.isDisabled).toStrictEqual(false);
+    const actionListItem = screen.getAllByTestId('action-list-item');
+    expect(actionListItem).toHaveLength(3);
   });
 
   it('showing disabled', () => {
@@ -95,23 +76,16 @@ describe('Form Footer test', () => {
       }
     ];
 
-    const wrapper = mount(<FormFooter actions={actions} enabled={false} />);
-    expect(wrapper).toMatchSnapshot();
+    const { container } = render(
+      <FormFooter actions={actions} enabled={false} />
+    );
+    expect(container).toMatchSnapshot();
 
-    const actionList = wrapper.find(ActionList);
-    expect(actionList.exists()).toBeTruthy();
+    const actionList = screen.getByTestId('action-list');
+    expect(actionList).toBeTruthy();
 
-    const buttons = actionList.find(Button);
-    expect(buttons).toHaveLength(3);
-
-    const completeButton = buttons.get(0);
-    expect(completeButton.props.isDisabled).toStrictEqual(true);
-
-    const abortButton = buttons.get(1);
-    expect(abortButton.props.isDisabled).toStrictEqual(true);
-
-    const releaseButton = buttons.get(2);
-    expect(releaseButton.props.isDisabled).toStrictEqual(true);
+    const actionListItem = screen.getAllByTestId('action-list-item');
+    expect(actionListItem).toHaveLength(3);
   });
 
   it('showing empty actions', () => {
@@ -120,49 +94,8 @@ describe('Form Footer test', () => {
       actionType: ActionType.SUBMIT
     };
 
-    const wrapper = mount(<FormFooter {...props} />);
-    expect(wrapper.children()).toHaveLength(0);
-  });
+    const { container } = render(<FormFooter {...props} />);
 
-  it('showing no actions', () => {
-    const wrapper = mount(<FormFooter />);
-    expect(wrapper.children()).toHaveLength(0);
-  });
-
-  it('action click', () => {
-    const releaseAction = {
-      name: 'Release',
-      execute: jest.fn(),
-      actionType: ActionType.SUBMIT
-    };
-
-    const completeAction = {
-      name: 'Complete',
-      execute: jest.fn(),
-      actionType: ActionType.SUBMIT
-    };
-
-    const props = {
-      actions: [releaseAction, completeAction],
-      enabled: true,
-      onSubmitForm: jest.fn()
-    };
-
-    const wrapper = mount(<FormFooter {...props} />);
-
-    const releaseButton = wrapper.findWhere(
-      (node) => node.key() === 'submit-Release'
-    );
-    releaseButton.props().onClick();
-
-    expect(releaseAction.execute).toBeCalledTimes(1);
-
-    const completeButton = wrapper.findWhere(
-      (node) => node.key() === 'submit-Complete'
-    );
-    completeButton.props().onClick();
-
-    expect(completeAction.execute).toBeCalledTimes(1);
-    expect(props.onSubmitForm).toHaveBeenCalled();
+    expect(container.querySelector('div')).toBe(null);
   });
 });

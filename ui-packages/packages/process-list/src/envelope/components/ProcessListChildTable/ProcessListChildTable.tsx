@@ -1,19 +1,21 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import { ProcessListDriver } from '../../../api';
 import {
   ICell,
@@ -22,30 +24,33 @@ import {
   Table,
   TableBody,
   TableHeader
-} from '@patternfly/react-table';
+} from '@patternfly/react-table/dist/js/components/Table';
 import React, { useEffect, useState } from 'react';
 import {
   ProcessInstance,
   ProcessInstanceState
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
 import _ from 'lodash';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
 import {
-  ServerErrors,
-  KogitoSpinner,
-  ItemDescriptor,
-  EndpointLink,
   KogitoEmptyState,
   KogitoEmptyStateType
-} from '@kogito-apps/components-common';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+} from '@kogito-apps/components-common/dist/components/KogitoEmptyState';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import { ItemDescriptor } from '@kogito-apps/components-common/dist/components/ItemDescriptor';
+import { EndpointLink } from '@kogito-apps/components-common/dist/components/EndpointLink';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import {
   getProcessInstanceDescription,
   ProcessInstanceIconCreator
 } from '../utils/ProcessListUtils';
-import { HistoryIcon } from '@patternfly/react-icons';
+import { HistoryIcon } from '@patternfly/react-icons/dist/js/icons/history-icon';
 import Moment from 'react-moment';
 import ProcessListActionsKebab from '../ProcessListActionsKebab/ProcessListActionsKebab';
-import { Checkbox } from '@patternfly/react-core';
+import { Checkbox } from '@patternfly/react-core/dist/js/components/Checkbox';
 import DisablePopup from '../DisablePopup/DisablePopup';
 import ErrorPopover from '../ErrorPopover/ErrorPopover';
 import '../styles.css';
@@ -147,6 +152,7 @@ const ProcessListChildTable: React.FC<
                     aria-label="process-list-checkbox"
                     id={`checkbox-${child.id}`}
                     name={`checkbox-${child.id}`}
+                    data-testid={`checkbox-${child.id}`}
                   />
                 ) : (
                   <DisablePopup

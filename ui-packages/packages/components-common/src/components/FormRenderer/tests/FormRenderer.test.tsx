@@ -1,29 +1,53 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { mount } from 'enzyme';
+import { render, screen, fireEvent } from '@testing-library/react';
 import cloneDeep from 'lodash/cloneDeep';
-import { AutoForm } from 'uniforms-patternfly/dist/es6';
-import { UserTaskInstance } from '@kogito-apps/task-console-shared';
 
-import FormRenderer from '../FormRenderer';
+import { FormRenderer } from '../FormRenderer';
 import { FormAction } from '../../utils';
 import { ApplyForVisaForm } from '../../utils/tests/mocks/ApplyForVisa';
-import FormFooter from '../../FormFooter/FormFooter';
+
+export type UserTaskInstance = {
+  id: string;
+  description?: string;
+  name?: string;
+  priority?: string;
+  processInstanceId: string;
+  processId: string;
+  rootProcessInstanceId?: string;
+  rootProcessId?: string;
+  state: string;
+  actualOwner?: string;
+  adminGroups?: string[];
+  adminUsers?: string[];
+  completed?: Date;
+  started: Date;
+  excludedUsers?: string[];
+  potentialGroups?: string[];
+  potentialUsers?: string[];
+  inputs?: string;
+  outputs?: string;
+  referenceName?: string;
+  lastUpdate: Date;
+  endpoint?: string;
+};
 
 const userTaskInstance: UserTaskInstance = {
   id: '45a73767-5da3-49bf-9c40-d533c3e77ef3',
@@ -54,12 +78,8 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('../../FormFooter/FormFooter');
 jest.mock('uniforms-patternfly/dist/es6', () =>
   Object.assign({}, jest.requireActual('uniforms-patternfly/dist/es6'), {
-    AutoForm: () => {
-      return <MockedComponent />;
-    },
     AutoFields: () => {
       return <MockedComponent />;
     },
@@ -98,18 +118,19 @@ describe('FormRenderer test', () => {
       execute: jest.fn()
     });
 
-    const wrapper = mount(<FormRenderer {...props} />);
-    expect(wrapper).toMatchSnapshot();
+    const { container } = render(<FormRenderer {...props} />);
+    expect(container).toMatchSnapshot();
 
-    const form = wrapper.findWhere((node) => node.type() === AutoForm);
+    const checkForm = container.querySelector('form');
+    expect(checkForm).toBeTruthy();
 
-    expect(form.exists()).toBeTruthy();
-    expect(form.props().disabled).toBeFalsy();
+    const checkFormFooter = container.querySelector(
+      '[data-ouia-component-type="form-footer"]'
+    );
+    expect(checkFormFooter).toBeTruthy();
 
-    const footer = wrapper.find(FormFooter);
-    expect(footer.exists()).toBeTruthy();
-    expect(footer.props()['actions']).toHaveLength(1);
-    expect(footer.props()['enabled']).toBeTruthy();
+    const checkSubmitButton = screen.getByText('Complete');
+    expect(checkSubmitButton).toBeTruthy();
   });
 
   it('Render readonly form with actions', () => {
@@ -120,29 +141,28 @@ describe('FormRenderer test', () => {
 
     props.readOnly = true;
 
-    const wrapper = mount(<FormRenderer {...props} />);
+    const { container } = render(<FormRenderer {...props} />);
 
-    const form = wrapper.findWhere((node) => node.type() === AutoForm);
+    const checkForm = container.querySelector('form');
+    expect(checkForm).toBeTruthy();
 
-    expect(form.exists()).toBeTruthy();
-    expect(form.props().disabled).toBeTruthy();
+    fireEvent.submit(container.querySelector('form')!);
+    const checkFormFooter = container.querySelector(
+      '[data-ouia-component-type="form-footer"]'
+    );
+    expect(checkFormFooter).toBeTruthy();
 
-    const footer = wrapper.find(FormFooter);
-    expect(footer.exists()).toBeTruthy();
-    expect(footer.props()['actions']).toHaveLength(1);
-    expect(footer.props()['enabled']).toBeFalsy();
+    const checkSubmitButton = screen.getByText('Complete');
+    expect(checkSubmitButton).toBeTruthy();
   });
 
   it('Render form without actions', () => {
-    const wrapper = mount(<FormRenderer {...props} />);
-    expect(wrapper).toMatchSnapshot();
+    const { container } = render(<FormRenderer {...props} />);
+    expect(container).toMatchSnapshot();
 
-    const form = wrapper.findWhere((node) => node.type() === AutoForm);
-    expect(form.exists()).toBeTruthy();
-    expect(form.props()['disabled']).toBeFalsy();
-    const footer = wrapper.find(FormFooter);
-    expect(footer.exists()).toBeTruthy();
-    expect(footer.props()['actions']).toHaveLength(0);
-    expect(footer.props()['enabled']).toStrictEqual(true);
+    const checkForm = container.querySelector('form');
+    expect(checkForm).toBeTruthy();
+
+    expect(container.querySelector('button')).toBeFalsy();
   });
 });

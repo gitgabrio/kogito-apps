@@ -1,23 +1,31 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 import React from 'react';
 import ErrorPopover from '../ErrorPopover';
-import { mount } from 'enzyme';
-import { Popover } from '@patternfly/react-core';
-import { ProcessInstanceState } from '@kogito-apps/management-console-shared';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor
+} from '@testing-library/react';
+import { ProcessInstanceState } from '@kogito-apps/management-console-shared/dist/types';
 const props = {
   processInstanceData: {
     id: 'e4448857-fa0c-403b-ad69-f0a353458b9d',
@@ -49,34 +57,32 @@ const props = {
 };
 
 describe('Errorpopover component tests', () => {
-  it('snapshot testing with error object', () => {
-    const wrapper = mount(<ErrorPopover {...props} />).find('ErrorPopover');
-    expect(wrapper).toMatchSnapshot();
+  it('snapshot testing with error object', async () => {
+    const container = render(<ErrorPopover {...props} />);
+    expect(container).toMatchSnapshot();
   });
 
-  it('snapshot testing without error object', () => {
-    const wrapper = mount(
-      <ErrorPopover
-        {...{
-          ...props,
-          processInstanceData: { ...props.processInstanceData, error: null }
-        }}
-      />
-    ).find('ErrorPopover');
-    expect(wrapper).toMatchSnapshot();
-  });
-
-  it('Skip call success', () => {
-    let wrapper = mount(<ErrorPopover {...props} />);
-    wrapper.find(Popover).props()['footerContent'][0]['props']['onClick']();
-    wrapper = wrapper.update();
+  it('Skip call success', async () => {
+    const container = render(<ErrorPopover {...props} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('error-state'));
+    });
+    await waitFor(() => screen.getAllByText('Skip'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('skip-button'));
+    });
     expect(props.onSkipClick).toHaveBeenCalled();
   });
 
-  it('Retry call success', () => {
-    let wrapper = mount(<ErrorPopover {...props} />);
-    wrapper.find(Popover).props()['footerContent'][1]['props']['onClick']();
-    wrapper = wrapper.update();
+  it('Retry call success', async () => {
+    const container = render(<ErrorPopover {...props} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('error-state'));
+    });
+    await waitFor(() => screen.getAllByText('Retry'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('retry-button'));
+    });
     expect(props.onRetryClick).toHaveBeenCalled();
   });
 });

@@ -16,6 +16,8 @@ message JobDetails {
   /* @Field(store = Store.YES) */
   optional Trigger trigger = 10; //serialized as json to be generic
   optional string type = 11;//enum
+  optional int64 executionTimeout = 12;
+  optional string executionTimeoutUnit = 13;
 }
 
 /* @Indexed */
@@ -28,4 +30,8 @@ message Trigger {
   /* @Field(store = Store.YES) */
   optional int64 nextFireTime = 6;
   optional int64 period = 7;
+  optional string periodUnit = 8;
+  optional string zoneId = 9;
+  optional int32 currentRepeatCount = 10;
+  optional bool endTimeReached = 11;
 }

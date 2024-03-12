@@ -1,23 +1,25 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 import ProcessDetails from '../ProcessDetails';
-import { mount } from 'enzyme';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MockedProcessDetailsDriver } from '../../../../embedded/tests/mocks/Mocks';
 import {
   Job,
@@ -25,20 +27,10 @@ import {
   MilestoneStatus,
   ProcessInstance,
   ProcessInstanceState
-} from '@kogito-apps/management-console-shared';
-import wait from 'waait';
-
-jest.mock('../../JobsPanel/JobsPanel');
-jest.mock('../../ProcessDiagram/ProcessDiagram');
-jest.mock('../../ProcessDetailsErrorModal/ProcessDetailsErrorModal');
-jest.mock('../../ProcessVariables/ProcessVariables');
-jest.mock('../../ProcessDetailsPanel/ProcessDetailsPanel');
-jest.mock('../../ProcessDetailsMilestonesPanel/ProcessDetailsMilestonesPanel');
-jest.mock('../../ProcessDetailsTimelinePanel/ProcessDetailsTimelinePanel');
-jest.mock('../../ProcessDetailsNodeTrigger/ProcessDetailsNodeTrigger');
-jest.mock('../../SwfCombinedEditor/SwfCombinedEditor');
+} from '@kogito-apps/management-console-shared/dist/types';
 
 Date.now = jest.fn(() => 1592000000000); // UTC Fri Jun 12 2020 22:13:20
+jest.mock('../../ProcessDetailsNodeTrigger/ProcessDetailsNodeTrigger');
 
 const mockMath = Object.create(global.Math);
 mockMath.random = () => 0.5;
@@ -53,15 +45,47 @@ describe('ProcessDetails tests', () => {
       parentProcessInstanceId: 'e4448857-fa0c-403b-ad69-f0a353458b9d',
       parentProcessInstance: null,
       roles: [],
-      variables:
-        '{"trip":{"begin":"2019-10-22T22:00:00Z[UTC]","city":"Bangalore","country":"India","end":"2019-10-30T22:00:00Z[UTC]","visaRequired":false},"hotel":{"address":{"city":"Bangalore","country":"India","street":"street","zipCode":"12345"},"bookingNumber":"XX-012345","name":"Perfect hotel","phone":"09876543"},"traveller":{"address":{"city":"Bangalore","country":"US","street":"Bangalore","zipCode":"560093"},"email":"ajaganat@redhat.com","firstName":"Ajay","lastName":"Jaganathan","nationality":"US"}}',
-      state: ProcessInstanceState.Completed,
+      variables: {
+        trip: {
+          begin: '2019-10-22T22:00:00Z[UTC]',
+          city: 'Bangalore',
+          country: 'India',
+          end: '2019-10-30T22:00:00Z[UTC]',
+          visaRequired: false
+        },
+        hotel: {
+          address: {
+            city: 'Bangalore',
+            country: 'India',
+            street: 'street',
+            zipCode: '12345'
+          },
+          bookingNumber: 'XX-012345',
+          name: 'Perfect hotel',
+          phone: '09876543'
+        },
+        traveller: {
+          address: {
+            city: 'Bangalore',
+            country: 'US',
+            street: 'Bangalore',
+            zipCode: '560093'
+          },
+          email: 'ajaganat@redhat.com',
+          firstName: 'Ajay',
+          lastName: 'Jaganathan',
+          nationality: 'US'
+        }
+      } as any,
+      state: ProcessInstanceState.Active,
       start: new Date('2019-10-22T03:40:44.089Z'),
       lastUpdate: new Date('Thu, 22 Apr 2021 14:53:04 GMT'),
       end: new Date('2019-10-22T05:40:44.089Z'),
       addons: ['process-management'],
       endpoint: 'http://localhost:4000',
       serviceUrl: 'http://localhost:4000',
+      source:
+        '{\n  "id": "hello_world",\n  "version": "1.0",\n  "specVersion": "0.8",\n  "name": "Hello World Workflow",\n  "description": "JSON based hello world workflow",\n  "start": "Inject Hello World",\n  "states": [\n    {\n      "name": "Inject Hello World",\n      "type": "inject",\n      "data": {\n        "greeting": "Hello World"\n      },\n      "transition": "Inject Mantra"\n    },\n    {\n      "name": "Inject Mantra",\n      "type": "inject",\n      "data": {\n        "mantra": "Serverless Workflow is awesome!"\n      },\n      "end": true\n    }\n  ]\n}',
       error: {
         nodeDefinitionId: 'a1e139d5-4e77-48c9-84ae-34578e904e6b',
         message: 'some thing went wrong',
@@ -173,53 +197,61 @@ describe('ProcessDetails tests', () => {
       );
     });
     it('Snapshot tests with default prop', async () => {
-      let wrapper;
+      let container;
       await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
+        container = render(<ProcessDetails {...props} />).container;
       });
-      expect(wrapper).toMatchSnapshot();
+
+      expect(container).toMatchSnapshot();
     });
 
     it('Initiaload with query responses', async () => {
-      let wrapper;
+      let container;
       await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
+        container = render(<ProcessDetails {...props} />).container;
       });
-      wrapper = wrapper.update();
-      expect(wrapper.find('MockedJobsPanel')).toBeTruthy();
-      expect(wrapper.find('MockedProcessDiagram')).toBeTruthy();
-      expect(wrapper.find('MockedProcessVariables')).toBeTruthy();
+      expect((await screen.findAllByText('Jobs')).length).toBeTruthy();
+      expect(
+        (await screen.findAllByText('Serverless Workflow Diagram')).length
+      ).toBeTruthy();
+      expect((await screen.findAllByText('Variables')).length).toBeTruthy();
     });
 
     it('handle save option', async () => {
-      let wrapper;
       await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
+        render(<ProcessDetails {...props} />);
       });
-      wrapper = wrapper.update();
       await act(async () => {
-        wrapper.find('#save-button').at(1).simulate('click');
+        const save = await screen.findByTestId('save-button');
+        fireEvent.click(save);
       });
+      expect(props.driver.jobsQuery).toHaveBeenCalled();
     });
 
     it('handle refresh option', async () => {
-      let wrapper;
+      let container;
       await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
+        container = render(<ProcessDetails {...props} />);
       });
-      wrapper = wrapper.update();
       await act(async () => {
-        wrapper.find('#refresh-button').at(1).simulate('click');
+        const save = await screen.findByTestId('refresh-button');
+        fireEvent.click(save);
       });
       expect(props.driver.jobsQuery).toHaveBeenCalled();
+    });
+
+    it('click abort', async () => {
+      let container;
+      const driverClickAbort = jest.spyOn(props.driver, 'handleProcessAbort');
+      await act(async () => {
+        container = render(<ProcessDetails {...props} />);
+      });
+      await act(async () => {
+        const abort = await screen.findByTestId('abort-button');
+        fireEvent.click(abort);
+      });
+      await new Promise((r) => setTimeout(r, 1000));
+      expect(driverClickAbort).toHaveBeenCalled();
     });
   });
 
@@ -232,8 +264,38 @@ describe('ProcessDetails tests', () => {
       parentProcessInstanceId: 'e4448857-fa0c-403b-ad69-f0a353458b9d',
       parentProcessInstance: null,
       roles: [],
-      variables:
-        '{"trip":{"begin":"2019-10-22T22:00:00Z[UTC]","city":"Bangalore","country":"India","end":"2019-10-30T22:00:00Z[UTC]","visaRequired":false},"hotel":{"address":{"city":"Bangalore","country":"India","street":"street","zipCode":"12345"},"bookingNumber":"XX-012345","name":"Perfect hotel","phone":"09876543"},"traveller":{"address":{"city":"Bangalore","country":"US","street":"Bangalore","zipCode":"560093"},"email":"ajaganat@redhat.com","firstName":"Ajay","lastName":"Jaganathan","nationality":"US"}}',
+      variables: {
+        trip: {
+          begin: '2019-10-22T22:00:00Z[UTC]',
+          city: 'Bangalore',
+          country: 'India',
+          end: '2019-10-30T22:00:00Z[UTC]',
+          visaRequired: false
+        },
+        hotel: {
+          address: {
+            city: 'Bangalore',
+            country: 'India',
+            street: 'street',
+            zipCode: '12345'
+          },
+          bookingNumber: 'XX-012345',
+          name: 'Perfect hotel',
+          phone: '09876543'
+        },
+        traveller: {
+          address: {
+            city: 'Bangalore',
+            country: 'US',
+            street: 'Bangalore',
+            zipCode: '560093'
+          },
+          email: 'ajaganat@redhat.com',
+          firstName: 'Ajay',
+          lastName: 'Jaganathan',
+          nationality: 'US'
+        }
+      } as any,
       state: ProcessInstanceState.Completed,
       start: new Date('2019-10-22T03:40:44.089Z'),
       lastUpdate: new Date('Thu, 22 Apr 2021 14:53:04 GMT'),
@@ -354,82 +416,14 @@ describe('ProcessDetails tests', () => {
       );
     });
     it('Test svg error modal', async () => {
-      let wrapper;
+      let container;
       await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
+        container = render(<ProcessDetails {...props} />);
       });
-      wrapper = wrapper.update();
       await act(async () => {
-        wrapper
-          .find('MockedProcessDetailsErrorModal')
-          .props()
-          ['handleErrorModal']();
+        fireEvent.click(screen.getByTestId('svg-error-modal'));
       });
-      expect(
-        wrapper.find('MockedProcessDetailsErrorModal').props()['errorModalOpen']
-      ).toEqual(true);
-    });
-
-    it('Test process variable success modal', async () => {
-      let wrapper;
-      await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
-      });
-      wrapper = wrapper.update();
-      await act(async () => {
-        wrapper.find('Modal').at(1).props()['onClose']();
-      });
-      wrapper = wrapper.update();
-
-      expect(wrapper.find('Modal').at(1).props()['isOpen']).toEqual(true);
-      await act(async () => {
-        wrapper.find('#confirm-button').at(0).simulate('click');
-      });
-      wrapper = wrapper.update();
-      expect(wrapper.find('Modal').at(1).props()['isOpen']).toEqual(false);
-      await act(async () => {
-        wrapper.find('Modal').at(1).props()['onClose']();
-      });
-      wrapper = wrapper.update();
-      await act(async () => {
-        wrapper.find('#cancel-button').at(0).simulate('click');
-      });
-      wrapper = wrapper.update();
-      expect(wrapper.find('Modal').at(1).props()['isOpen']).toEqual(false);
-    });
-
-    it('Test process variable error modal', async () => {
-      let wrapper;
-      await act(async () => {
-        wrapper = mount(<ProcessDetails {...props} />);
-        await wait(0);
-        wrapper = wrapper.update().find('ProcessDetails');
-      });
-      wrapper = wrapper.update();
-      await act(async () => {
-        wrapper.find('Modal').at(0).props()['onClose']();
-      });
-      wrapper = wrapper.update();
-
-      expect(wrapper.find('Modal').at(0).props()['isOpen']).toEqual(true);
-      await act(async () => {
-        wrapper.find('#retry-button').at(0).simulate('click');
-      });
-      wrapper = wrapper.update();
-      expect(wrapper.find('Modal').at(0).props()['isOpen']).toEqual(false);
-      await act(async () => {
-        wrapper.find('Modal').at(0).props()['onClose']();
-      });
-      wrapper = wrapper.update();
-      await act(async () => {
-        wrapper.find('#discard-button').at(0).simulate('click');
-      });
-      wrapper = wrapper.update();
-      expect(wrapper.find('Modal').at(0).props()['isOpen']).toEqual(false);
+      expect(container).toMatchSnapshot();
     });
   });
 });

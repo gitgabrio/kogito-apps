@@ -1,3 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { FormEvent } from 'react';
 import { mount } from 'enzyme';
 import { act } from 'react-dom/test-utils';
@@ -59,39 +77,20 @@ describe('CounterfactualAnalysis', () => {
     expect(wrapper.find('CounterfactualTable Thead Tr')).toHaveLength(1);
     expect(wrapper.find('CounterfactualTable Tbody Tr')).toHaveLength(2);
     expect(
-      wrapper
-        .find('CounterfactualTable Tbody Tr Td')
-        .at(1)
-        .text()
+      wrapper.find('CounterfactualTable Tbody Tr Td').at(1).text()
     ).toMatch('Credit Score');
     expect(
-      wrapper
-        .find('CounterfactualTable Tbody Tr Td')
-        .at(3)
-        .text()
+      wrapper.find('CounterfactualTable Tbody Tr Td').at(3).text()
     ).toMatch('738');
     expect(
-      wrapper
-        .find('CounterfactualTable Tbody Tr')
-        .at(1)
-        .find('Td')
-        .at(1)
-        .text()
+      wrapper.find('CounterfactualTable Tbody Tr').at(1).find('Td').at(1).text()
     ).toMatch('Type');
     expect(
-      wrapper
-        .find('CounterfactualTable Tbody Tr')
-        .at(1)
-        .find('Td')
-        .at(3)
-        .text()
+      wrapper.find('CounterfactualTable Tbody Tr').at(1).find('Td').at(3).text()
     ).toMatch('Lease');
 
     expect(
-      wrapper
-        .find('CounterfactualTable Tbody Tr Td')
-        .at(4)
-        .text()
+      wrapper.find('CounterfactualTable Tbody Tr Td').at(4).text()
     ).toMatch('No available results');
   });
 
@@ -139,6 +138,7 @@ describe('CounterfactualAnalysis', () => {
       .find(
         'CounterfactualTable Tbody Tr:first-child Td:first-child SelectColumn'
       )
+      .find('input')
       .simulate('change');
 
     wrapper
@@ -210,9 +210,9 @@ describe('CounterfactualAnalysis', () => {
         .at(2)
         .find('Checkbox.counterfactual-outcome__floating')
         .props()
-        ['onChange']({ currentTarget: { checked: true } } as FormEvent<
-          HTMLInputElement
-        >);
+        ['onChange']({
+          currentTarget: { checked: true }
+        } as FormEvent<HTMLInputElement>);
     });
     wrapper.update();
 
@@ -369,10 +369,7 @@ describe('CounterfactualAnalysis', () => {
     );
 
     expect(
-      wrapper
-        .find('CounterfactualTable Tbody Tr:first-child Td')
-        .at(5)
-        .text()
+      wrapper.find('CounterfactualTable Tbody Tr:first-child Td').at(5).text()
     ).toMatch(`ID #${cfResultsFinal.solutions[0].solutionId}`);
 
     expect(
@@ -540,6 +537,7 @@ describe('CounterfactualAnalysis', () => {
       .find(
         'CounterfactualTable Tbody Tr:first-child Td:first-child SelectColumn'
       )
+      .find('input')
       .simulate('change');
 
     wrapper

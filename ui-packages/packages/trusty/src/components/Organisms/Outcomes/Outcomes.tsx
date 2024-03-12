@@ -1,3 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React from 'react';
 import {
   Button,
@@ -18,7 +36,10 @@ import FormattedValue from '../../Atoms/FormattedValue/FormattedValue';
 import { LongArrowAltRightIcon } from '@patternfly/react-icons';
 import { ItemObjectStructure, ItemObjectValue, Outcome } from '../../../types';
 import './Outcomes.scss';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 
 type OutcomesProps =
   | {
@@ -41,7 +62,7 @@ const Outcomes: React.FC<OutcomesProps & OUIAProps> = (
       <section className="outcomes" {...ouiaProps}>
         {props.outcomes.length && (
           <Gallery className="outcome-cards" hasGutter>
-            {props.outcomes.map(item =>
+            {props.outcomes.map((item) =>
               renderCard(item, props.onExplanationClick)
             )}
           </Gallery>
@@ -52,14 +73,14 @@ const Outcomes: React.FC<OutcomesProps & OUIAProps> = (
 
   return (
     <section className="outcomes" {...ouiaProps}>
-      {props.outcomes.map(item => {
+      {props.outcomes.map((item) => {
         if (
           item.outcomeResult !== null &&
           item.outcomeResult.kind === 'COLLECTION'
         ) {
           return (
             <Gallery className="outcome-cards" hasGutter key={uuid()}>
-              {item.outcomeResult.value.map(value => {
+              {item.outcomeResult.value.map((value) => {
                 return (
                   <GalleryItem key={uuid()}>
                     <LightCard className="outcome-cards__card" isHoverable>
@@ -104,7 +125,7 @@ const renderCard = (
     outcome.outcomeResult !== null &&
     outcome.outcomeResult.kind === 'COLLECTION'
   ) {
-    return outcome.outcomeResult.value.map(value => {
+    return outcome.outcomeResult.value.map((value) => {
       return (
         <GalleryItem key={uuid()}>
           <OutcomeCard
@@ -231,7 +252,7 @@ const renderOutcome = (
         />
       );
     } else if (value.kind === 'COLLECTION') {
-      value.value.forEach(item => {
+      value.value.forEach((item) => {
         renderedItems.push(<OutcomeSubList name={name} value={item} />);
       });
     }
@@ -321,7 +342,7 @@ const OutcomeComposed = (props: {
         </span>
       </div>
       <div className="outcome outcome--struct" key={name}>
-        {renderItems.map(item => item)}
+        {renderItems.map((item) => item)}
       </div>
     </>
   );

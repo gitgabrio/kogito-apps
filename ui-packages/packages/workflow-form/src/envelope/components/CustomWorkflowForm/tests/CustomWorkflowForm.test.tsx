@@ -1,24 +1,26 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 import wait from 'waait';
 import { WorkflowFormDriver } from '../../../../api';
-import { mount } from 'enzyme';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MockedWorkflowFormDriver } from '../../../../embedded/tests/mocks/Mocks';
 import CustomWorkflowForm, {
   CustomWorkflowFormProps
@@ -35,23 +37,8 @@ const getWorkflowFormDriver = (): WorkflowFormDriver => {
   return driver;
 };
 
-const MockedComponent = (): React.ReactElement => {
-  return <></>;
-};
-
-jest.mock('@kogito-apps/components-common', () =>
-  Object.assign({}, jest.requireActual('@kogito-apps/components-common'), {
-    FormRenderer: () => {
-      return <MockedComponent />;
-    },
-    FormFooter: () => {
-      return <MockedComponent />;
-    }
-  })
-);
-
 const getWorkflowFormWrapper = () => {
-  return mount(<CustomWorkflowForm {...props} />).find('CustomWorkflowForm');
+  return render(<CustomWorkflowForm {...props} />).container;
 };
 
 describe('CustomWorkflowForm Test', () => {
@@ -69,22 +56,81 @@ describe('CustomWorkflowForm Test', () => {
 
   it('Custom Workflow Form rendering', async () => {
     const driver = getWorkflowFormDriver();
-    let wrapper;
+    let container;
     await act(async () => {
-      wrapper = getWorkflowFormWrapper();
+      container = getWorkflowFormWrapper();
       wait();
     });
-    expect(wrapper).toMatchSnapshot();
-
-    const customWorkflowForm = wrapper.find('CustomWorkflowForm');
-    expect(customWorkflowForm.exists()).toBeTruthy();
-
-    expect(customWorkflowForm.props().enabled).toBeFalsy();
+    expect(container).toMatchSnapshot();
+    const checkCustomWorkflowForm = container.querySelector(
+      '[data-ouia-component-type="custom-workflow-form"]'
+    );
+    expect(checkCustomWorkflowForm).toBeTruthy();
 
     await act(async () => {
-      customWorkflowForm.find('FormRenderer').props()['onSubmit']();
+      fireEvent.click(container.querySelector('[type="submit"]'));
       wait();
     });
     expect(driver.startWorkflow).toHaveBeenCalled();
+  });
+
+  it('Custom Workflow Form with reset', async () => {
+    const driver = getWorkflowFormDriver();
+    let container;
+    await act(async () => {
+      container = getWorkflowFormWrapper();
+      wait();
+    });
+    expect(container).toMatchSnapshot();
+    const checkCustomWorkflowForm = container.querySelector(
+      '[data-ouia-component-type="custom-workflow-form"]'
+    );
+    expect(checkCustomWorkflowForm).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(container.querySelector('[type="reset"]'));
+      wait();
+    });
+  });
+
+  it('Custom Workflow Form - loading', async () => {
+    jest.spyOn(window, 'setTimeout');
+    jest.useFakeTimers();
+
+    const driver = new MockedWorkflowFormDriver();
+    startWorkflowRestSpy = jest.spyOn(driver, 'startWorkflow');
+    startWorkflowRestSpy.mockReturnValue(
+      new Promise((resolve) => setTimeout(() => resolve('newKey'), 1000))
+    );
+    props.driver = driver;
+
+    let container;
+    act(() => {
+      container = getWorkflowFormWrapper();
+    });
+
+    const checkCustomWorkflowForm = container.querySelector(
+      '[data-ouia-component-type="custom-workflow-form"]'
+    );
+    expect(checkCustomWorkflowForm).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(container.querySelector('[type="submit"]'));
+      wait();
+    });
+
+    expect(driver.startWorkflow).toHaveBeenCalled();
+
+    expect(container).toMatchSnapshot();
+
+    await act(async () => {
+      Promise.resolve().then(() => jest.advanceTimersByTime(2000));
+      new Promise((resolve) => {
+        setTimeout(resolve, 2000);
+      });
+    });
+
+    expect(container).toMatchSnapshot();
+
+    jest.useRealTimers();
   });
 });

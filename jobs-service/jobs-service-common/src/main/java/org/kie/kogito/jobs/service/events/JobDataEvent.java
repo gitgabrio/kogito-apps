@@ -1,17 +1,20 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.jobs.service.events;
 
@@ -28,7 +31,7 @@ public class JobDataEvent extends AbstractDataEvent<ScheduledJob> {
 
     public static final String JOB_EVENT_TYPE = "JobEvent";
 
-    public JobDataEvent(String source, ScheduledJob data) {
+    public JobDataEvent(String source, String identity, ScheduledJob data) {
         super(JOB_EVENT_TYPE,
                 source,
                 data,
@@ -36,7 +39,8 @@ public class JobDataEvent extends AbstractDataEvent<ScheduledJob> {
                 data.getRootProcessInstanceId(),
                 data.getProcessId(),
                 data.getRootProcessId(),
-                null);
+                null,
+                identity);
     }
 
     @JsonIgnore
@@ -49,9 +53,15 @@ public class JobDataEvent extends AbstractDataEvent<ScheduledJob> {
 
         private String source;
         private ScheduledJob data;
+        private String identity;
 
         public JobDataEventBuilder source(String source) {
             this.source = source;
+            return this;
+        }
+
+        public JobDataEventBuilder identity(String identity) {
+            this.identity = identity;
             return this;
         }
 
@@ -61,7 +71,7 @@ public class JobDataEvent extends AbstractDataEvent<ScheduledJob> {
         }
 
         public JobDataEvent build() {
-            return new JobDataEvent(source, data);
+            return new JobDataEvent(source, identity, data);
         }
     }
 }

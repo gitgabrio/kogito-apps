@@ -1,31 +1,5 @@
 extend schema {
     subscription: Subscription
-    mutation: Mutation
-}
-
-extend type Query {
-    Jobs(where: JobArgument, orderBy: JobOrderBy, pagination: Pagination):  [Job]
-}
-
-type Mutation {
-    ProcessInstanceAbort(id: String): String
-    ProcessInstanceRetry(id: String): String
-    ProcessInstanceSkip(id: String): String
-    ProcessInstanceUpdateVariables(id: String, variables: String): String
-    NodeInstanceTrigger(id: String, nodeId: String): String
-    NodeInstanceRetrigger(id: String, nodeInstanceId: String): String
-    NodeInstanceCancel(id: String, nodeInstanceId: String): String
-    JobCancel(id: String): String
-    JobReschedule(id: String, data: String): String
-    UserTaskInstanceUpdate(taskId: String, user: String, groups: [String],  description: String, priority: String,
-        actualOwner: String, adminGroups: [String!], adminUsers: [String!], excludedUsers: [String!],
-        potentialGroups: [String!], potentialUsers: [String!], inputParams: String): String
-    UserTaskInstanceCommentCreate(taskId: String, user: String, groups: [String], comment: String): String
-    UserTaskInstanceAttachmentCreate(taskId: String, user: String, groups: [String], name: String, uri: String): String
-    UserTaskInstanceCommentUpdate(user:String, groups:[String],commentId: String, comment: String): String
-    UserTaskInstanceCommentDelete(user:String, groups:[String],commentId: String): String
-    UserTaskInstanceAttachmentUpdate(user:String, groups:[String],attachmentId: String,  name: String, uri: String): String
-    UserTaskInstanceAttachmentDelete(user:String, groups:[String], attachmentId: String): String
 }
 
 type KogitoMetadata {
@@ -47,6 +21,7 @@ input KogitoMetadataArgument {
 type ProcessInstanceMeta {
     id: String!
     processId: String!
+    version: String
     processName: String
     parentProcessInstanceId: String
     rootProcessInstanceId: String
@@ -59,6 +34,8 @@ type ProcessInstanceMeta {
     end: DateTime
     lastUpdate: DateTime!
     businessKey: String
+    createdBy: String
+    updatedBy: String
 }
 
 input ProcessInstanceMetaArgument {
@@ -74,6 +51,8 @@ input ProcessInstanceMetaArgument {
     start: DateArgument
     end: DateArgument
     businessKey: StringArgument
+    createdBy: StringArgument
+    updatedBy: StringArgument
 }
 
 extend type UserTaskInstance {
@@ -126,65 +105,4 @@ type Subscription {
     UserTaskInstanceUpdated: UserTaskInstance!
     JobAdded: Job!
     JobUpdated: Job!
-}
-
-type Job {
-    id: String!
-    processId: String
-    processInstanceId: String
-    nodeInstanceId: String
-    rootProcessInstanceId: String
-    rootProcessId: String
-    status: JobStatus!
-    expirationTime: DateTime
-    priority: Int
-    callbackEndpoint: String
-    repeatInterval: Int
-    repeatLimit: Int
-    scheduledId: String
-    retries: Int
-    lastUpdate: DateTime
-    executionCounter: Int
-    endpoint: String
-}
-
-enum JobStatus {
-    ERROR,
-    EXECUTED,
-    SCHEDULED,
-    RETRY,
-    CANCELED
-}
-
-input JobStatusArgument {
-    equal: JobStatus
-    in: [JobStatus]
-}
-
-input JobArgument {
-    and: [JobArgument!]
-    or: [JobArgument!]
-    not: JobArgument
-    id: IdArgument
-    processId: StringArgument
-    processInstanceId: IdArgument
-    nodeInstanceId: IdArgument
-    rootProcessInstanceId: IdArgument
-    rootProcessId: StringArgument
-    status: JobStatusArgument
-    expirationTime: DateArgument
-    priority: NumericArgument
-    scheduledId: IdArgument
-    lastUpdate: DateArgument
-}
-
-input JobOrderBy {
-    processId: OrderBy
-    rootProcessId: OrderBy
-    status: OrderBy
-    expirationTime: OrderBy
-    priority: OrderBy
-    retries: OrderBy
-    lastUpdate: OrderBy
-    executionCounter: OrderBy
 }

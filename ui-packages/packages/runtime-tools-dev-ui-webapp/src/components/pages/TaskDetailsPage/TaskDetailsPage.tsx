@@ -1,26 +1,24 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import {
-  Bullseye,
-  Button,
-  Card,
-  CardBody,
   Drawer,
   DrawerActions,
   DrawerCloseButton,
@@ -28,34 +26,38 @@ import {
   DrawerContentBody,
   DrawerHead,
   DrawerPanelBody,
-  DrawerPanelContent,
-  Flex,
-  FlexItem,
-  Grid,
-  GridItem,
-  PageSection,
-  Title
-} from '@patternfly/react-core';
+  DrawerPanelContent
+} from '@patternfly/react-core/dist/js/components/Drawer';
+import { Card, CardBody } from '@patternfly/react-core/dist/js/components/Card';
+import { Grid, GridItem } from '@patternfly/react-core/dist/js/layouts/Grid';
+import { Flex, FlexItem } from '@patternfly/react-core/dist/js/layouts/Flex';
+import { Bullseye } from '@patternfly/react-core/dist/js/layouts/Bullseye';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import { Title } from '@patternfly/react-core/dist/js/components/Title';
+import { PageSection } from '@patternfly/react-core/dist/js/components/Page';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
 import {
-  KogitoSpinner,
-  ServerErrors,
-  KogitoEmptyState,
-  KogitoEmptyStateType,
   FormNotification,
   Notification
-} from '@kogito-apps/components-common';
+} from '@kogito-apps/components-common/dist/components/FormNotification';
+import {
+  KogitoEmptyState,
+  KogitoEmptyStateType
+} from '@kogito-apps/components-common/dist/components/KogitoEmptyState';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
 import {
   OUIAProps,
   componentOuiaProps,
   ouiaPageTypeAndObjectId
-} from '@kogito-apps/ouia-tools';
-import { PageTitle } from '@kogito-apps/consoles-common';
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
+import { PageTitle } from '@kogito-apps/consoles-common/dist/components/layout/PageTitle';
 import { UserTaskInstance, TaskState } from '@kogito-apps/task-console-shared';
 import { TaskInboxGatewayApi } from '../../../channel/TaskInbox';
 import { useTaskInboxGatewayApi } from '../../../channel/TaskInbox/TaskInboxContext';
 import TaskFormContainer from '../../containers/TaskFormContainer/TaskFormContainer';
 import '../../styles.css';
 import { EmbeddedTaskDetails } from '@kogito-apps/task-details';
+import { useDevUIAppContext } from '../../contexts/DevUIAppContext';
 
 interface Props {
   taskId?: string;
@@ -67,6 +69,7 @@ const TaskDetailsPage: React.FC<RouteComponentProps<Props> & OUIAProps> = ({
   ...props
 }) => {
   const taskInboxGatewayApi: TaskInboxGatewayApi = useTaskInboxGatewayApi();
+  const appContext = useDevUIAppContext();
 
   const [taskId] = useState<string>(props.match.params.taskId);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -225,7 +228,7 @@ const TaskDetailsPage: React.FC<RouteComponentProps<Props> & OUIAProps> = ({
       </DrawerHead>
       <DrawerPanelBody>
         <EmbeddedTaskDetails
-          targetOrigin={window.location.origin}
+          targetOrigin={appContext.getDevUIUrl()}
           userTask={userTask}
         />
       </DrawerPanelBody>

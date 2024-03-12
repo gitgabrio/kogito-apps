@@ -1,21 +1,26 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.jobs.service.scheduler;
 
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +32,7 @@ import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.kie.kogito.jobs.service.adapter.ScheduledJobAdapter;
+import org.kie.kogito.jobs.service.exception.JobServiceException;
 import org.kie.kogito.jobs.service.executor.JobExecutor;
 import org.kie.kogito.jobs.service.model.JobDetails;
 import org.kie.kogito.jobs.service.model.JobExecutionResponse;
@@ -37,6 +42,7 @@ import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.kie.kogito.jobs.service.utils.DateUtil;
 import org.kie.kogito.timer.Trigger;
 import org.kie.kogito.timer.impl.PointInTimeTrigger;
+import org.kie.kogito.timer.impl.SimpleTimerTrigger;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -45,12 +51,15 @@ import org.reactivestreams.Publisher;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
+import static mutiny.zero.flow.adapters.AdaptersToFlow.publisher;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.kie.kogito.jobs.service.model.JobStatus.CANCELED;
 import static org.kie.kogito.jobs.service.model.JobStatus.SCHEDULED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -231,7 +240,7 @@ public abstract class BaseTimerJobSchedulerTest {
     private JobDetails createPeriodicJob() {
         return JobDetails.builder()
                 .id(JOB_ID)
-                .trigger(ScheduledJobAdapter.intervalTrigger(expirationTime, 10, 2))
+                .trigger(new SimpleTimerTrigger(DateUtil.toDate(expirationTime.toOffsetDateTime()), 1, ChronoUnit.MILLIS, 10, null))
                 .status(SCHEDULED)
                 .build();
     }
@@ -350,7 +359,7 @@ public abstract class BaseTimerJobSchedulerTest {
 
     private void subscribeOn(Publisher<JobDetails> schedule) {
         Multi.createFrom()
-                .publisher(schedule)
+                .publisher(publisher(schedule))
                 .subscribe()
                 .with(dummyCallback(), dummyCallback());
     }
@@ -361,7 +370,7 @@ public abstract class BaseTimerJobSchedulerTest {
 
         scheduledJob = JobDetails.builder()
                 .of(scheduledJob)
-                .trigger(ScheduledJobAdapter.intervalTrigger(DateUtil.now().minusHours(1), 1, 1))
+                .trigger(new SimpleTimerTrigger(DateUtil.toDate(OffsetDateTime.now().minusHours(1)), 1, ChronoUnit.MILLIS, 0, null))
                 .build();
 
         //testing with forcing disabled
@@ -387,5 +396,44 @@ public abstract class BaseTimerJobSchedulerTest {
         subscribeOn(tested().reschedule(JOB_ID, newTrigger).buildRs());
         verify(tested()).doCancel(merged);
         verify(tested()).schedule(merged);
+    }
+
+    @Test
+    void handleJobExecutionSuccess() throws Exception {
+        scheduledJob = JobDetails.builder().id(JOB_ID).trigger(trigger).status(SCHEDULED).build();
+        doReturn(CompletableFuture.completedFuture(scheduledJob)).when(jobRepository).get(JOB_ID);
+        doReturn(CompletableFuture.completedFuture(scheduledJob)).when(jobRepository).delete(any(JobDetails.class));
+        JobExecutionResponse response = new JobExecutionResponse("execution successful", "200", ZonedDateTime.now(), JOB_ID);
+
+        Optional<JobDetails> result = tested().handleJobExecutionSuccess(response)
+                .findFirst()
+                .run()
+                .toCompletableFuture()
+                .get();
+
+        verify(jobRepository).delete(scheduleCaptor.capture());
+        JobDetails deletedJob = scheduleCaptor.getValue();
+        assertThat(deletedJob).isNotNull();
+        assertThat(deletedJob.getId()).isEqualTo(JOB_ID);
+        assertThat(result).isNotEmpty();
+        assertThat(result.get().getId()).isEqualTo(JOB_ID);
+    }
+
+    @Test
+    void handleJobExecutionSuccessJobNotFound() {
+        scheduledJob = JobDetails.builder().id(JOB_ID).trigger(trigger).status(SCHEDULED).build();
+        doReturn(CompletableFuture.completedFuture(null)).when(jobRepository).get(JOB_ID);
+        JobExecutionResponse response = new JobExecutionResponse("execution successful", "200", ZonedDateTime.now(), JOB_ID);
+
+        assertThatThrownBy(() -> tested().handleJobExecutionSuccess(response)
+                .findFirst()
+                .run()
+                .toCompletableFuture()
+                .get())
+                        .hasCauseInstanceOf(JobServiceException.class)
+                        .hasMessageContaining("Job: %s was not found in database.", JOB_ID);
+        verify(jobRepository, never()).delete(JOB_ID);
+        verify(jobRepository, never()).delete(any(JobDetails.class));
+        verify(jobRepository, never()).save(any());
     }
 }

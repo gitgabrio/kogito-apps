@@ -1,17 +1,20 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.job.http.recipient.test;
 
@@ -19,6 +22,7 @@ import java.util.Map;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.matching.UrlPattern;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 
@@ -29,15 +33,19 @@ public class HttpRecipientResourceMock implements QuarkusTestResourceLifecycleMa
     public static final String MOCK_SERVICE_URL = "mock.service.url";
     WireMockServer wireMockServer;
 
+    public static final String RESOURCE_URL = "my-service";
+
+    private static final UrlPattern RESOURCE_URL_PATTERN = WireMock.urlMatching("/" + RESOURCE_URL + "\\?limit=0");
+
     @Override
     public Map<String, String> start() {
         wireMockServer = new WireMockServer();
         wireMockServer.start();
-        stubFor(WireMock.post(WireMock.urlMatching(".*")).willReturn(WireMock.ok("POST")));
-        stubFor(WireMock.get(WireMock.urlMatching(".*")).willReturn(WireMock.ok("GET")));
-        stubFor(WireMock.put(WireMock.urlMatching(".*")).willReturn(WireMock.ok("PUT")));
-        stubFor(WireMock.delete(WireMock.urlMatching(".*")).willReturn(WireMock.ok("DELETE")));
-        stubFor(WireMock.patch(WireMock.urlMatching(".*")).willReturn(WireMock.ok("PATCH")));
+        stubFor(WireMock.post(RESOURCE_URL_PATTERN).willReturn(WireMock.ok("POST")));
+        stubFor(WireMock.get(RESOURCE_URL_PATTERN).willReturn(WireMock.ok("GET")));
+        stubFor(WireMock.put(RESOURCE_URL_PATTERN).willReturn(WireMock.ok("PUT")));
+        stubFor(WireMock.delete(RESOURCE_URL_PATTERN).willReturn(WireMock.ok("DELETE")));
+        stubFor(WireMock.patch(RESOURCE_URL_PATTERN).willReturn(WireMock.ok("PATCH")));
         return Map.of(MOCK_SERVICE_URL, "http://localhost:" + wireMockServer.port());
     }
 

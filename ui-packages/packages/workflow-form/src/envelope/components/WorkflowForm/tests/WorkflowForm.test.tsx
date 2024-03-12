@@ -1,52 +1,28 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 import WorkflowForm, { WorkflowFormProps } from '../WorkflowForm';
 import { WorkflowFormDriver } from '../../../../api';
-import { mount } from 'enzyme';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MockedWorkflowFormDriver } from '../../../../embedded/tests/mocks/Mocks';
 import * as validateWorkflowData from '../validateWorkflowData';
-
-const MockedComponent = (): React.ReactElement => {
-  return <></>;
-};
-
-jest.mock('@patternfly/react-core', () =>
-  Object.assign({}, jest.requireActual('@patternfly/react-core'), {
-    Alert: () => {
-      return <MockedComponent />;
-    },
-    Popover: () => {
-      return <MockedComponent />;
-    },
-    Popper: () => {
-      return <MockedComponent />;
-    }
-  })
-);
-
-jest.mock('@patternfly/react-code-editor', () =>
-  Object.assign({}, jest.requireActual('@patternfly/react-code-editor'), {
-    CodeEditor: () => {
-      return <MockedComponent />;
-    }
-  })
-);
 
 let props: WorkflowFormProps;
 let startWorkflowSpy;
@@ -64,7 +40,7 @@ const getWorkflowFormDriver = (): WorkflowFormDriver => {
 };
 
 const getWorkflowFormWrapper = () => {
-  return mount(<WorkflowForm {...props} />).find('WorkflowForm');
+  return render(<WorkflowForm {...props} />).container;
 };
 
 describe('WorkflowForm Test', () => {
@@ -77,26 +53,38 @@ describe('WorkflowForm Test', () => {
         endpoint: 'http://localhost:4000/hiring'
       }
     };
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(), // Deprecated
+        removeListener: jest.fn(), // Deprecated
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+      }))
+    });
+    //HTMLCanvasElement.prototype.getContext = jest.fn();
   });
 
   it('Workflow Form - rendering', () => {
     const driver = getWorkflowFormDriver();
     validateWorkflowDataSpy.mockReturnValue(true);
 
-    let wrapper;
+    let container;
     act(() => {
-      wrapper = getWorkflowFormWrapper();
+      container = getWorkflowFormWrapper();
     });
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const workflowForm = wrapper.find('Form');
-    expect(workflowForm.exists()).toBeTruthy();
-
-    expect(workflowForm.props().enabled).toBeFalsy();
+    const workflowForm = container.querySelector('form');
+    expect(workflowForm).toBeTruthy();
 
     act(() => {
-      workflowForm.find('Button[variant="primary"]').props().onClick();
+      fireEvent.click(screen.getByTestId('start-button'));
     });
 
     expect(driver.startWorkflow).toHaveBeenCalled();
@@ -106,24 +94,59 @@ describe('WorkflowForm Test', () => {
     const driver = getWorkflowFormDriver();
     validateWorkflowDataSpy.mockReturnValue(false);
 
-    let wrapper;
+    let container;
 
     act(() => {
-      wrapper = getWorkflowFormWrapper();
+      container = getWorkflowFormWrapper();
     });
 
-    const workflowForm = wrapper.find('Form');
-    expect(workflowForm.exists()).toBeTruthy();
-
-    expect(workflowForm.props().enabled).toBeFalsy();
+    const workflowForm = container.querySelector('form');
+    expect(workflowForm).toBeTruthy();
 
     act(() => {
-      workflowForm.find('Button[variant="primary"]').props().onClick();
+      fireEvent.click(screen.getByTestId('start-button'));
     });
-
-    wrapper = wrapper.update();
-
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
     expect(driver.startWorkflow).not.toHaveBeenCalled();
+  });
+
+  it('Workflow Form - loading', async () => {
+    jest.spyOn(window, 'setTimeout');
+    jest.useFakeTimers();
+
+    const driver = new MockedWorkflowFormDriver();
+    startWorkflowSpy = jest.spyOn(driver, 'startWorkflow');
+    startWorkflowSpy.mockReturnValue(
+      new Promise((resolve) => setTimeout(() => resolve(null), 1000))
+    );
+    props.driver = driver;
+
+    validateWorkflowDataSpy.mockReturnValue(true);
+
+    let container;
+    act(() => {
+      container = getWorkflowFormWrapper();
+    });
+
+    const workflowForm = container.querySelector('form');
+
+    act(() => {
+      fireEvent.click(screen.getByTestId('start-button'));
+    });
+
+    expect(driver.startWorkflow).toHaveBeenCalled();
+
+    expect(container).toMatchSnapshot();
+
+    await act(async () => {
+      Promise.resolve().then(() => jest.advanceTimersByTime(2000));
+      new Promise((resolve) => {
+        setTimeout(resolve, 2000);
+      });
+    });
+
+    expect(container).toMatchSnapshot();
+
+    jest.useRealTimers();
   });
 });

@@ -1,19 +1,21 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package org.kie.kogito.index.test;
 
 import java.time.Instant;
@@ -23,19 +25,26 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.kie.kogito.event.process.ProcessInstanceStateDataEvent;
+import org.kie.kogito.event.process.ProcessInstanceStateEventBody;
+import org.kie.kogito.event.process.ProcessInstanceVariableDataEvent;
+import org.kie.kogito.event.process.ProcessInstanceVariableEventBody;
 import org.kie.kogito.index.model.Attachment;
 import org.kie.kogito.index.model.Comment;
 import org.kie.kogito.index.model.Job;
 import org.kie.kogito.index.model.Milestone;
 import org.kie.kogito.index.model.MilestoneStatus;
 import org.kie.kogito.index.model.NodeInstance;
+import org.kie.kogito.index.model.ProcessDefinition;
 import org.kie.kogito.index.model.ProcessInstance;
 import org.kie.kogito.index.model.ProcessInstanceError;
 import org.kie.kogito.index.model.ProcessInstanceState;
 import org.kie.kogito.index.model.UserTaskInstance;
+import org.kie.kogito.jackson.utils.ObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -45,7 +54,39 @@ import static java.util.Collections.singletonList;
 
 public class TestUtils {
 
-    private static ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public static ProcessDefinition createProcessDefinition(String processId, String version, Set<String> roles) {
+        ProcessDefinition pd = new ProcessDefinition();
+        pd.setId(processId);
+        pd.setName(RandomStringUtils.randomAlphabetic(10));
+        pd.setVersion(version);
+        pd.setAddons(singleton("kogito-events"));
+        pd.setRoles(roles);
+        return pd;
+    }
+
+    public static ProcessInstanceStateDataEvent createProcessInstanceEvent(String processInstance,
+            String processId, String rootProcessInstanceId, String rootProcessId, Integer status) {
+        ProcessInstanceStateDataEvent event = new ProcessInstanceStateDataEvent();
+        event.setKogitoProcessId(processId);
+        event.setKogitoRootProcessId(rootProcessId);
+        event.setKogitoRootProcessInstanceId(rootProcessInstanceId);
+        event.setKogitoProcessInstanceId(processInstance);
+        event.setData(ProcessInstanceStateEventBody.create().processId(processId).rootProcessId(rootProcessId).rootProcessInstanceId(rootProcessInstanceId).processInstanceId(processInstance)
+                .state(status).build());
+        return event;
+    }
+
+    public static ProcessInstanceVariableDataEvent createProcessInstanceVariableEvent(String processInstance,
+            String processId, String firstName, String lastName) {
+        ProcessInstanceVariableDataEvent event = new ProcessInstanceVariableDataEvent();
+        event.setKogitoProcessId(processId);
+        event.setKogitoProcessInstanceId(processInstance);
+        event.setData(ProcessInstanceVariableEventBody.create().processId(processId).processInstanceId(processInstance)
+                .variableName("traveller").variableValue(ObjectMapperFactory.get().createObjectNode().put("firstName", firstName).put("lastName", lastName)).build());
+        return event;
+    }
 
     public static ProcessInstance createProcessInstance(String processInstanceId,
             String processId,

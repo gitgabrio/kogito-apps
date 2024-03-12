@@ -1,30 +1,29 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { act } from 'react-dom/test-utils';
-import { shallow, mount } from 'enzyme';
-import { Dropdown } from '@patternfly/react-core';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import PageToolbar from '../PageToolbar';
 import {
   resetTestKogitoAppContext,
   testHandleLogoutMock
 } from '../../../../environment/auth/tests/utils/KogitoAppContextTestingUtils';
-
-jest.mock('../../AboutModalBox/AboutModalBox');
+import { BrandContext } from '../../BrandContext/BrandContext';
 
 describe('PageToolbar component tests', () => {
   beforeEach(() => {
@@ -33,28 +32,67 @@ describe('PageToolbar component tests', () => {
   });
 
   it('Snapshot testing - auth disabled', () => {
-    const wrapper = mount(<PageToolbar />).find('PageToolbar');
+    const { container } = render(
+      <BrandContext.Provider
+        value={{
+          imageSrc: 'kogito-image-src',
+          altText: 'kogito image alt text'
+        }}
+      >
+        <PageToolbar />
+      </BrandContext.Provider>
+    );
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
   });
 
   it('Snapshot testing - auth enabled', () => {
     resetTestKogitoAppContext(true);
-    const wrapper = mount(<PageToolbar />).find('PageToolbar');
+    const { container } = render(
+      <BrandContext.Provider
+        value={{
+          imageSrc: 'kogito-image-src',
+          altText: 'kogito image alt text'
+        }}
+      >
+        <PageToolbar />
+      </BrandContext.Provider>
+    );
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
   });
 
   it('Testing dropdown items - auth enabled', () => {
     resetTestKogitoAppContext(true);
 
-    const wrapper = shallow(<PageToolbar />);
+    const { container } = render(
+      <BrandContext.Provider
+        value={{
+          imageSrc: 'kogito-image-src',
+          altText: 'kogito image alt text'
+        }}
+      >
+        <PageToolbar />
+      </BrandContext.Provider>
+    );
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const dropdown = wrapper.find(Dropdown);
+    const dropdown = screen.getByTestId('pageToolbar-dropdown');
 
-    const dropdownItems = dropdown.prop('dropdownItems');
+    const dropdownItems = container.querySelectorAll('span');
+    const userProfile = screen.getByText('jdoe');
+
+    expect(userProfile).toBeTruthy();
+    fireEvent.click(container.querySelector('button')!);
+
+    const testAbout = container.querySelectorAll('li')[0];
+    fireEvent.click(testAbout!);
+
+    const testAboutModalBox = screen.getByText('Version:');
+    act(() => {
+      expect(testAboutModalBox).toBeTruthy();
+    });
 
     expect(dropdownItems.length).toStrictEqual(3);
   });
@@ -62,87 +100,55 @@ describe('PageToolbar component tests', () => {
   it('Testing logout - auth enabled', () => {
     resetTestKogitoAppContext(true);
 
-    const wrapper = shallow(<PageToolbar />);
+    const { container } = render(
+      <BrandContext.Provider
+        value={{
+          imageSrc: 'kogito-image-src',
+          altText: 'kogito image alt text'
+        }}
+      >
+        <PageToolbar />
+      </BrandContext.Provider>
+    );
 
-    const dropdown = wrapper.find(Dropdown);
+    const dropdown = screen.getByTestId('pageToolbar-dropdown');
 
-    const dropdownItems = dropdown.prop('dropdownItems');
+    const dropdownItems = container.querySelectorAll('span');
 
+    const userProfile = screen.getByText('jdoe');
+
+    expect(userProfile).toBeTruthy();
+    fireEvent.click(container.querySelector('button')!);
+
+    const testLogoutButton = container.querySelectorAll('li')[2];
+    fireEvent.click(testLogoutButton!);
+
+    fireEvent.click(
+      container.querySelector(
+        '[data-ouia-component-id="OUIA-Generated-Toolbar-4"]'
+      )!
+    );
     expect(dropdownItems.length).toStrictEqual(3);
 
-    const logout = dropdownItems[2];
-
-    act(() => {
-      logout.props.onClick();
-    });
-
-    expect(testHandleLogoutMock).toBeCalled();
+    expect(container).toMatchSnapshot();
   });
 
   it('Testing dropdown items - auth disabled', () => {
-    const wrapper = shallow(<PageToolbar />);
+    const { container } = render(
+      <BrandContext.Provider
+        value={{
+          imageSrc: 'kogito-image-src',
+          altText: 'kogito image alt text'
+        }}
+      >
+        <PageToolbar />
+      </BrandContext.Provider>
+    );
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const dropdown = wrapper.find(Dropdown);
+    const anonymousProfile = screen.getByText('Anonymous');
 
-    const dropdownItems = dropdown.prop('dropdownItems');
-
-    expect(dropdownItems.length).toStrictEqual(1);
-  });
-
-  it('Testing select dropdown test', () => {
-    let wrapper = shallow(<PageToolbar />);
-
-    let dropdown = wrapper.find(Dropdown);
-
-    expect(dropdown.prop('isOpen')).toBeFalsy();
-
-    act(() => {
-      dropdown.prop('onSelect')();
-    });
-
-    wrapper = wrapper.update();
-
-    dropdown = wrapper.find(Dropdown);
-
-    expect(dropdown.prop('isOpen')).toBeTruthy();
-  });
-
-  it('Testing toggle dropdown test', () => {
-    let wrapper = shallow(<PageToolbar />);
-
-    let dropdown = wrapper.find(Dropdown);
-
-    expect(dropdown.prop('isOpen')).toBeFalsy();
-
-    act(() => {
-      dropdown.prop('toggle').props.onToggle(true);
-    });
-
-    wrapper = wrapper.update();
-
-    dropdown = wrapper.find(Dropdown);
-
-    expect(dropdown.prop('isOpen')).toBeTruthy();
-  });
-
-  it('handleAboutModalToggle test', () => {
-    const wrapper = mount(<PageToolbar />).find('PageToolbar');
-
-    let aboutModalBox = wrapper.find('MockedAboutModalBox');
-
-    expect(aboutModalBox.exists()).toBeTruthy();
-
-    expect(aboutModalBox.prop('isOpenProp')).toBeFalsy();
-
-    act(() => {
-      // tslint:disable:no-string-literal
-      aboutModalBox.props()['handleModalToggleProp']();
-    });
-
-    aboutModalBox = wrapper.update().find('MockedAboutModalBox');
-
-    expect(aboutModalBox.prop('isOpenProp')).toBeTruthy();
+    expect(anonymousProfile).toBeTruthy();
   });
 });

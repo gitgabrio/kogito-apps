@@ -1,54 +1,56 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect, useState } from 'react';
+import { Flex, FlexItem } from '@patternfly/react-core/dist/js/layouts/Flex';
+import { Grid, GridItem } from '@patternfly/react-core/dist/js/layouts/Grid';
+import { Split, SplitItem } from '@patternfly/react-core/dist/js/layouts/Split';
+import { Bullseye } from '@patternfly/react-core/dist/js/layouts/Bullseye';
 import {
-  Grid,
-  GridItem,
-  Title,
-  Split,
-  SplitItem,
+  Modal,
+  ModalVariant
+} from '@patternfly/react-core/dist/js/components/Modal';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import {
   OverflowMenu,
   OverflowMenuContent,
-  OverflowMenuGroup,
-  Flex,
-  FlexItem,
-  Card,
-  Button,
-  Modal,
-  ModalVariant,
-  TitleSizes,
-  Bullseye
-} from '@patternfly/react-core';
-import { SyncIcon, InfoCircleIcon } from '@patternfly/react-icons';
+  OverflowMenuGroup
+} from '@patternfly/react-core/dist/js/components/OverflowMenu';
+import { Card } from '@patternfly/react-core/dist/js/components/Card';
 import {
-  ItemDescriptor,
-  KogitoSpinner,
-  ServerErrors
-} from '@kogito-apps/components-common';
+  Title,
+  TitleSizes
+} from '@patternfly/react-core/dist/js/components/Title';
+import { SyncIcon } from '@patternfly/react-icons/dist/js/icons/sync-icon';
+import { InfoCircleIcon } from '@patternfly/react-icons/dist/js/icons/info-circle-icon';
+import { ItemDescriptor } from '@kogito-apps/components-common/dist/components/ItemDescriptor';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
 import {
-  ProcessInfoModal,
   Job,
   ProcessInstance,
   ProcessInstanceState,
-  setTitle,
   TitleType,
   SvgSuccessResponse,
   SvgErrorResponse
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
+import { setTitle } from '@kogito-apps/management-console-shared/dist/utils/Utils';
+import { ProcessInfoModal } from '@kogito-apps/management-console-shared/dist/components/ProcessInfoModal';
 import { DiagramPreviewSize, ProcessDetailsDriver } from '../../../api';
 import ProcessDiagram from '../ProcessDiagram/ProcessDiagram';
 import JobsPanel from '../JobsPanel/JobsPanel';
@@ -69,7 +71,6 @@ interface ProcessDetailsProps {
   omittedProcessTimelineEvents: string[];
   diagramPreviewSize?: DiagramPreviewSize;
   showSwfDiagram: boolean;
-  isStunnerEnabled?: boolean;
   singularProcessLabel: string;
   pluralProcessLabel: string;
 }
@@ -84,8 +85,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
   diagramPreviewSize,
   showSwfDiagram,
   singularProcessLabel,
-  pluralProcessLabel,
-  isStunnerEnabled
+  pluralProcessLabel
 }) => {
   const [data, setData] = useState<ProcessInstance>({} as ProcessInstance);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -130,6 +130,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
 
   const errorModalAction: JSX.Element[] = [
     <Button
+      data-testid="svg-error-modal"
       key="confirm-selection"
       variant="primary"
       onClick={handleSvgErrorModal}
@@ -152,7 +153,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
     };
     const getVariableJSON = (): void => {
       if (data && data.id === processDetails.id) {
-        setUpdateJson(JSON.parse(data.variables));
+        setUpdateJson(data.variables);
       }
     };
     /* istanbul ignore else*/
@@ -182,6 +183,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
     }
   }, [isEnvelopeConnectedToChannel]);
 
+  /* istanbul ignore next */
   const handleSave = (): void => {
     driver
       .handleProcessVariableUpdate(data, updateJson)
@@ -208,6 +210,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
           className="kogito-process-details--details__buttonMargin"
           onClick={handleSave}
           isDisabled={!displayLabel}
+          data-testid="save-button"
         >
           Save
         </Button>
@@ -231,6 +234,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
           handleRefresh();
         }}
         id="refresh-button"
+        data-testid="refresh-button"
         aria-label={'Refresh list'}
       >
         <SyncIcon />
@@ -279,6 +283,7 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
         <Button
           variant="secondary"
           id="abort-button"
+          data-testid="abort-button"
           onClick={() => onAbortClick(data)}
         >
           Abort
@@ -317,10 +322,9 @@ const ProcessDetails: React.FC<ProcessDetailsProps> = ({
       <Flex>
         <FlexItem>
           <SwfCombinedEditor
-            sourceString={data?.source}
-            isStunnerEnabled={isStunnerEnabled}
             height={diagramPreviewSize?.height}
             width={diagramPreviewSize?.width}
+            workflowInstance={data}
           />
         </FlexItem>
       </Flex>

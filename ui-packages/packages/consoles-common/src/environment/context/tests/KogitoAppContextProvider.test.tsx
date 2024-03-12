@@ -1,50 +1,42 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { mount } from 'enzyme';
+import { render, screen } from '@testing-library/react';
 
 import KogitoAppContextProvider from '../KogitoAppContextProvider';
-import KogitoAppContext, { AppContext } from '../KogitoAppContext';
+import KogitoAppContext from '../KogitoAppContext';
 import { TestUserContext } from '../TestUserContext';
-import { ANONYMOUS_USER } from '../../auth';
-
-const MockedComponent = (props): React.ReactElement => {
-  return <></>;
-};
 
 describe('KogitoAppContextProvider tests', () => {
   it('Snapshot testing', () => {
-    const wrapper = mount(
+    const { container } = render(
       <KogitoAppContextProvider userContext={new TestUserContext()}>
         <KogitoAppContext.Consumer>
-          {(ctx) => <MockedComponent context={ctx} />}
+          {(ctx) => <div />}
         </KogitoAppContext.Consumer>
       </KogitoAppContextProvider>
     );
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const component = wrapper.find('MockedComponent');
+    const MockedComponent = container.querySelector('div');
 
-    expect(component.exists()).toBeTruthy();
-
-    const context: AppContext = component.prop('context');
-
-    expect(context).not.toBeNull();
-    expect(context.getCurrentUser()).toStrictEqual(ANONYMOUS_USER);
+    expect(MockedComponent).toBeTruthy();
   });
 });

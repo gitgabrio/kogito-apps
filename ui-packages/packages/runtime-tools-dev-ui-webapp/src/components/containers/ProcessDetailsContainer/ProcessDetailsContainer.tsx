@@ -1,44 +1,40 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect } from 'react';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
-import { ProcessInstance } from '@kogito-apps/management-console-shared';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
+import { ProcessInstance } from '@kogito-apps/management-console-shared/dist/types';
 import { EmbeddedProcessDetails } from '@kogito-apps/process-details';
 import { ProcessDetailsGatewayApi } from '../../../channel/ProcessDetails';
 import { useProcessDetailsGatewayApi } from '../../../channel/ProcessDetails/ProcessDetailsContext';
 import { useHistory } from 'react-router-dom';
-import { DiagramPreviewSize } from '@kogito-apps/process-details/dist/api';
 import { useDevUIAppContext } from '../../contexts/DevUIAppContext';
 
 interface ProcessDetailsContainerProps {
   processInstance: ProcessInstance;
-  omittedProcessTimelineEvents: string[];
-  diagramPreviewSize?: DiagramPreviewSize;
 }
 
 const ProcessDetailsContainer: React.FC<
   ProcessDetailsContainerProps & OUIAProps
-> = ({
-  processInstance,
-  omittedProcessTimelineEvents,
-  diagramPreviewSize,
-  ouiaId,
-  ouiaSafe
-}) => {
+> = ({ processInstance, ouiaId, ouiaSafe }) => {
   const history = useHistory();
   const appContext = useDevUIAppContext();
   const gatewayApi: ProcessDetailsGatewayApi = useProcessDetailsGatewayApi();
@@ -58,12 +54,11 @@ const ProcessDetailsContainer: React.FC<
     <EmbeddedProcessDetails
       {...componentOuiaProps(ouiaId, 'process-details-container', ouiaSafe)}
       driver={gatewayApi}
-      targetOrigin={'*'}
+      targetOrigin={appContext.getDevUIUrl()}
       processInstance={processInstance}
-      omittedProcessTimelineEvents={omittedProcessTimelineEvents}
-      diagramPreviewSize={diagramPreviewSize}
+      omittedProcessTimelineEvents={appContext.omittedProcessTimelineEvents}
+      diagramPreviewSize={appContext.diagramPreviewSize}
       showSwfDiagram={appContext.isWorkflow()}
-      isStunnerEnabled={appContext.getIsStunnerEnabled()}
       singularProcessLabel={appContext.customLabels.singularProcessLabel}
       pluralProcessLabel={appContext.customLabels.pluralProcessLabel}
     />

@@ -1,29 +1,36 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
-import React from 'react';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+import React, { useState } from 'react';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import {
   ActionType,
-  FormRendererApi,
-  FormAction,
-  FormRenderer
-} from '@kogito-apps/components-common';
+  FormAction
+} from '@kogito-apps/components-common/dist/components/utils';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import { FormRenderer } from '@kogito-apps/components-common/dist/components/FormRenderer';
+import { FormRendererApi } from '@kogito-apps/components-common/dist/types';
 import { WorkflowFormDriver } from '../../../api/WorkflowFormDriver';
 import { WorkflowDefinition } from '../../../api';
+import { Bullseye } from '@patternfly/react-core/dist/js/layouts/Bullseye';
 
 export interface CustomWorkflowFormProps {
   customFormSchema: Record<string, any>;
@@ -38,6 +45,7 @@ const CustomWorkflowForm: React.FC<CustomWorkflowFormProps & OUIAProps> = ({
   ouiaSafe
 }) => {
   const formRendererApi = React.useRef<FormRendererApi>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const formAction: FormAction[] = [
     {
@@ -53,13 +61,36 @@ const CustomWorkflowForm: React.FC<CustomWorkflowFormProps & OUIAProps> = ({
   ];
 
   const startWorkflow = (data: Record<string, any>): void => {
-    driver.startWorkflow(workflowDefinition.endpoint, data).then(() => {
-      formRendererApi?.current?.doReset();
-    });
+    setIsLoading(true);
+    driver
+      .startWorkflow(workflowDefinition.endpoint, data)
+      .then(() => {
+        formRendererApi?.current?.doReset();
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
+  if (isLoading) {
+    return (
+      <Bullseye>
+        <KogitoSpinner
+          spinnerText="Starting workflow..."
+          ouiaId="custom-workflow-form-loading"
+        />
+      </Bullseye>
+    );
+  }
+
   return (
-    <div {...componentOuiaProps(ouiaId, 'custom-workflow-form', ouiaSafe)}>
+    <div
+      {...componentOuiaProps(
+        ouiaId,
+        'custom-workflow-form',
+        ouiaSafe ? ouiaSafe : !isLoading
+      )}
+    >
       <FormRenderer
         formSchema={customFormSchema}
         readOnly={false}

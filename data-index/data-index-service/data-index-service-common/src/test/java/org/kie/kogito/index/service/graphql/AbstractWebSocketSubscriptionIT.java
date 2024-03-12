@@ -1,17 +1,20 @@
 /*
- * Copyright 2023 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.index.service.graphql;
 
@@ -21,18 +24,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Inject;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.event.process.ProcessInstanceDataEvent;
-import org.kie.kogito.event.process.UserTaskInstanceDataEvent;
-import org.kie.kogito.index.TestUtils;
+import org.kie.kogito.event.usertask.UserTaskInstanceDataEvent;
 import org.kie.kogito.index.event.KogitoJobCloudEvent;
 import org.kie.kogito.index.model.ProcessInstanceState;
 import org.kie.kogito.index.service.AbstractIndexingIT;
 import org.kie.kogito.index.storage.DataIndexStorageService;
+import org.kie.kogito.index.test.TestUtils;
 import org.kie.kogito.persistence.protobuf.ProtobufService;
 
 import io.restassured.http.ContentType;
@@ -43,6 +44,8 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.json.JsonObject;
+
+import jakarta.inject.Inject;
 
 import static io.restassured.RestAssured.given;
 import static io.vertx.ext.web.handler.graphql.ApolloWSMessageType.COMPLETE;
@@ -55,9 +58,9 @@ import static io.vertx.ext.web.handler.graphql.ApolloWSMessageType.START;
 import static java.lang.String.format;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.hamcrest.CoreMatchers.isA;
-import static org.kie.kogito.index.TestUtils.getJobCloudEvent;
-import static org.kie.kogito.index.TestUtils.getProcessCloudEvent;
-import static org.kie.kogito.index.TestUtils.getUserTaskCloudEvent;
+import static org.kie.kogito.index.test.TestUtils.getJobCloudEvent;
+import static org.kie.kogito.index.test.TestUtils.getProcessCloudEvent;
+import static org.kie.kogito.index.test.TestUtils.getUserTaskCloudEvent;
 
 public abstract class AbstractWebSocketSubscriptionIT extends AbstractIndexingIT {
 
@@ -82,9 +85,10 @@ public abstract class AbstractWebSocketSubscriptionIT extends AbstractIndexingIT
     @AfterEach
     void tearDown() {
         httpClient.close();
-        cacheService.getJobsCache().clear();
-        cacheService.getProcessInstancesCache().clear();
-        cacheService.getUserTaskInstancesCache().clear();
+        cacheService.getJobsStorage().clear();
+        cacheService.getProcessDefinitionStorage().clear();
+        cacheService.getProcessInstanceStorage().clear();
+        cacheService.getUserTaskInstanceStorage().clear();
         if (cacheService.getDomainModelCache("travels") != null) {
             cacheService.getDomainModelCache("travels").clear();
         }
@@ -148,7 +152,8 @@ public abstract class AbstractWebSocketSubscriptionIT extends AbstractIndexingIT
                 .when().post("/graphql")
                 .then().log().ifValidationFails().statusCode(200).body("data.Travels", isA(Collection.class));
 
-        ProcessInstanceDataEvent event = getProcessCloudEvent(processId, processInstanceId, state, null, null, null);
+        ProcessInstanceDataEvent<?> event = getProcessCloudEvent(processId, processInstanceId, state, null, null, null, "currentUser");
+
         indexProcessCloudEvent(event);
 
         JsonObject json = cf.get(1, TimeUnit.MINUTES);
@@ -156,8 +161,7 @@ public abstract class AbstractWebSocketSubscriptionIT extends AbstractIndexingIT
         assertThatJson(json.toString()).and(
                 a -> a.node("type").isEqualTo("data"),
                 a -> a.node("payload.data." + subscriptionName + ".id").isEqualTo(processInstanceId),
-                a -> a.node("payload.data." + subscriptionName + ".metadata.processInstances[0].state").isEqualTo(state.name()),
-                a -> a.node("payload.data." + subscriptionName + ".traveller.firstName").isEqualTo("Maciej"));
+                a -> a.node("payload.data." + subscriptionName + ".metadata.processInstances[0].state").isEqualTo(state.name()));
     }
 
     private void assertProcessInstanceSubscription(String processId, String processInstanceId, ProcessInstanceState state, String subscription, String subscriptionName) throws Exception {
@@ -167,7 +171,8 @@ public abstract class AbstractWebSocketSubscriptionIT extends AbstractIndexingIT
                 .when().post("/graphql")
                 .then().log().ifValidationFails().statusCode(200).body("data.Travels", isA(Collection.class));
 
-        ProcessInstanceDataEvent event = getProcessCloudEvent(processId, processInstanceId, state, null, null, null);
+        ProcessInstanceDataEvent<?> event = getProcessCloudEvent(processId, processInstanceId, state, null, null, null, "currentUser");
+
         indexProcessCloudEvent(event);
 
         JsonObject json = cf.get(1, TimeUnit.MINUTES);
@@ -186,7 +191,7 @@ public abstract class AbstractWebSocketSubscriptionIT extends AbstractIndexingIT
                 .when().post("/graphql")
                 .then().log().ifValidationFails().statusCode(200).body("data.Deals", isA(Collection.class));
 
-        UserTaskInstanceDataEvent event = getUserTaskCloudEvent(taskId, processId, processInstanceId, null, null, state);
+        UserTaskInstanceDataEvent<?> event = getUserTaskCloudEvent(taskId, processId, processInstanceId, null, null, state);
         indexUserTaskCloudEvent(event);
 
         JsonObject json = cf.get(1, TimeUnit.MINUTES);

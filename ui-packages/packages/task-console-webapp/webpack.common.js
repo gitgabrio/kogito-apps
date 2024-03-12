@@ -1,6 +1,24 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyPlugin = require("copy-webpack-plugin");
+const CopyPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const webpack = require('webpack');
 const BG_IMAGES_DIRNAME = 'bgimages';
@@ -21,15 +39,13 @@ module.exports = {
       KOGITO_APP_NAME: 'Task Console',
       KOGITO_TASK_STATES_LIST: 'Ready,Reserved,Completed,Aborted,Skipped',
       KOGITO_TASK_ACTIVE_STATES_LIST: 'Ready,Reserved'
-    }),
+    })
   ],
   module: {
     rules: [
       {
         test: /\.(tsx|ts)?$/,
-        include: [
-          path.resolve(__dirname, 'src')
-        ],
+        include: [path.resolve(__dirname, 'src')],
         use: [
           {
             loader: 'ts-loader',
@@ -42,31 +58,6 @@ module.exports = {
       },
       {
         test: /\.(svg|ttf|eot|woff|woff2)$/,
-        include: [
-          path.resolve('../../node_modules/patternfly/dist/fonts'),
-          path.resolve(
-            '../../node_modules/@patternfly/react-core/dist/styles/assets/fonts'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/react-core/dist/styles/assets/pficon'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/patternfly/assets/fonts'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/patternfly/assets/pficon'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/consoles-common/dist/static'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/form-displayer/dist/static'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/task-form/dist/static'
-          ),
-          path.resolve('./src/static')
-        ],
         use: {
           loader: 'file-loader',
           options: {
@@ -79,7 +70,7 @@ module.exports = {
       },
       {
         test: /\.svg$/,
-        include: input => input.indexOf('background-filter.svg') > 1,
+        include: (input) => input.indexOf('background-filter.svg') > 1,
         use: [
           {
             loader: 'url-loader',
@@ -93,7 +84,7 @@ module.exports = {
       },
       {
         test: /\.svg$/,
-        include: input => input.indexOf(BG_IMAGES_DIRNAME) > -1,
+        include: (input) => input.indexOf(BG_IMAGES_DIRNAME) > -1,
         use: {
           loader: 'svg-url-loader',
           options: {}
@@ -101,37 +92,6 @@ module.exports = {
       },
       {
         test: /\.(jpg|jpeg|png|gif)$/i,
-        include: [
-          path.resolve(__dirname, 'src'),
-          path.resolve('../../node_modules/patternfly'),
-          path.resolve(
-            '../../node_modules/@patternfly/patternfly/assets/images'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/react-styles/css/assets/images'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/react-core/dist/styles/assets/images'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/react-core/node_modules/@patternfly/react-styles/css/assets/images'
-          ),
-          path.resolve(
-            '../../node_modules/@patternfly/react-table/node_modules/@patternfly/react-styles/css/assets/images'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/consoles-common/dist/static'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/form-displayer/dist/static'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/task-form/dist/static'
-          ),
-          path.resolve(
-            '../../node_modules/@kogito-apps/components-common/dist/static'
-          )
-        ],
         use: [
           {
             loader: 'url-loader',
@@ -152,17 +112,12 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js'],
-    modules: [
-      path.resolve('../../node_modules'),
-      path.resolve('./node_modules'),
-      path.resolve('./src')
-    ],
+    modules: [path.resolve(__dirname, 'src'), 'node_modules'],
     plugins: [
       new TsconfigPathsPlugin({
         configFile: path.resolve(__dirname, './tsconfig.json')
       })
     ],
-    symlinks: false,
     cacheWithContext: false
   }
 };

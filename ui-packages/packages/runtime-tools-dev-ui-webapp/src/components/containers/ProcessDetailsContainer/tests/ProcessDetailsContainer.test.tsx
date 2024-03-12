@@ -1,27 +1,33 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { mount } from 'enzyme';
-import { ProcessInstance } from '@kogito-apps/management-console-shared';
+import { render } from '@testing-library/react';
+import { ProcessInstance } from '@kogito-apps/management-console-shared/dist/types';
 import ProcessDetailsContainer from '../ProcessDetailsContainer';
 import * as ProcessDetailsContext from '../../../../channel/ProcessDetails/ProcessDetailsContext';
 import { ProcessDetailsGatewayApiImpl } from '../../../../channel/ProcessDetails/ProcessDetailsGatewayApi';
 import { ProcessDetailsQueries } from '../../../../channel/ProcessDetails/ProcessDetailsQueries';
-import * as RuntimeToolsDevUIAppContext from '../../../contexts/DevUIAppContext';
+import DevUIAppContextProvider from '../../../contexts/DevUIAppContextProvider';
+import {
+  DefaultUser,
+  User
+} from '@kogito-apps/consoles-common/dist/environment/auth';
 
 const getJobsMock = jest.fn();
 const getProcessDetailsMock = jest.fn();
@@ -59,26 +65,31 @@ jest
     () => new ProcessDetailsGatewayApiImpl(new MockQueries())
   );
 
-jest
-  .spyOn(RuntimeToolsDevUIAppContext, 'useDevUIAppContext')
-  .mockImplementation(() => {
-    return {
-      isWorkflow: jest.fn(),
-      getIsStunnerEnabled: jest.fn(),
-      customLabels: {
-        singularProcessLabel: 'workflow',
-        pluralProcessLabel: 'workflows'
-      }
-    };
-  });
-
 const processInstance: ProcessInstance = {} as ProcessInstance;
+const user: User = new DefaultUser('jon', []);
+const appContextProps = {
+  devUIUrl: 'http://localhost:9000',
+  openApiPath: '/mocked',
+  isProcessEnabled: false,
+  isTracingEnabled: false,
+  omittedProcessTimelineEvents: [],
+  availablePages: [],
+  customLabels: {
+    singularProcessLabel: 'test-singular',
+    pluralProcessLabel: 'test-plural'
+  },
+  diagramPreviewSize: { width: 100, height: 100 }
+};
 
 describe('WebApp - ProcessDetailsContainer tests', () => {
   it('Snapshot test with default values', () => {
-    const wrapper = mount(
-      <ProcessDetailsContainer processInstance={processInstance} />
+    const { container } = render(
+      <DevUIAppContextProvider users={[user]} {...appContextProps}>
+        <ProcessDetailsContainer processInstance={processInstance} />
+      </DevUIAppContextProvider>
     );
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
+
+    expect(container.querySelector('div')).toBeTruthy();
   });
 });

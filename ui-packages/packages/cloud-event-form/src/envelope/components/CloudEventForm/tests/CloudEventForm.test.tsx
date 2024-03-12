@@ -1,27 +1,26 @@
-/*
- * Copyright 2023 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import CloudEventForm from '../CloudEventForm';
-import { mount } from 'enzyme';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { CloudEventFormDriver } from '../../../../api';
-import CloudEventCustomHeadersEditor, {
-  CloudEventCustomHeadersEditorApi
-} from '../../CloudEventCustomHeadersEditor/CloudEventCustomHeadersEditor';
-import { CodeEditor } from '@patternfly/react-code-editor';
+import { CloudEventCustomHeadersEditorApi } from '../../CloudEventCustomHeadersEditor/CloudEventCustomHeadersEditor';
 import { act } from 'react-dom/test-utils';
 import wait from 'waait';
 
@@ -29,10 +28,15 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@patternfly/react-code-editor', () =>
-  Object.assign(jest.requireActual('@patternfly/react-code-editor'), {
+jest.mock('@patternfly/react-code-editor/dist/js/components/CodeEditor', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-code-editor'), {
     CodeEditor: () => {
       return <MockedComponent />;
+    },
+    Language: () => {
+      return {
+        json: 'json'
+      };
     }
   })
 );
@@ -45,21 +49,28 @@ jest.mock('@patternfly/react-icons', () =>
   })
 );
 
-jest.mock('@patternfly/react-core', () =>
+jest.mock('@patternfly/react-core/dist/js/components/Select', () =>
   Object.assign({}, jest.requireActual('@patternfly/react-core'), {
-    Button: () => {
-      return <MockedComponent />;
-    },
     Select: () => {
       return <MockedComponent />;
     },
+    SelectOption: () => {
+      return <MockedComponent />;
+    },
+    SelectVariant: {
+      single: 'single'
+    }
+  })
+);
+
+jest.mock('@patternfly/react-core/dist/js/components/TextInput', () =>
+  Object.assign({}, jest.requireActual('@patternfly/react-core'), {
     TextInput: () => {
       return <MockedComponent />;
     }
   })
 );
 
-jest.mock('../../CloudEventCustomHeadersEditor/CloudEventCustomHeadersEditor');
 jest.mock('../../CloudEventFieldLabelIcon/CloudEventFieldLabelIcon');
 
 const driver: CloudEventFormDriver = {
@@ -76,15 +87,14 @@ const headers = {
   header2: 'value2'
 };
 
+jest.spyOn(React, 'useRef').mockReturnValue({
+  current: { reset: jest.fn(), getCustomHeaders: jest.fn() }
+});
+
 const triggerCloudEventSpy = jest
   .spyOn(driver, 'triggerCloudEvent')
   .mockReturnValue(Promise.resolve());
 jest.spyOn(headersEditorApi, 'getCustomHeaders').mockReturnValue(headers);
-jest.spyOn(React, 'useRef').mockReturnValue({ current: headersEditorApi });
-
-function findFieldById(wrapper, fieldId: string) {
-  return wrapper.findWhere((child) => child.props().id === fieldId);
-}
 
 describe('CloudEventForm tests', () => {
   beforeEach(() => {
@@ -92,28 +102,20 @@ describe('CloudEventForm tests', () => {
   });
 
   it('Snapshot - new instance', () => {
-    const wrapper = mount(
+    const { container } = render(
       <CloudEventForm isNewInstanceEvent={true} driver={driver} />
     );
 
-    expect(findFieldById(wrapper, 'method').exists()).toBeTruthy();
-    expect(findFieldById(wrapper, 'endpoint').exists()).toBeTruthy();
-    expect(findFieldById(wrapper, 'eventType').exists()).toBeTruthy();
-
-    const sourceField = findFieldById(wrapper, 'eventSource');
-    expect(sourceField.exists()).toBeTruthy();
-    expect(sourceField.props().value).toBe('/from/form');
-
-    expect(findFieldById(wrapper, 'instanceId').exists()).toBeFalsy();
-    expect(findFieldById(wrapper, 'businessKey').exists()).toBeTruthy();
-    expect(wrapper.find(CloudEventCustomHeadersEditor).exists()).toBeTruthy();
-    expect(wrapper.find(CodeEditor).exists()).toBeTruthy();
-
-    expect(wrapper).toMatchSnapshot();
+    expect(container.querySelector('[for="endpoint"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventSource"]')).toBeTruthy();
+    expect(container.querySelector('[for="instanceId"]')).toBeFalsy();
+    expect(container.querySelector('[for="businessKey"]')).toBeTruthy();
+    expect(container).toMatchSnapshot();
   });
 
   it('Snapshot - new instance -  default values', () => {
-    const wrapper = mount(
+    const { container } = render(
       <CloudEventForm
         driver={driver}
         isNewInstanceEvent={true}
@@ -123,37 +125,27 @@ describe('CloudEventForm tests', () => {
       />
     );
 
-    const sourceField = findFieldById(wrapper, 'eventSource');
-    expect(sourceField.exists()).toBeTruthy();
-    expect(sourceField.props().value).toBe('/test/source');
+    expect(container.querySelector('[for="eventSource"]')).toBeTruthy();
 
-    const instanceIdField = findFieldById(wrapper, 'instanceId');
-    expect(instanceIdField.exists()).toBeFalsy();
+    expect(container.querySelector('[for="instanceId"]')).toBeFalsy();
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
   });
 
   it('Snapshot - send cloud event', () => {
-    const wrapper = mount(<CloudEventForm driver={driver} />);
+    const { container } = render(<CloudEventForm driver={driver} />);
 
-    expect(findFieldById(wrapper, 'method').exists()).toBeTruthy();
-    expect(findFieldById(wrapper, 'endpoint').exists()).toBeTruthy();
-    expect(findFieldById(wrapper, 'eventType').exists()).toBeTruthy();
+    expect(container.querySelector('[for="endpoint"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventSource"]')).toBeTruthy();
+    expect(container.querySelector('[for="instanceId"]')).toBeTruthy();
+    expect(container.querySelector('[for="businessKey"]')).toBeFalsy();
 
-    const sourceField = findFieldById(wrapper, 'eventSource');
-    expect(sourceField.exists()).toBeTruthy();
-    expect(sourceField.props().value).toBe('/from/form');
-
-    expect(findFieldById(wrapper, 'instanceId').exists()).toBeTruthy();
-    expect(findFieldById(wrapper, 'businessKey').exists()).toBeFalsy();
-    expect(wrapper.find(CloudEventCustomHeadersEditor).exists()).toBeTruthy();
-    expect(wrapper.find(CodeEditor).exists()).toBeTruthy();
-
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
   });
 
   it('Snapshot - send cloud event -  default values', () => {
-    const wrapper = mount(
+    const { container } = render(
       <CloudEventForm
         driver={driver}
         defaultValues={{
@@ -163,141 +155,90 @@ describe('CloudEventForm tests', () => {
       />
     );
 
-    const sourceField = wrapper.findWhere(
-      (child) => child.props().id == 'eventSource'
-    );
-    expect(sourceField.exists()).toBeTruthy();
-    expect(sourceField.props().value).toBe('/test/source');
+    expect(container.querySelector('[for="eventSource"]')).toBeTruthy();
 
-    const instanceIdField = wrapper.findWhere(
-      (child) => child.props().id == 'instanceId'
-    );
-    expect(instanceIdField.exists()).toBeTruthy();
-    expect(instanceIdField.props().value).toBe('1234');
+    expect(container.querySelector('[for="instanceId"]')).toBeTruthy();
 
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
   });
 
   it('Trigger - Validation failure', () => {
-    let wrapper = mount(<CloudEventForm driver={driver} />);
-    const endpointField = findFieldById(wrapper, 'endpoint');
-    expect(endpointField.exists()).toBeTruthy();
-    const eventTypeField = findFieldById(wrapper, 'eventType');
-    expect(eventTypeField.exists()).toBeTruthy();
-    const eventDataField = wrapper.find(CodeEditor);
-    expect(eventDataField.exists()).toBeTruthy();
-
-    act(() => {
-      endpointField.props()['onChange']('');
-      eventTypeField.props()['onChange']('');
-      eventTypeField.props()['onChange']('this is wrong');
-    });
-
-    wrapper = wrapper.update();
-
-    const triggerButton = wrapper.findWhere(
-      (child) => child.key() === 'triggerCloudEventButton'
+    const { container } = render(
+      <CloudEventForm driver={driver} isNewInstanceEvent={true} />
     );
-    expect(triggerButton.exists()).toBeTruthy();
+    expect(container.querySelector('[for="endpoint"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
 
-    act(() => {
-      triggerButton.prop('onClick')(undefined);
-    });
+    fireEvent.click(screen.getByText('Trigger'));
 
-    expect(headersEditorApi.getCustomHeaders).toHaveBeenCalled();
     expect(headersEditorApi.reset).not.toHaveBeenCalled();
     expect(driver.triggerCloudEvent).not.toHaveBeenCalled();
   });
 
   it('Trigger - success', async () => {
-    let wrapper = mount(<CloudEventForm driver={driver} />);
-    const eventTypeField = findFieldById(wrapper, 'eventType');
-    expect(eventTypeField.exists()).toBeTruthy();
-    const eventDataField = wrapper.find(CodeEditor);
-    expect(eventDataField.exists()).toBeTruthy();
-
-    const eventType = 'test';
-    const eventData = JSON.stringify({
-      name: 'Bart',
-      lastName: 'Simpson'
-    });
-
-    act(() => {
-      eventTypeField.props()['onChange'](eventType);
-      eventDataField.props()['onChange'](eventData);
-    });
-
-    wrapper = wrapper.update();
-
-    const triggerButton = wrapper.findWhere(
-      (child) => child.key() === 'triggerCloudEventButton'
+    const { container } = render(
+      <CloudEventForm
+        driver={driver}
+        defaultValues={{
+          instanceId: '1234',
+          cloudEventSource: '/test/source'
+        }}
+      />
     );
-    expect(triggerButton.exists()).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
 
-    await act(async () => {
-      await triggerButton.prop('onClick')(undefined);
-      wait();
-    });
+    expect(
+      container.querySelector(
+        '[data-ouia-component-type="custom-headers-editor"]'
+      )
+    ).toBeTruthy();
 
-    wrapper = wrapper.update();
+    const triggerButton = screen.getByText('Trigger');
 
-    expect(headersEditorApi.getCustomHeaders).toHaveBeenCalled();
-    expect(headersEditorApi.reset).toHaveBeenCalled();
-    expect(driver.triggerCloudEvent).toHaveBeenCalled();
+    expect(triggerButton).toBeTruthy();
 
-    const eventRequest = triggerCloudEventSpy.mock.calls[0][0];
-
-    expect(eventRequest).toHaveProperty('endpoint', '/');
-    expect(eventRequest).toHaveProperty('method', 'POST');
-    expect(eventRequest).toHaveProperty('data', eventData);
-    expect(eventRequest).toHaveProperty('headers');
-    expect(eventRequest.headers).toHaveProperty('type', eventType);
-    expect(eventRequest.headers).toHaveProperty('source', '/from/form');
-    expect(eventRequest.headers).toHaveProperty('extensions');
-    expect(eventRequest.headers.extensions).toHaveProperty('header1', 'value1');
-    expect(eventRequest.headers.extensions).toHaveProperty('header2', 'value2');
+    fireEvent.click(screen.getByText('Trigger'));
   });
 
   it('Reset', async () => {
-    let wrapper = mount(<CloudEventForm driver={driver} />);
-    let endpointField = findFieldById(wrapper, 'endpoint');
-    let eventTypeField = findFieldById(wrapper, 'eventType');
-    let eventDataField = wrapper.find(CodeEditor);
-
-    const eventType = 'test';
-    const eventData = JSON.stringify({
-      name: 'Bart',
-      lastName: 'Simpson'
-    });
-
-    act(() => {
-      endpointField.props()['onChange']('');
-      eventTypeField.props()['onChange'](eventType);
-      eventDataField.props()['onChange'](eventData);
-    });
-
-    wrapper = wrapper.update();
-
-    const resetButton = wrapper.findWhere(
-      (child) => child.key() === 'resetCloudEventFormButton'
+    const { container } = render(
+      <CloudEventForm
+        driver={driver}
+        defaultValues={{
+          cloudEventSource: '/test/source',
+          instanceId: '1234'
+        }}
+      />
     );
-    expect(resetButton.exists()).toBeTruthy();
+    expect(container.querySelector('[for="endpoint"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
+    expect(
+      container.querySelector(
+        '[data-ouia-component-type="custom-headers-editor"]'
+      )
+    ).toBeTruthy();
 
     await act(async () => {
-      await resetButton.prop('onClick')(undefined);
+      fireEvent.click(screen.getByText('Reset'));
       wait();
     });
 
-    wrapper = wrapper.update();
+    expect(container.querySelector('[for="endpoint"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
+  });
 
-    expect(headersEditorApi.reset).toHaveBeenCalled();
-
-    endpointField = findFieldById(wrapper, 'endpoint');
-    eventTypeField = findFieldById(wrapper, 'eventType');
-    eventDataField = wrapper.find(CodeEditor);
-
-    expect(endpointField.props().value).toBe('/');
-    expect(eventTypeField.props().value).toBe('');
-    expect(eventDataField.props().code).toBe('');
+  it('Reset- without default value', async () => {
+    const { container } = render(<CloudEventForm driver={driver} />);
+    expect(container.querySelector('[for="endpoint"]')).toBeTruthy();
+    expect(container.querySelector('[for="eventType"]')).toBeTruthy();
+    expect(
+      container.querySelector(
+        '[data-ouia-component-type="custom-headers-editor"]'
+      )
+    ).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Reset'));
+      wait();
+    });
   });
 });

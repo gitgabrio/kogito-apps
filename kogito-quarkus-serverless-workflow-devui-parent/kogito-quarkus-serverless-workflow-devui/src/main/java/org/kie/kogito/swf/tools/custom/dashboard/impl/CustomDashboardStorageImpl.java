@@ -1,19 +1,21 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package org.kie.kogito.swf.tools.custom.dashboard.impl;
 
 import java.io.File;
@@ -22,6 +24,15 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -29,9 +40,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -42,6 +52,12 @@ import org.kie.kogito.swf.tools.custom.dashboard.model.CustomDashboardFilter;
 import org.kie.kogito.swf.tools.custom.dashboard.model.CustomDashboardInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 @ApplicationScoped
 public class CustomDashboardStorageImpl implements CustomDashboardStorage {
@@ -74,8 +90,21 @@ public class CustomDashboardStorageImpl implements CustomDashboardStorage {
         } catch (Exception ex) {
             LOGGER.warn("Couldn't properly initialize CustomDashboardStorageImpl");
         } finally {
-            init();
+            if (classLoaderCustomDashboardUrl == null) {
+                return;
+            }
+
+            init(readCustomDashboardResources());
+            String storageUrl = getStorageUrl(classLoaderCustomDashboardUrl);
+            Thread t = new Thread(new DashboardFilesWatcher(reload(), storageUrl));
+            t.start();
         }
+    }
+
+    protected String getStorageUrl(URL classLoaderCustomDashboardUrl) {
+        return ConfigProvider.getConfig()
+                .getOptionalValue(PROJECT_CUSTOM_DASHBOARD_STORAGE_PROP, String.class)
+                .orElseGet(() -> classLoaderCustomDashboardUrl.getFile());
     }
 
     private URL getCustomDashboardStorageUrl(URL classLoaderCustomDashboardUrl) {
@@ -83,9 +112,7 @@ public class CustomDashboardStorageImpl implements CustomDashboardStorage {
             return null;
         }
 
-        String storageUrl = ConfigProvider.getConfig()
-                .getOptionalValue(PROJECT_CUSTOM_DASHBOARD_STORAGE_PROP, String.class)
-                .orElseGet(() -> classLoaderCustomDashboardUrl.getFile());
+        String storageUrl = getStorageUrl(classLoaderCustomDashboardUrl);
 
         File customDashStorageeFolder = new File(storageUrl);
 
@@ -133,12 +160,13 @@ public class CustomDashboardStorageImpl implements CustomDashboardStorage {
 
     }
 
-    private void init() {
-        readCustomDashboardResources().stream()
+    private void init(Collection<File> files) {
+        customDashboardInfoMap.clear();
+        files.stream()
                 .forEach(file -> {
                     LocalDateTime lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(file.lastModified()), TimeZone.getDefault().toZoneId());
                     customDashboardInfoMap.put(file.getName(),
-                            new CustomDashboardInfo(file.getName(), getRelativePath(file), lastModified));
+                            new CustomDashboardInfo(file.getName(), file.getPath(), lastModified));
                 });
     }
 
@@ -146,12 +174,53 @@ public class CustomDashboardStorageImpl implements CustomDashboardStorage {
         if (classLoaderCustomDashboardUrl != null) {
             LOGGER.info("custom-dashboard's files path is {}", classLoaderCustomDashboardUrl.toString());
             File rootFolder = FileUtils.toFile(classLoaderCustomDashboardUrl);
-            return FileUtils.listFiles(rootFolder, new String[] { "dash.yaml" }, false);
+            return FileUtils.listFiles(rootFolder, new String[] { "dash.yaml", "dash.yml" }, true);
         }
         return Collections.emptyList();
     }
 
-    private String getRelativePath(File file) {
-        return classLoaderCustomDashboardUrl.getPath() + file.getName();
+    private Consumer<Collection<File>> reload() {
+        return this::init;
+    }
+
+    private class DashboardFilesWatcher implements Runnable {
+
+        private final Map<WatchKey, Path> keys = new HashMap<>();
+        private Consumer<Collection<File>> consumer;
+        private String folder;
+
+        public DashboardFilesWatcher(Consumer<Collection<File>> consumer, String folder) {
+            this.consumer = consumer;
+            this.folder = folder;
+        }
+
+        @Override
+        public void run() {
+            try (WatchService ws = FileSystems.getDefault().newWatchService()) {
+                Path path = Path.of(folder);
+                keys.put(path.register(ws, ENTRY_MODIFY, ENTRY_CREATE), path);
+
+                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                        keys.put(dir.register(ws, ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE), dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+                WatchKey key;
+                while ((key = ws.take()) != null) {
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                        LOGGER.warn("Event kind: {}. File affected: {}", event.kind(), event.context());
+                        consumer.accept(readCustomDashboardResources());
+                    }
+                    key.reset();
+                }
+            } catch (InterruptedException e) {
+                LOGGER.warn("Exception in custom dashboard folder watcher for folder: {}, message: {}", folder, e.getMessage(), e);
+                Thread.currentThread().interrupt();
+            } catch (IOException ex) {
+                LOGGER.warn("Exception in custom dashboard folder watcher for folder: {}, message: {}", folder, ex.getMessage(), ex);
+            }
+        }
     }
 }

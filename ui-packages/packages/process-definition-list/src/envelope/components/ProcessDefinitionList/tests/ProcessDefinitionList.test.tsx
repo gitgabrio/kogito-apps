@@ -1,27 +1,26 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the 'License');
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { mount } from 'enzyme';
+import { render } from '@testing-library/react';
 import ProcessDefinitionList from '../ProcessDefinitionList';
 import { MockedProcessDefinitionListDriver } from '../../../tests/mocks/MockedProcessDefinitionListDriver';
 import { act } from 'react-dom/test-utils';
-import ProcessDefinitionListToolbar from '../../ProcessDefinitionListToolbar/ProcessDefinitionListToolbar';
-
-jest.mock('../../ProcessDefinitionListToolbar/ProcessDefinitionListToolbar');
 
 describe('ProcessDefinition list tests', () => {
   Date.now = jest.fn(() => 1487076708000);
@@ -33,15 +32,15 @@ describe('ProcessDefinition list tests', () => {
       driver: null,
       singularProcessLabel: 'Workflow'
     };
-    let wrapper;
+    let container;
     await act(async () => {
-      wrapper = mount(<ProcessDefinitionList {...props} />);
+      container = render(<ProcessDefinitionList {...props} />).container;
     });
-    expect(
-      wrapper.find(ProcessDefinitionList).props()[
-        'isEnvelopeConnectedToChannel'
-      ]
-    ).toBeFalsy();
+
+    const checkIsEnvelopeConnectedToChannel = container.querySelector('h3');
+    expect(checkIsEnvelopeConnectedToChannel.textContent).toEqual(
+      'Loading workflow definitions...'
+    );
   });
 
   it('render ProcessDefinition list - table', async () => {
@@ -50,14 +49,19 @@ describe('ProcessDefinition list tests', () => {
       driver: driver,
       singularProcessLabel: 'Workflow'
     };
-    let wrapper;
+    let container;
     await act(async () => {
-      wrapper = mount(<ProcessDefinitionList {...props} />);
+      container = render(<ProcessDefinitionList {...props} />).container;
     });
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const toolbar = wrapper.find(ProcessDefinitionListToolbar);
-    expect(toolbar.props().onOpenTriggerCloudEvent).toBeUndefined();
+    const checkToolbar = container.querySelector(
+      '[class="pf-c-toolbar__content"]'
+    );
+    expect(checkToolbar).toBeTruthy();
+
+    const checkToolbarButton = container.querySelector('[type="button"]');
+    expect(checkToolbarButton).toBeTruthy();
   });
 
   it('render ProcessDefinition list - table with cloud event enabled', async () => {
@@ -67,13 +71,18 @@ describe('ProcessDefinition list tests', () => {
       singularProcessLabel: 'Workflow',
       isTriggerCloudEventEnabled: true
     };
-    let wrapper;
+    let container;
     await act(async () => {
-      wrapper = mount(<ProcessDefinitionList {...props} />);
+      container = render(<ProcessDefinitionList {...props} />).container;
     });
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
-    const toolbar = wrapper.find(ProcessDefinitionListToolbar);
-    expect(toolbar.props().onOpenTriggerCloudEvent).not.toBeUndefined();
+    const checkToolbar = container.querySelector(
+      '[class="pf-c-toolbar__content"]'
+    );
+    expect(checkToolbar).toBeTruthy();
+
+    const checkToolbarButton = container.querySelector('[type="button"]');
+    expect(checkToolbarButton).toBeTruthy();
   });
 });

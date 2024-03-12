@@ -1,40 +1,51 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import Moment from 'react-moment';
 import {
-  Button,
   Card,
   CardBody,
-  CardHeader,
+  CardHeader
+} from '@patternfly/react-core/dist/js/components/Card';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import { Title } from '@patternfly/react-core/dist/js/components/Title';
+import {
   Form,
-  FormGroup,
+  FormGroup
+} from '@patternfly/react-core/dist/js/components/Form';
+import {
   Text,
-  TextVariants,
-  Title
-} from '@patternfly/react-core';
+  TextVariants
+} from '@patternfly/react-core/dist/js/components/Text';
 import React from 'react';
-import { LevelDownAltIcon, LevelUpAltIcon } from '@patternfly/react-icons';
+import { LevelDownAltIcon } from '@patternfly/react-icons/dist/js/icons/level-down-alt-icon';
+import { LevelUpAltIcon } from '@patternfly/react-icons/dist/js/icons/level-up-alt-icon';
+import { ProcessInstance } from '@kogito-apps/management-console-shared/dist/types';
 import {
   getProcessInstanceDescription,
-  ProcessInstance,
   ProcessInstanceIconCreator
-} from '@kogito-apps/management-console-shared';
-import { ItemDescriptor, EndpointLink } from '@kogito-apps/components-common';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+} from '@kogito-apps/management-console-shared/dist/utils/Utils';
+import { ItemDescriptor } from '@kogito-apps/components-common/dist/components/ItemDescriptor';
+import { EndpointLink } from '@kogito-apps/components-common/dist/components/EndpointLink';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import { ProcessDetailsDriver } from '../../../api';
 
 interface IOwnProps {
@@ -133,6 +144,7 @@ const ProcessDetailsPanel: React.FC<IOwnProps & OUIAProps> = ({
             <FormGroup label="Parent Process" fieldId="parent">
               <div>
                 <Button
+                  data-testid="open-parent-process"
                   variant="link"
                   icon={<LevelUpAltIcon />}
                   onClick={(): void => {

@@ -1,32 +1,30 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { shallow } from 'enzyme';
+import { render } from '@testing-library/react';
 import {
   ProcessInstance,
   ProcessInstanceState
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
 import ProcessDetailsPanel from '../ProcessDetailsPanel';
-import TestProcessDetailsDriver from '../../../tests/mocks/TestProcessDetailsDriver';
+import { MockedProcessDetailsDriver } from '../../../../embedded/tests/mocks/Mocks';
 Date.now = jest.fn(() => 1592000000000); // UTC Fri Jun 12 2020 22:13:20
-
-const driver = new TestProcessDetailsDriver(
-  '2d962eef-45b8-48a9-ad4e-9cde0ad6af89'
-);
 
 const mockMath = Object.create(global.Math);
 mockMath.random = () => 0.5;
@@ -108,21 +106,21 @@ const processInstance2: ProcessInstance = {
 };
 const props = {
   processInstance: processInstance1,
-  driver: driver
+  driver: new MockedProcessDetailsDriver()
 };
 
 const props2 = {
   processInstance: processInstance2,
-  driver: driver
+  driver: new MockedProcessDetailsDriver()
 };
 
 describe('ProcessDetailsPanel component tests', () => {
   it('Snapshot testing with basic data loaded', () => {
-    const wrapper = shallow(<ProcessDetailsPanel {...props} />);
-    expect(wrapper).toMatchSnapshot();
+    const container = render(<ProcessDetailsPanel {...props} />);
+    expect(container).toMatchSnapshot();
   });
-  it('should find a paragraph', () => {
-    const wrapper = shallow(<ProcessDetailsPanel {...props2} />);
-    expect(wrapper.find('Text').at(1).prop('component')).toBe('p');
+  it('should find a paragraph and click parent process', async () => {
+    const container = render(<ProcessDetailsPanel {...props2} />);
+    expect(container).toMatchSnapshot();
   });
 });

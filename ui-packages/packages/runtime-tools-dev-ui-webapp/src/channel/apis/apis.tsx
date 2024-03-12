@@ -1,31 +1,38 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-import { GraphQL } from '@kogito-apps/consoles-common';
+import { OpenAPI } from 'openapi-types';
+import { GraphQL } from '@kogito-apps/consoles-common/dist/graphql';
 import {
   BulkProcessInstanceActionResponse,
   NodeInstance,
-  OperationType,
   ProcessInstance,
   TriggerableNode
-} from '@kogito-apps/management-console-shared';
-import { FormInfo } from '@kogito-apps/forms-list';
+} from '@kogito-apps/management-console-shared/dist/types';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 import axios from 'axios';
 import uuidv4 from 'uuid';
-import { Form, FormContent } from '@kogito-apps/form-details';
+import {
+  Form,
+  FormContent,
+  FormInfo
+} from '@kogito-apps/components-common/dist/types';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import { createProcessDefinitionList } from '../../utils/Utils';
 import { ProcessDefinition } from '@kogito-apps/process-definition-list';
@@ -353,7 +360,7 @@ export const getProcessDefinitionList = (
       .then((response) => {
         const processDefinitionObjs = [];
         const paths = response.paths;
-        const regexPattern = /^\/\w+\/schema/;
+        const regexPattern = /^\/[^\n/]+\/schema/;
         Object.getOwnPropertyNames(paths)
           .filter((path) => regexPattern.test(path.toString()))
           .forEach((url) => {
@@ -381,6 +388,28 @@ export const getProcessSchema = (
   return new Promise((resolve, reject) => {
     axios
       .get(`${processDefinitionData.endpoint}/schema`)
+      .then((response) => {
+        /* istanbul ignore else*/
+        if (response.status === 200) {
+          resolve(response.data);
+        }
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+};
+
+export const getCustomForm = (
+  processDefinitionData: ProcessDefinition
+): Promise<Form> => {
+  return new Promise((resolve, reject) => {
+    const lastIndex = processDefinitionData.endpoint.lastIndexOf(
+      `/${processDefinitionData.processName}`
+    );
+    const baseEndpoint = processDefinitionData.endpoint.slice(0, lastIndex);
+    axios
+      .get(`${baseEndpoint}/forms/${processDefinitionData.processName}`)
       .then((response) => {
         /* istanbul ignore else*/
         if (response.status === 200) {
@@ -515,20 +544,50 @@ export const getCustomDashboardContent = (name: string): Promise<string> => {
   });
 };
 
-export const getCustomWorkflowSchema = (
+export const getCustomWorkflowSchemaFromApi = async (
+  api: OpenAPI.Document,
+  workflowName: string
+): Promise<Record<string, any>> => {
+  let schema = {};
+
+  try {
+    const schemaFromRequestBody =
+      api.paths['/' + workflowName].post.requestBody.content['application/json']
+        .schema;
+
+    if (schemaFromRequestBody.type) {
+      schema = {
+        type: schemaFromRequestBody.type,
+        properties: schemaFromRequestBody.properties
+      };
+    } else {
+      schema = (api as any).components.schemas[workflowName + '_input'];
+    }
+  } catch (e) {
+    console.log(e);
+    schema = (api as any).components.schemas[workflowName + '_input'];
+  }
+
+  // Components can contain the content of internal refs ($ref)
+  // This keeps the refs working while avoiding circular refs with the workflow itself
+  if (schema) {
+    const { [workflowName + '_input']: _, ...schemas } =
+      (api as any).components?.schemas ?? {};
+    (schema as any)['components'] = { schemas };
+  }
+
+  return schema ?? null;
+};
+
+export const getCustomWorkflowSchema = async (
   devUIUrl: string,
   openApiPath: string,
   workflowName: string
 ): Promise<Record<string, any>> => {
   return new Promise((resolve, reject) => {
     SwaggerParser.parse(`${devUIUrl}/${openApiPath}`)
-      .then((response: any) => {
-        const schema = response.components.schemas[workflowName];
-        if (schema) {
-          resolve(schema);
-        } else {
-          resolve(null);
-        }
+      .then(async (response: any) => {
+        resolve(await getCustomWorkflowSchemaFromApi(response, workflowName));
       })
       .catch((err) => reject(err));
   });

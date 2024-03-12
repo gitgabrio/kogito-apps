@@ -1,22 +1,24 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import { act } from 'react-dom/test-utils';
-import { mount } from 'enzyme';
+import { render } from '@testing-library/react';
 import {
   MockedMessageBusClientApi,
   workflowForm__getCustomWorkflowSchema,
@@ -25,41 +27,36 @@ import {
 import WorkflowFormEnvelopeView, {
   WorkflowFormEnvelopeViewApi
 } from '../WorkflowFormEnvelopeView';
-import { KogitoSpinner } from '@kogito-apps/components-common';
-import CustomWorkflowForm from '../components/CustomWorkflowForm/CustomWorkflowForm';
-import WorkflowForm from '../components/WorkflowForm/WorkflowForm';
-
-jest.mock('../components/WorkflowForm/WorkflowForm');
-jest.mock('../components/CustomWorkflowForm/CustomWorkflowForm');
-
-const MockedComponent = (): React.ReactElement => {
-  return <></>;
-};
-jest.mock('@kogito-apps/components-common', () =>
-  Object.assign({}, jest.requireActual('@kogito-apps/components-common'), {
-    KogitoSpinner: () => {
-      return <MockedComponent />;
-    }
-  })
-);
 
 describe('WorkflowFormEnvelopeView tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(), // Deprecated
+        removeListener: jest.fn(), // Deprecated
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+      }))
+    });
   });
 
   it('Loading', () => {
     const channelApi = MockedMessageBusClientApi();
     const forwardRef = React.createRef<WorkflowFormEnvelopeViewApi>();
 
-    const wrapper = mount(
+    const container = render(
       <WorkflowFormEnvelopeView channelApi={channelApi} ref={forwardRef} />
-    );
+    ).container;
 
-    expect(wrapper).toMatchSnapshot();
-
-    const spinner = wrapper.find(KogitoSpinner);
-    expect(spinner.exists()).toBeTruthy();
+    expect(container).toMatchSnapshot();
+    const checkLoading = container.querySelector('h3');
+    expect(checkLoading?.textContent).toEqual('Loading workflow form...');
   });
 
   it('Workflow Form', async () => {
@@ -70,9 +67,9 @@ describe('WorkflowFormEnvelopeView tests', () => {
       Promise.resolve(null)
     );
 
-    let wrapper = mount(
+    const container = render(
       <WorkflowFormEnvelopeView channelApi={channelApi} ref={forwardRef} />
-    );
+    ).container;
 
     await act(async () => {
       if (forwardRef.current) {
@@ -83,13 +80,11 @@ describe('WorkflowFormEnvelopeView tests', () => {
       }
     });
 
-    wrapper = wrapper.update();
-
-    expect(wrapper).toMatchSnapshot();
-
-    const workflowForm = wrapper.find(WorkflowForm);
-    expect(workflowForm.exists()).toBeTruthy();
-    expect(workflowForm.props().driver).not.toBeNull();
+    expect(container).toMatchSnapshot();
+    const checkWorkflowForm = container.querySelector(
+      '[data-ouia-component-type="workflow-form"]'
+    );
+    expect(checkWorkflowForm).toBeTruthy();
   });
 
   it('Custom Workflow Form', async () => {
@@ -100,9 +95,9 @@ describe('WorkflowFormEnvelopeView tests', () => {
       Promise.resolve(workflowSchema)
     );
 
-    let wrapper = mount(
+    const container = render(
       <WorkflowFormEnvelopeView channelApi={channelApi} ref={forwardRef} />
-    );
+    ).container;
 
     await act(async () => {
       if (forwardRef.current) {
@@ -113,12 +108,10 @@ describe('WorkflowFormEnvelopeView tests', () => {
       }
     });
 
-    wrapper = wrapper.update();
-
-    expect(wrapper).toMatchSnapshot();
-
-    const customWorkflowForm = wrapper.find(CustomWorkflowForm);
-    expect(customWorkflowForm.exists()).toBeTruthy();
-    expect(customWorkflowForm.props().driver).not.toBeNull();
+    expect(container).toMatchSnapshot();
+    const checkCustomWorkflowForm = container.querySelector(
+      '[data-ouia-component-type="custom-workflow-form"]'
+    );
+    expect(checkCustomWorkflowForm).toBeTruthy();
   });
 });

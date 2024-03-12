@@ -1,19 +1,21 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import { mount } from 'enzyme';
 import _ from 'lodash';
@@ -24,16 +26,17 @@ import CustomTaskFormDisplayer, {
 import { TaskFormDriver } from '../../../../api';
 import { MockedTaskFormDriver } from '../../../../embedded/tests/mocks/Mocks';
 import { ApplyForVisaForm } from '../../utils/tests/mocks/ApplyForVisa';
-import { CustomForm, FormType } from '../../../../types';
-import { KogitoSpinner, FormFooter } from '@kogito-apps/components-common';
+import { Form, FormType } from '@kogito-apps/components-common/dist';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import { FormFooter } from '@kogito-apps/components-common/dist/components/FormFooter';
+import { EmbeddedFormDisplayer } from '@kogito-apps/form-displayer';
 import {
-  EmbeddedFormDisplayer,
   FormOpenedState,
-  FormSubmitResponse
-} from '@kogito-apps/form-displayer';
+  FormSubmitResponse,
+  FormSubmitResponseType
+} from '@kogito-apps/components-common/dist';
 import { act } from 'react-dom/test-utils';
 import wait from 'waait';
-import { FormSubmitResponseType } from '@kogito-apps/form-displayer';
 
 jest.mock('uuid', () => {
   return () => 'testId';
@@ -43,11 +46,16 @@ const MockedComponent = (): React.ReactElement => {
   return <></>;
 };
 
-jest.mock('@kogito-apps/components-common', () =>
+jest.mock('@kogito-apps/components-common/dist/components/KogitoSpinner', () =>
   Object.assign({}, jest.requireActual('@kogito-apps/components-common'), {
     KogitoSpinner: () => {
       return <MockedComponent />;
-    },
+    }
+  })
+);
+
+jest.mock('@kogito-apps/components-common/dist/components/FormFooter', () =>
+  Object.assign({}, jest.requireActual('@kogito-apps/components-common'), {
     FormFooter: () => {
       return <MockedComponent />;
     }
@@ -91,7 +99,7 @@ const getTaskFormDriver = (): TaskFormDriver => {
   return driver;
 };
 
-export const customForm: CustomForm = {
+export const customForm: Form = {
   formInfo: {
     type: FormType.HTML,
     name: 'travels_VisaApplication',
@@ -130,7 +138,8 @@ describe('CustomTaskFormDisplayer Test', () => {
       },
       schema: _.cloneDeep(ApplyForVisaForm),
       customForm: customForm,
-      driver: getTaskFormDriver()
+      driver: getTaskFormDriver(),
+      targetOrigin: 'http://localhost:9000'
     };
   });
 

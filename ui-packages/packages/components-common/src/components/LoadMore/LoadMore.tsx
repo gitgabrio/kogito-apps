@@ -1,35 +1,41 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useState } from 'react';
 import {
   DataList,
   DataListItem,
-  DataListCell,
-  Spinner,
+  DataListCell
+} from '@patternfly/react-core/dist/js/components/DataList';
+import { Spinner } from '@patternfly/react-core/dist/js/components/Spinner';
+import {
   DropdownItem,
   Dropdown,
   DropdownToggle,
-  DropdownToggleAction,
-  Split,
-  SplitItem
-} from '@patternfly/react-core';
-import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
+  DropdownToggleAction
+} from '@patternfly/react-core/dist/js/components/Dropdown';
+import { Split, SplitItem } from '@patternfly/react-core/dist/js/layouts/Split';
+import {
+  OUIAProps,
+  componentOuiaProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import '../styles.css';
-import { CheckIcon } from '@patternfly/react-icons';
+import { CheckIcon } from '@patternfly/react-icons/dist/js/icons/check-icon';
 
 interface IOwnProps {
   offset: number;
@@ -40,7 +46,7 @@ interface IOwnProps {
   setLoadMoreClicked?: (loadMoreClicked: boolean) => void;
 }
 
-const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
+export const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
   offset,
   setOffset,
   getMoreItems,
@@ -74,6 +80,7 @@ const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
       <DropdownItem
         key={'loadmore' + count}
         component="button"
+        data-testid="dropdown-item"
         id={count.toString()}
       >
         <Split hasGutter>
@@ -95,6 +102,7 @@ const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
         'load-more',
         ouiaSafe ? ouiaSafe : !isLoadingMore
       )}
+      data-testid="load-more-data-list"
     >
       <DataListItem aria-labelledby="kie-datalist-item">
         <DataListCell className="kogito-components-common__load-more">
@@ -104,7 +112,7 @@ const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
               direction="up"
               toggle={
                 <DropdownToggle
-                  id={`toggle-id`}
+                  data-testid={`toggle-id`}
                   onToggle={onToggle}
                   splitButtonItems={[
                     <DropdownToggleAction
@@ -113,6 +121,7 @@ const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
                         loadMore(loadMoreValue);
                         setIsOpen(false);
                       }}
+                      data-testid="toggle-action"
                     >
                       {isLoadingMore ? (
                         <>
@@ -143,5 +152,3 @@ const LoadMore: React.FC<IOwnProps & OUIAProps> = ({
     </DataList>
   );
 };
-
-export default LoadMore;

@@ -1,23 +1,25 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { shallow } from 'enzyme';
-import NoData from '../NoData';
-import { Button } from '@patternfly/react-core';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { NoData } from '../NoData';
+import { BrowserRouter as Router } from 'react-router-dom';
 
 const props1 = {
   defaultPath: '/processInstances',
@@ -40,18 +42,23 @@ const props2 = {
 
 describe('NoData component tests', () => {
   it('snapshot tests with location object', () => {
-    const wrapper = shallow(<NoData {...props1} />);
-    expect(wrapper).toMatchSnapshot();
+    const { container } = render(<NoData {...props1} />);
+    expect(container).toMatchSnapshot();
   });
 
   it('snapshot tests without location object', () => {
-    const wrapper = shallow(<NoData {...props2} />);
-    expect(wrapper).toMatchSnapshot();
+    const { container } = render(<NoData {...props2} />);
+    expect(container).toMatchSnapshot();
   });
   /* tslint:disable */
-  it('redirect button click', () => {
-    const wrapper = shallow(<NoData {...props2} />);
-    wrapper.find(Button).simulate('click');
-    expect(wrapper.find('Redirect').props()['to']).toEqual('/processInstances');
+  it('redirect button click', async () => {
+    const { container } = render(
+      <Router>
+        <NoData {...props2} />
+      </Router>
+    );
+    const button = screen.getByTestId('redirect-button');
+    fireEvent.click(button);
+    expect(container).toMatchSnapshot();
   });
 });

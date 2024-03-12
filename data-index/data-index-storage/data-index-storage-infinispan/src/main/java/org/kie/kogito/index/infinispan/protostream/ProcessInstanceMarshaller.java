@@ -1,17 +1,20 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.index.infinispan.protostream;
 
@@ -44,11 +47,14 @@ public class ProcessInstanceMarshaller extends AbstractMarshaller implements Mes
     protected static final String ROOT_PROCESS_ID = "rootProcessId";
     protected static final String PARENT_PROCESS_INSTANCE_ID = "parentProcessInstanceId";
     protected static final String PROCESS_NAME = "processName";
+    protected static final String VERSION = "version";
     protected static final String ERROR = "error";
     protected static final String ADDONS = "addons";
     protected static final String LAST_UPDATE = "lastUpdate";
     protected static final String BUSINESS_KEY = "businessKey";
     protected static final String MILESTONES = "milestones";
+    protected static final String CREATED_BY = "createdBy";
+    protected static final String UPDATED_BY = "updatedBy";
 
     public ProcessInstanceMarshaller(ObjectMapper mapper) {
         super(mapper);
@@ -75,6 +81,9 @@ public class ProcessInstanceMarshaller extends AbstractMarshaller implements Mes
         pi.setLastUpdate(dateToZonedDateTime(reader.readDate(LAST_UPDATE)));
         pi.setBusinessKey(reader.readString(BUSINESS_KEY));
         pi.setMilestones(reader.readCollection(MILESTONES, new ArrayList<>(), Milestone.class));
+        pi.setVersion(reader.readString(VERSION));
+        pi.setCreatedBy(reader.readString(CREATED_BY));
+        pi.setUpdatedBy(reader.readString(UPDATED_BY));
         return pi;
     }
 
@@ -98,6 +107,9 @@ public class ProcessInstanceMarshaller extends AbstractMarshaller implements Mes
         writer.writeDate(LAST_UPDATE, zonedDateTimeToDate(pi.getLastUpdate()));
         writer.writeString(BUSINESS_KEY, pi.getBusinessKey());
         writer.writeCollection(MILESTONES, pi.getMilestones(), Milestone.class);
+        writer.writeString(VERSION, pi.getVersion());
+        writer.writeString(CREATED_BY, pi.getCreatedBy());
+        writer.writeString(UPDATED_BY, pi.getCreatedBy());
     }
 
     @Override

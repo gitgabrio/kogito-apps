@@ -1,25 +1,28 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import {
   MessageBusClientApi,
-  NotificationPropertyNames,
   RequestPropertyNames,
-  MessageBusServer
-} from '@kogito-tooling/envelope-bus/dist/api';
+  MessageBusServer,
+  ApiNotificationConsumers,
+  ApiSharedValueConsumers
+} from '@kie-tools-core/envelope-bus/dist/api';
 import {
   ProcessDetailsChannelApi,
   ProcessDetailsEnvelopeApi
@@ -27,9 +30,9 @@ import {
 import {
   ProcessInstanceState,
   MilestoneStatus
-} from '@kogito-apps/management-console-shared';
-import { EnvelopeBusMessageManager } from '@kogito-tooling/envelope-bus/dist/common';
-import { EnvelopeBusController } from '@kogito-tooling/envelope-bus/dist/envelope';
+} from '@kogito-apps/management-console-shared/dist/types';
+import { EnvelopeBusMessageManager } from '@kie-tools-core/envelope-bus/dist/common';
+import { EnvelopeClient } from '@kie-tools-core/envelope-bus/dist/envelope';
 import { ProcessDetailsEnvelopeViewApi } from '../../ProcessDetailsEnvelopeView';
 
 export const ProcessDetails = {
@@ -136,16 +139,33 @@ export const MockedApiRequests = jest.fn<
   processDetails__handleNodeInstanceRetrigger: jest.fn()
 }));
 
+const mockNotificationConsumer = {
+  subscribe: jest.fn(),
+  unsubscribe: jest.fn(),
+  send: jest.fn()
+};
+
+const mockSharedConsumer = {
+  subscribe: jest.fn(),
+  unsubscribe: jest.fn(),
+  send: jest.fn(),
+  set: jest.fn()
+};
+
 export const MockedApiNotifications = jest.fn<
-  Pick<
-    ProcessDetailsChannelApi,
-    NotificationPropertyNames<ProcessDetailsChannelApi>
-  >,
+  ApiNotificationConsumers<ProcessDetailsChannelApi>,
   []
 >(() => ({
-  jobList__sortBy: jest.fn(),
-  processDetails__handleProcessVariableUpdate: jest.fn(),
-  processDetails__openProcessDetails: jest.fn()
+  jobList__sortBy: mockNotificationConsumer,
+  processDetails__handleProcessVariableUpdate: mockNotificationConsumer,
+  processDetails__openProcessDetails: mockNotificationConsumer
+}));
+
+export const MockedApiSharedValueConsumers = jest.fn<
+  ApiSharedValueConsumers<ProcessDetailsChannelApi>,
+  []
+>(() => ({
+  processDetails__handleProcessVariableUpdate: mockSharedConsumer
 }));
 
 export const MockedMessageBusClientApi = jest.fn<
@@ -154,6 +174,7 @@ export const MockedMessageBusClientApi = jest.fn<
 >(() => ({
   requests: new MockedApiRequests(),
   notifications: new MockedApiNotifications(),
+  shared: new MockedApiSharedValueConsumers(),
   subscribe: jest.fn(),
   unsubscribe: jest.fn()
 }));
@@ -195,9 +216,7 @@ export const MockedEnvelopeBusMessageManager = jest.fn<
 }));
 
 export const MockedEnvelopeBusControllerDefinition = jest.fn<
-  Partial<
-    EnvelopeBusController<ProcessDetailsEnvelopeApi, ProcessDetailsChannelApi>
-  >,
+  Partial<EnvelopeClient<ProcessDetailsEnvelopeApi, ProcessDetailsChannelApi>>,
   []
 >(() => ({
   bus: jest.fn(),
@@ -213,8 +232,8 @@ export const MockedEnvelopeBusControllerDefinition = jest.fn<
   receive: jest.fn()
 }));
 
-export const MockedEnvelopeBusController =
-  new MockedEnvelopeBusControllerDefinition() as EnvelopeBusController<
+export const MockedEnvelopeClient =
+  new MockedEnvelopeBusControllerDefinition() as EnvelopeClient<
     ProcessDetailsEnvelopeApi,
     ProcessDetailsChannelApi
   >;

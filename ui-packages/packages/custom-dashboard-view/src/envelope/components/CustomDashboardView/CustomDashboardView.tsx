@@ -1,29 +1,36 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect, useRef, useState } from 'react';
-import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
+import {
+  OUIAProps,
+  componentOuiaProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import { CustomDashboardViewDriver } from '../../../api/CustomDashboardViewDriver';
-import { ServerErrors } from '@kogito-apps/components-common';
-import { Bullseye, Card } from '@patternfly/react-core';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
+import { Card } from '@patternfly/react-core/dist/js/components/Card';
+import { Bullseye } from '@patternfly/react-core/dist/js/layouts/Bullseye';
 
 export interface CustomDashboardViewProps {
   isEnvelopeConnectedToChannel: boolean;
   driver: CustomDashboardViewDriver;
   customDashboardName: string;
+  targetOrigin: string;
 }
 
 const CustomDashboardView: React.FC<CustomDashboardViewProps & OUIAProps> = ({
@@ -31,6 +38,7 @@ const CustomDashboardView: React.FC<CustomDashboardViewProps & OUIAProps> = ({
   driver,
   ouiaId,
   customDashboardName,
+  targetOrigin,
   ouiaSafe
 }) => {
   const ref = useRef(null);
@@ -47,6 +55,9 @@ const CustomDashboardView: React.FC<CustomDashboardViewProps & OUIAProps> = ({
     });
 
   window.addEventListener('message', (e) => {
+    if (e.origin !== targetOrigin) {
+      return;
+    }
     if (e.data == 'ready') {
       setReady(true);
     }

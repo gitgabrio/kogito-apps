@@ -1,44 +1,52 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect, useRef, useState } from 'react';
-import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
-import { FormDetailsDriver } from '../../../api/FormDetailsDriver';
-import { FormInfo } from '@kogito-apps/forms-list';
 import {
-  Card,
+  OUIAProps,
+  componentOuiaProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
+import { FormDetailsDriver } from '../../../api/FormDetailsDriver';
+import { Card } from '@patternfly/react-core/dist/js/components/Card';
+import {
   Drawer,
   DrawerContent,
   DrawerContentBody,
   DrawerHead,
-  DrawerPanelContent,
+  DrawerPanelContent
+} from '@patternfly/react-core/dist/js/components/Drawer';
+import {
   Tab,
   Tabs,
   TabTitleText
-} from '@patternfly/react-core';
+} from '@patternfly/react-core/dist/js/components/Tabs';
 import FormEditor from '../FormEditor/FormEditor';
-import { ServerErrors, KogitoSpinner } from '@kogito-apps/components-common';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
 import isEmpty from 'lodash/isEmpty';
-import { Form } from '../../../api';
+import { Form, FormInfo } from '@kogito-apps/components-common/dist/types';
 import FormDisplayerContainer from '../../containers/FormDisplayerContainer/FormDisplayerContainer';
 
 export interface FormDetailsProps {
   isEnvelopeConnectedToChannel: boolean;
   driver: FormDetailsDriver;
   formData: FormInfo;
+  targetOrigin: string;
 }
 
 export interface ResizableContent {
@@ -50,7 +58,8 @@ const FormDetails: React.FC<FormDetailsProps & OUIAProps> = ({
   driver,
   formData,
   ouiaId,
-  ouiaSafe
+  ouiaSafe,
+  targetOrigin
 }) => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [formContent, setFormContent] = useState<Form>(null);
@@ -101,7 +110,10 @@ const FormDetails: React.FC<FormDetailsProps & OUIAProps> = ({
       <DrawerHead style={{ height: '100%' }}>
         {formContent && Object.keys(formContent)[0].length > 0 && (
           <span>
-            <FormDisplayerContainer formContent={formContent} />
+            <FormDisplayerContainer
+              formContent={formContent}
+              targetOrigin={targetOrigin}
+            />
           </span>
         )}
       </DrawerHead>

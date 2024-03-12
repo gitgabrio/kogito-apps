@@ -1,29 +1,85 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
-import { GraphQL } from '@kogito-apps/consoles-common';
+import { GraphQL } from '@kogito-apps/consoles-common/dist/graphql';
 import {
   BulkProcessInstanceActionResponse,
   JobCancel,
   NodeInstance,
-  OperationType,
   ProcessInstance,
-  TriggerableNode
-} from '@kogito-apps/management-console-shared';
+  TriggerableNode,
+  ProcessInstanceFilter,
+  ProcessListSortBy,
+  JobStatus,
+  Job,
+  JobsSortBy
+} from '@kogito-apps/management-console-shared/dist/types';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 import { ApolloClient } from 'apollo-client';
+import { buildProcessListWhereArgument } from './QueryUtils';
+
+export const getProcessInstances = async (
+  offset: number,
+  limit: number,
+  filters: ProcessInstanceFilter,
+  sortBy: ProcessListSortBy,
+  client: ApolloClient<any>
+): Promise<ProcessInstance[]> => {
+  return new Promise<ProcessInstance[]>((resolve, reject) => {
+    client
+      .query({
+        query: GraphQL.GetProcessInstancesDocument,
+        variables: {
+          where: buildProcessListWhereArgument(filters),
+          offset: offset,
+          limit: limit,
+          orderBy: sortBy
+        },
+        fetchPolicy: 'network-only',
+        errorPolicy: 'all'
+      })
+      .then((value) => {
+        resolve(value.data.ProcessInstances);
+      })
+      .catch((reason) => {
+        reject({ errorMessage: JSON.stringify(reason) });
+      });
+  });
+};
+
+export const getChildProcessInstances = async (
+  rootProcessInstanceId: string,
+  client: ApolloClient<any>
+): Promise<ProcessInstance[]> => {
+  return new Promise<ProcessInstance[]>((resolve, reject) => {
+    client
+      .query({
+        query: GraphQL.GetChildInstancesDocument,
+        variables: {
+          rootProcessInstanceId
+        }
+      })
+      .then((value) => {
+        resolve(value.data.ProcessInstances);
+      })
+      .catch((reason) => reject(reason));
+  });
+};
 
 //Rest Api to Cancel multiple Jobs
 export const performMultipleCancel = async (
@@ -406,4 +462,28 @@ export const getTriggerableNodes = async (
     .catch((reason) => {
       return reason;
     });
+};
+
+export const getJobsWithFilters = async (
+  offset: number,
+  limit: number,
+  filters: JobStatus[],
+  orderBy: JobsSortBy,
+  client: ApolloClient<any>
+): Promise<Job[]> => {
+  try {
+    const response = await client.query({
+      query: GraphQL.GetJobsWithFiltersDocument,
+      variables: {
+        values: filters,
+        offset: offset,
+        limit: limit,
+        orderBy
+      },
+      fetchPolicy: 'network-only'
+    });
+    return Promise.resolve(response.data.Jobs);
+  } catch (error) {
+    return Promise.reject(error);
+  }
 };

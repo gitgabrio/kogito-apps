@@ -1,34 +1,30 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import { act } from 'react-dom/test-utils';
-import { mount } from 'enzyme';
+import { render } from '@testing-library/react';
 import { MockedMessageBusClientApi } from './mocks/Mocks';
-import CustomDashboardView from '../components/CustomDashboardView/CustomDashboardView';
 import CustomDashboardViewEnvelopeView, {
   CustomDashboardViewEnvelopeViewApi
 } from '../CustomDashboardViewEnvelopeView';
 
 describe('CustomDashboardViewEnvelopeView tests', () => {
-  beforeEach(() => {
-    jest.mock('../components/CustomDashboardView/CustomDashboardView');
-    jest.mock('../../api/CustomDashboardViewDriver');
-  });
-
   it('Snapshot', async () => {
     const channelApi = new MockedMessageBusClientApi();
     (
@@ -36,42 +32,30 @@ describe('CustomDashboardViewEnvelopeView tests', () => {
         .customDashboardView__getCustomDashboardView as jest.Mock
     ).mockResolvedValue('its a yml file');
     const forwardRef = React.createRef<CustomDashboardViewEnvelopeViewApi>();
-
-    let wrapper;
+    let container;
     await act(async () => {
-      wrapper = mount(
+      container = render(
         <CustomDashboardViewEnvelopeView
           channelApi={channelApi}
           ref={forwardRef}
         />
-      ).find('CustomDashboardViewEnvelopeView');
+      ).container;
     });
-
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
 
     act(() => {
       if (forwardRef.current) {
-        forwardRef.current.initialize('name');
+        forwardRef.current.initialize('name', 'targetOrigin');
       }
     });
 
-    wrapper = wrapper.update();
+    const checkIframe = container.querySelector('iframe');
 
-    expect(wrapper.find(CustomDashboardViewEnvelopeView)).toMatchSnapshot();
+    expect(checkIframe).toMatchSnapshot();
+    const iframeWrapper = container.querySelector('iframe');
 
-    const envelopeView = wrapper.find(CustomDashboardView);
-
-    envelopeView.update();
-    expect(
-      envelopeView.find(CustomDashboardView).props()[
-        'isEnvelopeConnectedToChannel'
-      ]
-    ).toEqual(true);
-    expect(
-      envelopeView.find('CustomDashboardView').props()['driver']
-    ).not.toBeNull();
-    expect(
-      envelopeView.find('CustomDashboardView').props()['customDashboardName']
-    ).toEqual('name');
+    expect(iframeWrapper?.getAttribute('src')).toEqual(
+      'resources/webapp/custom-dashboard-view/dashbuilder/index.html'
+    );
   });
 });

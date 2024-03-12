@@ -1,25 +1,28 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
 import * as H from 'history';
 import { MemoryRouter } from 'react-router';
 import { act } from 'react-dom/test-utils';
 import wait from 'waait';
-import { KogitoEmptyState, ServerErrors } from '@kogito-apps/components-common';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
+import { KogitoEmptyState } from '@kogito-apps/components-common/dist/components/KogitoEmptyState';
 import { mount } from 'enzyme';
 import { UserTaskInstance } from '@kogito-apps/task-console-shared';
 import { TaskInboxGatewayApi } from '../../../../channel/inbox';
@@ -105,18 +108,25 @@ jest.mock('@patternfly/react-core', () =>
   })
 );
 
-jest.mock('@kogito-apps/components-common', () =>
+jest.mock('@kogito-apps/components-common/dist/components/ServerErrors', () =>
   Object.assign({}, jest.requireActual('@kogito-apps/components-common'), {
-    KogitoEmptyState: () => {
-      return <MockedComponent />;
-    },
     ServerErrors: () => {
       return <MockedComponent />;
     }
   })
 );
 
-jest.mock('@kogito-apps/consoles-common', () =>
+jest.mock(
+  '@kogito-apps/components-common/dist/components/KogitoEmptyState',
+  () =>
+    Object.assign({}, jest.requireActual('@kogito-apps/components-common'), {
+      KogitoEmptyState: () => {
+        return <MockedComponent />;
+      }
+    })
+);
+
+jest.mock('@kogito-apps/consoles-common/dist/components/layout/PageTitle', () =>
   Object.assign({}, jest.requireActual('@kogito-apps/consoles-common'), {
     PageTitle: () => {
       return <MockedComponent />;
@@ -345,10 +355,10 @@ describe('TaskDetailsPage tests', () => {
     // open details drawer
     await act(async () => {
       const button = wrapper
-        .find(Button)
+        .find('Button')
         .findWhere((node) => node.props().id === 'view-details');
 
-      button.props().onClick();
+      button.at(0).props().onClick();
     });
     wrapper = wrapper.update();
 

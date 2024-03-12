@@ -1,19 +1,21 @@
-/*
- * Copyright 2023 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, {
   useCallback,
   useEffect,
@@ -21,17 +23,16 @@ import React, {
   useState
 } from 'react';
 import uuidv4 from 'uuid';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import { Grid, GridItem } from '@patternfly/react-core/dist/js/layouts/Grid';
+import { Stack, StackItem } from '@patternfly/react-core/dist/js/layouts/Stack';
+import { TextInput } from '@patternfly/react-core/dist/js/components/TextInput';
+import { PlusCircleIcon } from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
+import { TrashIcon } from '@patternfly/react-icons/dist/esm/icons/trash-icon';
 import {
-  Button,
-  Grid,
-  GridItem,
-  Stack,
-  StackItem,
-  TextInput
-} from '@patternfly/react-core';
-import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
-import TrashIcon from '@patternfly/react-icons/dist/esm/icons/trash-icon';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 
 export interface CloudEventCustomHeadersEditorApi {
   reset(): void;
@@ -154,6 +155,7 @@ const CloudEventCustomHeadersEditor = React.forwardRef<
                         value={header.key}
                         onChange={(value) => updateHeaderKey(index, value)}
                         autoFocus={isNewHeader && index === headers.length - 1}
+                        data-testid="update-key"
                       />
                     </GridItem>
                     <GridItem span={7} key={`header-value-${header.uuid}`}>
@@ -161,6 +163,7 @@ const CloudEventCustomHeadersEditor = React.forwardRef<
                         id={`header-value-${index}-input`}
                         value={header.value}
                         onChange={(value) => updateHeaderValue(index, value)}
+                        data-testid="update-value"
                       />
                     </GridItem>
                     <GridItem span={1} key={`header-delete-${header.uuid}`}>

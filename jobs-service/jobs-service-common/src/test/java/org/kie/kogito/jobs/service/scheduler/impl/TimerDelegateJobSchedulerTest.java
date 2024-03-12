@@ -1,17 +1,20 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.jobs.service.scheduler.impl;
 
@@ -19,7 +22,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,10 +44,9 @@ import org.reactivestreams.Publisher;
 
 import io.smallrye.mutiny.Multi;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static mutiny.zero.flow.adapters.AdaptersToFlow.publisher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -76,14 +77,14 @@ class TimerDelegateJobSchedulerTest extends BaseTimerJobSchedulerTest {
     @Test
     void testDoSchedule() {
         PublisherBuilder<ManageableJobHandle> schedule = tested.doSchedule(scheduledJob, Optional.empty());
-        Multi.createFrom().publisher(schedule.buildRs()).subscribe().with(dummyCallback(), dummyCallback());
+        Multi.createFrom().publisher(publisher(schedule.buildRs())).subscribe().with(dummyCallback(), dummyCallback());
         verify(timer).scheduleJob(any(DelegateJob.class), any(JobDetailsContext.class), eq(scheduledJob.getTrigger()));
     }
 
     @Test
     void testDoCancel() {
         Publisher<ManageableJobHandle> cancel = tested.doCancel(JobDetails.builder().of(scheduledJob).scheduledId(SCHEDULED_ID).build());
-        Multi.createFrom().publisher(cancel).subscribe().with(dummyCallback(), dummyCallback());
+        Multi.createFrom().publisher(publisher(cancel)).subscribe().with(dummyCallback(), dummyCallback());
         verify(timer).removeJob(any(ManageableJobHandle.class));
     }
 
@@ -91,44 +92,8 @@ class TimerDelegateJobSchedulerTest extends BaseTimerJobSchedulerTest {
     void testDoCancelNullId() {
         Publisher<ManageableJobHandle> cancel =
                 tested.doCancel(JobDetails.builder().of(scheduledJob).scheduledId(null).build());
-        Multi.createFrom().publisher(cancel).subscribe().with(dummyCallback(), dummyCallback());
+        Multi.createFrom().publisher(publisher(cancel)).subscribe().with(dummyCallback(), dummyCallback());
         verify(timer, never()).removeJob(any(ManageableJobHandle.class));
-    }
-
-    @Test
-    void testJobSuccessProcessor() {
-        JobExecutionResponse response = getJobResponse();
-        doReturn(ReactiveStreams.of(JobDetails.builder().build()))
-                .when(tested).handleJobExecutionSuccess(response);
-        tested.jobSuccessProcessor(response).thenAccept(r -> assertThat(r).isTrue());
-        verify(tested).handleJobExecutionSuccess(response);
-    }
-
-    @Test
-    void testJobSuccessProcessorFail() {
-        JobExecutionResponse response = getJobResponse();
-        doReturn(ReactiveStreams.failed(new RuntimeException()))
-                .when(tested).handleJobExecutionSuccess(response);
-        tested.jobSuccessProcessor(response).thenAccept(r -> assertThat(r).isFalse());
-        verify(tested).handleJobExecutionSuccess(response);
-    }
-
-    @Test
-    void testJobErrorProcessor() {
-        JobExecutionResponse response = getJobResponse();
-        doReturn(ReactiveStreams.of(JobDetails.builder().build()))
-                .when(tested).handleJobExecutionError(response);
-        tested.jobErrorProcessor(response).thenAccept(r -> assertThat(r).isTrue());
-        verify(tested).handleJobExecutionError(response);
-    }
-
-    @Test
-    void testJobErrorProcessorFail() {
-        JobExecutionResponse response = getJobResponse();
-        doReturn(ReactiveStreams.failed(new RuntimeException()))
-                .when(tested).handleJobExecutionError(response);
-        tested.jobErrorProcessor(response).thenAccept(r -> assertThat(r).isFalse());
-        verify(tested).handleJobExecutionError(response);
     }
 
     private JobExecutionResponse getJobResponse() {

@@ -1,38 +1,39 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-import { ProcessInstanceFilter, SortBy } from '@kogito-apps/process-list';
 import {
   BulkProcessInstanceActionResponse,
-  OperationType,
-  ProcessInstance
-} from '@kogito-apps/management-console-shared';
+  ProcessInstance,
+  ProcessInstanceFilter,
+  ProcessListSortBy
+} from '@kogito-apps/management-console-shared/dist/types';
+import { OperationType } from '@kogito-apps/management-console-shared/dist/components/BulkList';
 import { ProcessListQueries } from './ProcessListQueries';
-import {
-  handleProcessAbort,
-  handleProcessMultipleAction,
-  handleProcessRetry,
-  handleProcessSkip
-} from '../../apis/apis';
 
 export interface ProcessListGatewayApi {
   processListState: ProcessListState;
-  initialLoad: (filter: ProcessInstanceFilter, sortBy: SortBy) => Promise<void>;
+  initialLoad: (
+    filter: ProcessInstanceFilter,
+    sortBy: ProcessListSortBy
+  ) => Promise<void>;
   openProcess: (process: ProcessInstance) => Promise<void>;
   applyFilter: (filter: ProcessInstanceFilter) => Promise<void>;
-  applySorting: (SortBy: SortBy) => Promise<void>;
+  applySorting: (SortBy: ProcessListSortBy) => Promise<void>;
   handleProcessSkip: (processInstance: ProcessInstance) => Promise<void>;
   handleProcessRetry: (processInstance: ProcessInstance) => Promise<void>;
   handleProcessAbort: (processInstance: ProcessInstance) => Promise<void>;
@@ -50,7 +51,7 @@ export interface ProcessListGatewayApi {
 
 export interface ProcessListState {
   filters: ProcessInstanceFilter;
-  sortBy: SortBy;
+  sortBy: ProcessListSortBy;
 }
 
 export interface OnOpenProcessListener {
@@ -87,7 +88,7 @@ export class ProcessListGatewayApiImpl implements ProcessListGatewayApi {
 
   initialLoad = (
     filter: ProcessInstanceFilter,
-    sortBy: SortBy
+    sortBy: ProcessListSortBy
   ): Promise<void> => {
     this._ProcessListState.filters = filter;
     this._ProcessListState.sortBy = sortBy;
@@ -99,7 +100,7 @@ export class ProcessListGatewayApiImpl implements ProcessListGatewayApi {
     return Promise.resolve();
   };
 
-  applySorting = (sortBy: SortBy) => {
+  applySorting = (sortBy: ProcessListSortBy) => {
     this._ProcessListState.sortBy = sortBy;
     return Promise.resolve();
   };
@@ -107,26 +108,29 @@ export class ProcessListGatewayApiImpl implements ProcessListGatewayApi {
   handleProcessSkip = async (
     processInstance: ProcessInstance
   ): Promise<void> => {
-    return handleProcessSkip(processInstance);
+    return this.queries.handleProcessSkip(processInstance);
   };
 
   handleProcessRetry = async (
     processInstance: ProcessInstance
   ): Promise<void> => {
-    return handleProcessRetry(processInstance);
+    return this.queries.handleProcessRetry(processInstance);
   };
 
   handleProcessAbort = async (
     processInstance: ProcessInstance
   ): Promise<void> => {
-    return handleProcessAbort(processInstance);
+    return this.queries.handleProcessAbort(processInstance);
   };
 
   handleProcessMultipleAction = async (
     processInstances: ProcessInstance[],
     operationType: OperationType
   ): Promise<BulkProcessInstanceActionResponse> => {
-    return handleProcessMultipleAction(processInstances, operationType);
+    return this.queries.handleProcessMultipleAction(
+      processInstances,
+      operationType
+    );
   };
   query(offset: number, limit: number): Promise<ProcessInstance[]> {
     return new Promise<ProcessInstance[]>((resolve, reject) => {

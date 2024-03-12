@@ -1,31 +1,35 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package org.kie.kogito.jobs.service.repository.marshaller;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Optional;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import org.kie.kogito.timer.Trigger;
 import org.kie.kogito.timer.impl.IntervalTrigger;
 import org.kie.kogito.timer.impl.PointInTimeTrigger;
+import org.kie.kogito.timer.impl.SimpleTimerTrigger;
 
 import io.vertx.core.json.JsonObject;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class TriggerMarshaller implements Marshaller<Trigger, JsonObject> {
@@ -34,6 +38,10 @@ public class TriggerMarshaller implements Marshaller<Trigger, JsonObject> {
 
     @Override
     public JsonObject marshall(Trigger trigger) {
+        if (trigger instanceof SimpleTimerTrigger) {
+            return JsonObject.mapFrom(new SimpleTimerTriggerAccessor((SimpleTimerTrigger) trigger))
+                    .put(CLASS_TYPE, trigger.getClass().getName());
+        }
         if (trigger instanceof IntervalTrigger) {
             return JsonObject.mapFrom(new IntervalTriggerAccessor((IntervalTrigger) trigger))
                     .put(CLASS_TYPE, trigger.getClass().getName());
@@ -48,6 +56,9 @@ public class TriggerMarshaller implements Marshaller<Trigger, JsonObject> {
     @Override
     public Trigger unmarshall(JsonObject jsonObject) {
         String classType = Optional.ofNullable(jsonObject).map(o -> (String) o.remove(CLASS_TYPE)).orElse(null);
+        if (SimpleTimerTrigger.class.getName().equals(classType)) {
+            return jsonObject.mapTo(SimpleTimerTriggerAccessor.class).to();
+        }
         if (IntervalTrigger.class.getName().equals(classType)) {
             return jsonObject.mapTo(IntervalTriggerAccessor.class).to();
         }
@@ -141,6 +152,84 @@ public class TriggerMarshaller implements Marshaller<Trigger, JsonObject> {
 
         public long getPeriod() {
             return period;
+        }
+    }
+
+    private static class SimpleTimerTriggerAccessor {
+
+        private Long startTime;
+        private long period;
+        private ChronoUnit periodUnit;
+        private int repeatCount;
+        private Long endTime;
+        private String zoneId;
+        private Long nextFireTime;
+        private int currentRepeatCount;
+        private boolean endTimeReached;
+
+        public SimpleTimerTriggerAccessor() {
+        }
+
+        public SimpleTimerTriggerAccessor(SimpleTimerTrigger trigger) {
+            this.startTime = toTime(trigger.getStartTime());
+            this.period = trigger.getPeriod();
+            this.periodUnit = trigger.getPeriodUnit();
+            this.repeatCount = trigger.getRepeatCount();
+            this.endTime = toTime(trigger.getEndTime());
+            this.zoneId = trigger.getZoneId();
+            this.nextFireTime = toTime(trigger.getNextFireTime());
+            this.currentRepeatCount = trigger.getCurrentRepeatCount();
+            this.endTimeReached = trigger.isEndTimeReached();
+        }
+
+        public SimpleTimerTrigger to() {
+            SimpleTimerTrigger simpleTimerTrigger = new SimpleTimerTrigger();
+            simpleTimerTrigger.setStartTime(toDate(startTime));
+            simpleTimerTrigger.setPeriod(period);
+            simpleTimerTrigger.setPeriodUnit(periodUnit);
+            simpleTimerTrigger.setRepeatCount(repeatCount);
+            simpleTimerTrigger.setEndTime(toDate(endTime));
+            simpleTimerTrigger.setZoneId(zoneId);
+            simpleTimerTrigger.setNextFireTime(toDate(nextFireTime));
+            simpleTimerTrigger.setCurrentRepeatCount(currentRepeatCount);
+            simpleTimerTrigger.setEndTimeReached(endTimeReached);
+            return simpleTimerTrigger;
+        }
+
+        public Long getStartTime() {
+            return startTime;
+        }
+
+        public long getPeriod() {
+            return period;
+        }
+
+        public ChronoUnit getPeriodUnit() {
+            return periodUnit;
+        }
+
+        public int getRepeatCount() {
+            return repeatCount;
+        }
+
+        public Long getEndTime() {
+            return endTime;
+        }
+
+        public String getZoneId() {
+            return zoneId;
+        }
+
+        public Long getNextFireTime() {
+            return nextFireTime;
+        }
+
+        public int getCurrentRepeatCount() {
+            return currentRepeatCount;
+        }
+
+        public boolean isEndTimeReached() {
+            return endTimeReached;
         }
     }
 }

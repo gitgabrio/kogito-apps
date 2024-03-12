@@ -13,13 +13,13 @@ This is a basis test suite which should verify that UI of Trusty AI is running a
 To install dependencies
 
 ```
-yarn install
+pnpm install
 ```
 
 To run Cypress test suite with mocked data
 
 ```
-yarn run test:it
+pnpm run test:it
 ```
 
 ### Run integration tests with real data
@@ -73,7 +73,7 @@ Go to the docker-compose folder:
 cd ui-packages/packages/trusty/docker-compose
 ```
 
-Create the ".env" file which content the "VERSION=\${project.version}" tag. Be sure that this tag reference to the right version of docker images. For example: "VERSION=2.0.0-SNAPSHOT"
+Create the ".env" file which content the "VERSION=\${project.version}" tag. Be sure that this tag reference to the right version of docker images. For example: "VERSION=999-SNAPSHOT"
 
 To be sure that you have built all necessary docker images. Check file docker-compose.yml and output of this command:
 

@@ -1,21 +1,27 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-import React, { useCallback, useMemo, Ref } from 'react';
-import { EnvelopeServer } from '@kogito-tooling/envelope-bus/dist/channel';
-import { EmbeddedEnvelopeFactory } from '@kogito-tooling/envelope/dist/embedded';
+import React, { useCallback } from 'react';
+import { EnvelopeServer } from '@kie-tools-core/envelope-bus/dist/channel';
+import {
+  EmbeddedEnvelopeProps,
+  RefForwardingEmbeddedEnvelope
+} from '@kie-tools-core/envelope/dist/embedded';
 import {
   FormDetailsApi,
   FormDetailsChannelApi,
@@ -23,8 +29,8 @@ import {
   FormDetailsDriver
 } from '../api';
 import { FormDetailsChannelApiImpl } from './FormDetailsChannelApiImpl';
-import { FormInfo } from '@kogito-apps/forms-list';
-import { ContainerType } from '@kogito-tooling/envelope/dist/api';
+import { FormInfo } from '@kogito-apps/components-common/dist/types';
+import { ContainerType } from '@kie-tools-core/envelope/dist/api';
 import { init } from '../envelope';
 export interface Props {
   targetOrigin: string;
@@ -32,8 +38,17 @@ export interface Props {
   formData: FormInfo;
 }
 
-export const EmbeddedFormDetails = React.forwardRef<FormDetailsApi, Props>(
-  (props, forwardedRef: Ref<FormDetailsApi>) => {
+export const EmbeddedFormDetails = React.forwardRef(
+  (props: Props, forwardedRef: React.Ref<FormDetailsApi>) => {
+    const refDelegate = useCallback(
+      (
+        envelopeServer: EnvelopeServer<
+          FormDetailsChannelApi,
+          FormDetailsEnvelopeApi
+        >
+      ): FormDetailsApi => ({}),
+      []
+    );
     const pollInit = useCallback(
       (
         envelopeServer: EnvelopeServer<
@@ -50,9 +65,10 @@ export const EmbeddedFormDetails = React.forwardRef<FormDetailsApi, Props>(
           container: container(),
           bus: {
             postMessage(message, targetOrigin, transfer) {
-              window.postMessage(message, '*', transfer);
+              window.postMessage(message, targetOrigin, transfer);
             }
-          }
+          },
+          targetOrigin: props.targetOrigin
         });
         return envelopeServer.envelopeApi.requests.formDetails__init(
           {
@@ -67,26 +83,24 @@ export const EmbeddedFormDetails = React.forwardRef<FormDetailsApi, Props>(
       []
     );
 
-    const refDelegate = useCallback(
-      (
-        envelopeServer: EnvelopeServer<
-          FormDetailsChannelApi,
-          FormDetailsEnvelopeApi
-        >
-      ): FormDetailsApi => ({}),
-      []
+    return (
+      <EmbeddedFormDetailsEnvelope
+        ref={forwardedRef}
+        apiImpl={new FormDetailsChannelApiImpl(props.driver)}
+        origin={props.targetOrigin}
+        refDelegate={refDelegate}
+        pollInit={pollInit}
+        config={{ containerType: ContainerType.DIV }}
+      />
     );
-
-    const EmbeddedEnvelope = useMemo(() => {
-      return EmbeddedEnvelopeFactory({
-        api: new FormDetailsChannelApiImpl(props.driver),
-        origin: props.targetOrigin,
-        refDelegate,
-        pollInit,
-        config: { containerType: ContainerType.DIV }
-      });
-    }, []);
-
-    return <EmbeddedEnvelope ref={forwardedRef} />;
   }
 );
+
+const EmbeddedFormDetailsEnvelope = React.forwardRef<
+  FormDetailsApi,
+  EmbeddedEnvelopeProps<
+    FormDetailsChannelApi,
+    FormDetailsEnvelopeApi,
+    FormDetailsApi
+  >
+>(RefForwardingEmbeddedEnvelope);

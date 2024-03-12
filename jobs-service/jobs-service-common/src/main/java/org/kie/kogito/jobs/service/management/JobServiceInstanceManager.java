@@ -1,17 +1,20 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.jobs.service.management;
 
@@ -22,13 +25,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.kie.kogito.jobs.service.messaging.MessagingHandler;
 import org.kie.kogito.jobs.service.model.JobServiceManagementInfo;
 import org.kie.kogito.jobs.service.repository.JobServiceManagementRepository;
 import org.kie.kogito.jobs.service.utils.DateUtil;
@@ -38,9 +36,14 @@ import org.slf4j.LoggerFactory;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.reactive.messaging.kafka.KafkaConnector;
 import io.vertx.mutiny.core.TimeoutStream;
 import io.vertx.mutiny.core.Vertx;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class JobServiceInstanceManager {
@@ -60,8 +63,7 @@ public class JobServiceInstanceManager {
     String leaderManagementId;
 
     @Inject
-    @Connector(value = "smallrye-kafka")
-    KafkaConnector kafkaConnector;
+    Instance<MessagingHandler> messagingHandlerInstance;
 
     @Inject
     Event<MessagingChangeEvent> messagingChangeEventEvent;
@@ -86,27 +88,26 @@ public class JobServiceInstanceManager {
         //background task for leader check, it will be started after the first tryBecomeLeader() execution
         checkLeader = vertx.periodicStream(TimeUnit.SECONDS.toMillis(leaderCheckIntervalInSeconds))
                 .handler(id -> tryBecomeLeader(currentInfo.get(), checkLeader, heartbeat)
-                        .subscribe().with(i -> LOGGER.info("Checking Leader"),
+                        .subscribe().with(i -> LOGGER.trace("Leader check completed"),
                                 ex -> LOGGER.error("Error checking Leader", ex)))
                 .pause();
 
         //background task for heartbeat will be started when become leader
         heartbeat = vertx.periodicStream(TimeUnit.SECONDS.toMillis(heardBeatIntervalInSeconds))
                 .handler(t -> heartbeat(currentInfo.get())
-                        .subscribe().with(i -> LOGGER.debug("Heartbeat {}", currentInfo.get()),
+                        .subscribe().with(i -> LOGGER.trace("Heartbeat completed {}", currentInfo.get()),
                                 ex -> LOGGER.error("Error on heartbeat {}", currentInfo.get(), ex)))
                 .pause();
 
         //initial leader check
         tryBecomeLeader(currentInfo.get(), checkLeader, heartbeat)
-                .subscribe().with(i -> LOGGER.info("Initial check leader execution"),
+                .subscribe().with(i -> LOGGER.info("Initial leader check completed"),
                         ex -> LOGGER.error("Error on initial check leader", ex));
     }
 
     private void disableCommunication() {
         //disable consuming events
-        kafkaConnector.getConsumerChannels().stream().forEach(c -> kafkaConnector.getConsumer(c).pause());
-
+        messagingHandlerInstance.stream().forEach(MessagingHandler::pause);
         //disable producing events
         messagingChangeEventEvent.fire(new MessagingChangeEvent(false));
 
@@ -115,12 +116,11 @@ public class JobServiceInstanceManager {
 
     private void enableCommunication() {
         //enable consuming events
-        kafkaConnector.getConsumerChannels().stream().forEach(c -> kafkaConnector.getConsumer(c).resume());
-
+        messagingHandlerInstance.stream().forEach(MessagingHandler::resume);
         //enable producing events
         messagingChangeEventEvent.fire(new MessagingChangeEvent(true));
 
-        LOGGER.warn("Enabled communication for leader instance");
+        LOGGER.info("Enabled communication for leader instance");
     }
 
     void onShutdown(@Observes ShutdownEvent event) {
@@ -182,7 +182,6 @@ public class JobServiceInstanceManager {
     }
 
     protected Uni<JobServiceManagementInfo> heartbeat(JobServiceManagementInfo info) {
-        LOGGER.debug("Heartbeat Leader");
         if (isLeader()) {
             return repository.heartbeat(info);
         }

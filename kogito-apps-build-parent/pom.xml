@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.kie.kogito</groupId>
         <artifactId>kogito-apps</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -26,10 +46,10 @@
         <tests.quarkus.http.port>0</tests.quarkus.http.port>
 
         <version.rename.plugin>1.0.1</version.rename.plugin>
-        <version.frontend.plugin>1.9.1</version.frontend.plugin>
-        <version.node>v16.2.0</version.node>
+        <version.frontend.plugin>1.12.1</version.frontend.plugin>
+        <version.node>v18.16.0</version.node>
         <version.npm>6.10.3</version.npm>
-        <version.yarn>v1.22.10</version.yarn>
+        <version.pnpm>v8.7.0</version.pnpm>
 
         <!-- internal containers used for testing (built by maven using quarkus-container-image-jib) -->
         <container.image.explainability-service-messaging>org.kie.kogito/explainability-service-messaging:${project.version}</container.image.explainability-service-messaging>
@@ -41,23 +61,26 @@
         <container.image.data-index-service-inmemory>org.kie.kogito/data-index-service-inmemory:${project.version}</container.image.data-index-service-inmemory>
         <container.image.trusty-service-infinispan>org.kie.kogito/trusty-service-infinispan:${project.version}</container.image.trusty-service-infinispan>
         <container.image.trusty-service>org.kie.kogito/trusty-service:${project.version}</container.image.trusty-service>
-        <container.image.task-assigning-service>org.kie.kogito/task-assigning-service:${project.version}</container.image.task-assigning-service>
         <container.image.trusty-ui>org.kie.kogito/trusty-ui:${project.version}</container.image.trusty-ui>
         <container.image.integration-tests-trusty-service-quarkus>org.kie.kogito/integration-tests-trusty-service-quarkus:${project.version}</container.image.integration-tests-trusty-service-quarkus>
 
         <!-- OptaPlanner version -->
-        <version.org.optaplanner>8.34.0.Final</version.org.optaplanner>
+        <version.org.optaplanner>999-SNAPSHOT</version.org.optaplanner>
 
-        <version.com.vladmihalcea.hibernate-types-55>2.12.1</version.com.vladmihalcea.hibernate-types-55>
-        <version.org.apache.opennlp>1.9.2</version.org.apache.opennlp>
-        <version.org.apache.commons.csv>1.8</version.org.apache.commons.csv>
+        <version.org.hibernate>6.2.13.Final</version.org.hibernate>
+        <version.org.apache.opennlp>2.3.1</version.org.apache.opennlp>
+        <version.org.apache.commons.csv>1.10.0</version.org.apache.commons.csv>
         <version.org.jredisearch>2.0.0</version.org.jredisearch>
-        <version.org.mapstruct>1.4.2.Final</version.org.mapstruct>
+        <version.org.mapstruct>1.5.5.Final</version.org.mapstruct>
         <version.org.skyscreamer>1.5.0</version.org.skyscreamer>
         <version.com.graphql-java-extended-scalars>19.0</version.com.graphql-java-extended-scalars>
 
         <!-- Explainability Toolkit version -->
         <version.explainability-core>1.22.1.Final</version.explainability-core>
+
+        <!-- Mutiny Zero Flow Adapters -->
+        <version.io.smallrye.reactive.mutiny-zero>1.0.0</version.io.smallrye.reactive.mutiny-zero>
+        <version.drools.util>${project.version}</version.drools.util>
     </properties>
 
     <build>
@@ -98,7 +121,6 @@
                             <container.image.jobs-service>${container.image.jobs-service}</container.image.jobs-service>
                             <container.image.explainability-service-messaging>${container.image.explainability-service-messaging}</container.image.explainability-service-messaging>
                             <container.image.trusty-service-infinispan>${container.image.trusty-service-infinispan}</container.image.trusty-service-infinispan>
-                            <container.image.task-assigning-service>${container.image.task-assigning-service}</container.image.task-assigning-service>
                             <quarkus.http.test-port>${tests.quarkus.http.port}</quarkus.http.test-port>
                         </systemPropertyVariables>
                         <classesDirectory>${project.build.outputDirectory}</classesDirectory>
@@ -114,6 +136,53 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <!-- Remove comments from META-INF/quarkus-javadoc.properties -->
+                <!-- This is needed because the file generated by quarkus contains a timestamp in a comment that makes the build not reproducible -->
+                <!-- This workaround can be removed when drools will be migrated to quarkus release containing this fix https://github.com/quarkusio/quarkus/pull/38365 -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.drools</groupId>
+                        <artifactId>drools-util</artifactId>
+                        <version>${version.drools.util}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>Remove comments from generated files</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <includeProjectDependencies>false</includeProjectDependencies>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <executableDependency>
+                                <groupId>org.drools</groupId>
+                                <artifactId>drools-util</artifactId>
+                            </executableDependency>
+                            <mainClass>org.drools.util.RemoveCommentsMain</mainClass>
+                            <arguments>
+                                <argument>true</argument>
+                                <argument>${project.basedir}/target/classes/META-INF/quarkus-javadoc.properties</argument>
+                                <argument>${project.basedir}/target/classes/META-INF/quarkus-extension.properties</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/job/http/recipient/JobHttpRecipientRuntimeConfiguration.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/job/sink/recipient/JobSinkRecipientRuntimeConfiguration.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/addons/quarkus/jobs/service/embedded/KogitoAddonsQuarkusJobsServiceEmbeddedRuntimeConfig.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/index/addon/config/DataIndexBuildConfig.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/index/addon/config/DataIndexRuntimeConfig.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/index/addon/config/DataIndexUIClientRuntimeConfig.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/runtime/tools/quarkus/extension/runtime/config/DevConsoleRuntimeConfig.jdp</argument>
+                                <argument>${project.basedir}/target/generated-sources/annotations/org/kie/kogito/runtime/tools/quarkus/extension/runtime/config/UserConfig.jdp</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <dependencyManagement>
@@ -160,15 +229,20 @@
                 <version>${version.org.mapstruct}</version>
             </dependency>
             <dependency>
+                <groupId>io.smallrye.reactive</groupId>
+                <artifactId>mutiny-zero-flow-adapters</artifactId>
+                <version>${version.io.smallrye.reactive.mutiny-zero}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.skyscreamer</groupId>
                 <artifactId>jsonassert</artifactId>
                 <version>${version.org.skyscreamer}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.vladmihalcea</groupId>
-                <artifactId>hibernate-types-55</artifactId>
-                <version>${version.com.vladmihalcea.hibernate-types-55}</version>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-ant</artifactId>
+                <version>${version.org.hibernate}</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java</groupId>

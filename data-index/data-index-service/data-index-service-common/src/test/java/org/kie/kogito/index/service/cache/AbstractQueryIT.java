@@ -1,17 +1,20 @@
 /*
- * Copyright 2023 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.index.service.cache;
 
@@ -19,21 +22,23 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import javax.inject.Inject;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.index.model.ProcessInstance;
 import org.kie.kogito.index.storage.DataIndexStorageService;
+import org.kie.kogito.persistence.api.StorageService;
 import org.kie.kogito.persistence.api.query.AttributeFilter;
+
+import jakarta.inject.Inject;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.kie.kogito.index.TestUtils.getProcessInstance;
 import static org.kie.kogito.index.model.ProcessInstanceState.ACTIVE;
 import static org.kie.kogito.index.model.ProcessInstanceState.COMPLETED;
+import static org.kie.kogito.index.storage.Constants.PROCESS_INSTANCES_STORAGE;
+import static org.kie.kogito.index.test.TestUtils.getProcessInstance;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.between;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.contains;
 import static org.kie.kogito.persistence.api.query.QueryFilterFactory.containsAll;
@@ -52,14 +57,19 @@ public abstract class AbstractQueryIT {
     @Inject
     public DataIndexStorageService cacheService;
 
+    @Inject
+    public StorageService storageService;
+
     @BeforeEach
     void setup() {
-        cacheService.getProcessInstancesCache().clear();
+        cacheService.getProcessDefinitionStorage().clear();
+        cacheService.getProcessInstanceStorage().clear();
     }
 
     @AfterEach
     void tearDown() {
-        cacheService.getProcessInstancesCache().clear();
+        cacheService.getProcessDefinitionStorage().clear();
+        cacheService.getProcessInstanceStorage().clear();
     }
 
     @Test
@@ -69,8 +79,9 @@ public abstract class AbstractQueryIT {
         String subProcessId = processId + "_sub";
         String subProcessInstanceId = UUID.randomUUID().toString();
         ProcessInstance processInstance = getProcessInstance(processId, processInstanceId, ACTIVE.ordinal(), null, null);
-        cacheService.getProcessInstancesCache().put(processInstanceId, processInstance);
-        cacheService.getProcessInstancesCache().put(subProcessInstanceId, getProcessInstance(subProcessId, subProcessInstanceId, COMPLETED.ordinal(), processInstanceId, processId));
+        storageService.getCache(PROCESS_INSTANCES_STORAGE, ProcessInstance.class).put(processInstanceId, processInstance);
+        storageService.getCache(PROCESS_INSTANCES_STORAGE, ProcessInstance.class).put(subProcessInstanceId,
+                getProcessInstance(subProcessId, subProcessInstanceId, COMPLETED.ordinal(), processInstanceId, processId));
 
         queryAndAssert(in("state", asList(ACTIVE.ordinal(), COMPLETED.ordinal())), processInstanceId, subProcessInstanceId);
         queryAndAssert(equalTo("state", ACTIVE.ordinal()), processInstanceId);
@@ -98,7 +109,7 @@ public abstract class AbstractQueryIT {
     }
 
     private void queryAndAssert(AttributeFilter filter, String... ids) {
-        List<ProcessInstance> instances = cacheService.getProcessInstancesCache().query().filter(singletonList(filter)).execute();
+        List<ProcessInstance> instances = cacheService.getProcessInstanceStorage().query().filter(singletonList(filter)).execute();
         assertThat(instances).hasSize(ids == null ? 0 : ids.length).extracting("id").containsExactlyInAnyOrder(ids);
     }
 }

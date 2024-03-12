@@ -19,6 +19,7 @@ exports[`FormDisplayerContainer render embeded formdisplayer 1`] = `
       "source": "html source code",
     }
   }
+  targetOrigin="http://localhost:9000"
 >
   <ForwardRef
     context={
@@ -100,9 +101,24 @@ exports[`FormDisplayerContainer render embeded formdisplayer 1`] = `
       }
     }
     key="testId"
-    targetOrigin="http://localhost"
+    targetOrigin="http://localhost:9000"
   >
-    <ForwardRef>
+    <ForwardRef(RefForwardingEmbeddedEnvelope)
+      apiImpl={
+        Object {
+          "notifyOnOpenForm": [Function],
+        }
+      }
+      config={
+        Object {
+          "containerType": "iframe",
+          "envelopePath": "resources/form-displayer.html",
+        }
+      }
+      origin="http://localhost:9000"
+      pollInit={[Function]}
+      refDelegate={[Function]}
+    >
       <iframe
         src="resources/form-displayer.html"
         style={
@@ -120,7 +136,7 @@ exports[`FormDisplayerContainer render embeded formdisplayer 1`] = `
         }
         title="X"
       />
-    </ForwardRef>
+    </ForwardRef(RefForwardingEmbeddedEnvelope)>
   </ForwardRef>
 </FormDisplayerContainer>
 `;

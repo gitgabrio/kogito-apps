@@ -1,24 +1,25 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React from 'react';
-import { mount } from 'enzyme';
+import { render, screen } from '@testing-library/react';
 import CustomDashboardList from '../CustomDashboardList';
 import { MockedCustomDashboardListDriver } from '../../../tests/mocks/MockedCustomDashboardsListDriver';
-import { ToggleGroupItem } from '@patternfly/react-core';
 import { act } from 'react-dom/test-utils';
 import wait from 'waait';
 import TestCustomDashboardListDriver from '../__mocks__/TestCustomDashboardListDriver';
@@ -36,13 +37,12 @@ describe('customDashboard list tests', () => {
       isEnvelopeConnectedToChannel: false,
       driver: null
     };
-    let wrapper;
+
     await act(async () => {
-      wrapper = mount(<CustomDashboardList {...props} />);
+      render(<CustomDashboardList {...props} />);
     });
-    expect(
-      wrapper.find(CustomDashboardList).props()['isEnvelopeConnectedToChannel']
-    ).toBeFalsy();
+
+    expect(screen.getByText('Loading Dashboard...')).toBeTruthy();
   });
 
   it('render customDashboard list - table', async () => {
@@ -50,14 +50,15 @@ describe('customDashboard list tests', () => {
       isEnvelopeConnectedToChannel: true,
       driver: driver
     };
-    let wrapper;
+    let container;
     await act(async () => {
-      wrapper = mount(<CustomDashboardList {...props} />);
+      container = render(<CustomDashboardList {...props} />).container;
     });
-    expect(wrapper).toMatchSnapshot();
+    expect(container).toMatchSnapshot();
   });
 
-  it('render CustomDashboard list - gallery', async () => {
+  /* Re-enable card view after thumbnails are available */
+  /*it('render CustomDashboard list - gallery', async () => {
     const props = {
       isEnvelopeConnectedToChannel: true,
       driver: driver
@@ -83,7 +84,7 @@ describe('customDashboard list tests', () => {
       wrapper = wrapper.update();
     });
     expect(wrapper.find('CustomDashboardList').exists()).toBeTruthy();
-  });
+  });*/
 });
 
 let applyFilterMock;
@@ -116,40 +117,27 @@ describe('customDashboard list action tests', () => {
     getCustomDashboardsQueryMock.mockImplementation(() => {
       throw new Error('404 error');
     });
-
     let wrapper;
     await act(async () => {
-      wrapper = mount(<CustomDashboardList {...props} />).find('ServerErrors');
+      const { container } = render(<CustomDashboardList {...props} />);
       wait();
+      wrapper = container;
     });
-    wrapper = wrapper.update();
-    expect(getCustomDashboardsQueryMock).toHaveBeenCalled();
-    const errorWrapper = wrapper.find('ServerErrors');
-    expect(errorWrapper.props()['error']).toEqual('404 error');
+    const error = wrapper.querySelector('h1')?.textContent;
+    expect(error).toBe('Error fetching data');
   });
 
   it('CustomDashboard list - applyFilter and handleItemClick', async () => {
     getCustomDashboardListDriver(3);
 
-    let wrapper;
-    await act(async () => {
-      wrapper = mount(<CustomDashboardList {...props} />).find(
-        'CustomDashboardList'
-      );
-      wait();
-    });
-    wrapper = wrapper.update();
+    const { container } = render(<CustomDashboardList {...props} />);
 
-    const toolbar = wrapper.find('CustomDashboardListToolbar');
+    const toolbar = container.getElementsByClassName('pf-m-filter-group');
 
-    const filters = ['age.dash.yaml'];
-    await act(async () => {
-      toolbar.props()['applyFilter'](filters);
-    });
-    expect(getCustomDashboardsQueryMock).toHaveBeenCalled();
-    expect(applyFilterMock).toHaveBeenCalled();
+    expect(toolbar.length).toBe(1);
 
-    const views = wrapper.find('ToggleGroupItem');
+    /* Re-enable card view after thumbnails are available */
+    /*const views = wrapper.find('ToggleGroupItem');
     expect(views.length).toBe(2);
 
     await act(() => {
@@ -157,6 +145,6 @@ describe('customDashboard list action tests', () => {
     });
 
     expect(views.get(0).props['isSelected']).toEqual(true);
-    expect(views.get(1).props['isSelected']).toEqual(false);
+    expect(views.get(1).props['isSelected']).toEqual(false);*/
   });
 });

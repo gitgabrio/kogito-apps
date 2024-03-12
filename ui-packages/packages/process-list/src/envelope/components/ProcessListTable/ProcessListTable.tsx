@@ -1,46 +1,52 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { ExpandableRowContent } from '@patternfly/react-table/dist/js/components/Table';
 import {
   TableComposable,
   Thead,
   Tbody,
   Tr,
   Th,
-  Td,
-  ExpandableRowContent
-} from '@patternfly/react-table';
+  Td
+} from '@patternfly/react-table/dist/js/components/TableComposable';
 import _ from 'lodash';
 import {
   ProcessInstance,
-  setTitle,
-  ProcessInfoModal,
   TitleType,
   ProcessInstanceState
-} from '@kogito-apps/management-console-shared';
+} from '@kogito-apps/management-console-shared/dist/types';
+import { setTitle } from '@kogito-apps/management-console-shared/dist/utils/Utils';
+import { ProcessInfoModal } from '@kogito-apps/management-console-shared/dist/components/ProcessInfoModal';
 import ProcessListChildTable from '../ProcessListChildTable/ProcessListChildTable';
+import { EndpointLink } from '@kogito-apps/components-common/dist/components/EndpointLink';
 import {
-  ItemDescriptor,
   KogitoEmptyState,
-  KogitoEmptyStateType,
-  KogitoSpinner,
-  EndpointLink
-} from '@kogito-apps/components-common';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
-import { HistoryIcon } from '@patternfly/react-icons';
+  KogitoEmptyStateType
+} from '@kogito-apps/components-common/dist/components/KogitoEmptyState';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import { ItemDescriptor } from '@kogito-apps/components-common/dist/components/ItemDescriptor';
+import {
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
+import { HistoryIcon } from '@patternfly/react-icons/dist/js/icons/history-icon';
 import Moment from 'react-moment';
 import {
   getProcessInstanceDescription,
@@ -48,11 +54,11 @@ import {
 } from '../utils/ProcessListUtils';
 import { ProcessListDriver } from '../../../api';
 import ProcessListActionsKebab from '../ProcessListActionsKebab/ProcessListActionsKebab';
-import { Checkbox } from '@patternfly/react-core';
+import { Checkbox } from '@patternfly/react-core/dist/js/components/Checkbox';
 import DisablePopup from '../DisablePopup/DisablePopup';
 import '../styles.css';
 import ErrorPopover from '../ErrorPopover/ErrorPopover';
-interface ProcessListTableProps {
+export interface ProcessListTableProps {
   processInstances: ProcessInstance[];
   isLoading: boolean;
   expanded: {
@@ -247,6 +253,7 @@ const ProcessListTable: React.FC<ProcessListTableProps & OUIAProps> = ({
                   isChecked={processInstance.isSelected}
                   onChange={() => checkBoxSelect(processInstance)}
                   aria-label="process-list-checkbox"
+                  data-testid={`checkbox-${processInstance.id}`}
                   id={`checkbox-${processInstance.id}`}
                   name={`checkbox-${processInstance.id}`}
                 />
@@ -256,6 +263,7 @@ const ProcessListTable: React.FC<ProcessListTableProps & OUIAProps> = ({
                   component={
                     <Checkbox
                       aria-label="process-list-checkbox-disabled"
+                      data-testid={`checkbox-${processInstance.id}`}
                       id={`checkbox-${processInstance.id}`}
                       isDisabled={true}
                     />
@@ -442,6 +450,7 @@ const ProcessListTable: React.FC<ProcessListTableProps & OUIAProps> = ({
         }
       />
       <TableComposable
+        data-testid="process-list-table"
         aria-label="Process List Table"
         {...componentOuiaProps(
           ouiaId,
@@ -511,10 +520,10 @@ const ProcessListTable: React.FC<ProcessListTableProps & OUIAProps> = ({
                 />
                 {pair.parent.map((cell, cellIndex) => (
                   <Td
-                    key={`${pair.id}-parent-${columns[++cellIndex]}`}
-                    dataLabel={columns[cellIndex]}
+                    key={`${pair.id}-parent-${columns[cellIndex + 1]}`}
+                    dataLabel={columns[cellIndex + 1]}
                     {...componentOuiaProps(
-                      columns[cellIndex].toLowerCase(),
+                      columns[cellIndex + 1].toLowerCase(),
                       'process-list-cell',
                       true
                     )}

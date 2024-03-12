@@ -1,34 +1,39 @@
-/*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useEffect, useState } from 'react';
 import {
   DataTable,
-  DataTableColumn,
-  KogitoSpinner
-} from '@kogito-apps/components-common';
-import { OUIAProps, componentOuiaProps } from '@kogito-apps/ouia-tools';
+  DataTableColumn
+} from '@kogito-apps/components-common/dist/components/DataTable';
+import { KogitoSpinner } from '@kogito-apps/components-common/dist/components/KogitoSpinner';
+import {
+  OUIAProps,
+  componentOuiaProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
 import { CustomDashboardInfo, CustomDashboardListDriver } from '../../../api';
 import {
   getDashboardNameColumn,
   getDateColumn
 } from '../CustomDashboardListUtils/CustomDashboardListUtils';
 import _ from 'lodash';
-import { Bullseye } from '@patternfly/react-core';
-import { ISortBy } from '@patternfly/react-table';
+import { Bullseye } from '@patternfly/react-core/dist/js/layouts/Bullseye';
+import { ISortBy } from '@patternfly/react-table/dist/js/components/Table';
 
 export interface CustomDashboardTableProps {
   driver: CustomDashboardListDriver;
@@ -79,20 +84,23 @@ const CustomDashboardsTable: React.FC<
     };
   };
 
-  const onSort = async (index: number, direction): Promise<void> => {
+  const onSort = async (
+    index: number,
+    direction: 'asc' | 'desc'
+  ): Promise<void> => {
     const sortObj: SortBy = {
       property: columns[index - 1].path,
-      direction: direction.toLowerCase()
+      direction: direction
     };
 
     const sortedData = _.orderBy(
       customDashboardData,
       _.keys({
         [sortObj.property]: sortObj.direction
-      }).map((key) => key),
+      }),
       _.values({
         [sortObj.property]: sortObj.direction
-      }).map((value) => value.toLowerCase())
+      })
     );
     setDashboardsData(sortedData);
     setSortBy(sortObj);

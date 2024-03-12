@@ -1,17 +1,20 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.kie.kogito.jobs.service.scheduler;
 
@@ -30,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.service.exception.InvalidScheduleTimeException;
+import org.kie.kogito.jobs.service.exception.JobServiceException;
 import org.kie.kogito.jobs.service.model.JobDetails;
 import org.kie.kogito.jobs.service.model.JobExecutionResponse;
 import org.kie.kogito.jobs.service.model.JobStatus;
@@ -44,6 +48,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.smallrye.mutiny.Uni;
+
+import static mutiny.zero.flow.adapters.AdaptersToFlow.publisher;
 
 /**
  * Base reactive Job Scheduler that performs the fundamental operations and let to the concrete classes to
@@ -125,7 +131,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler {
 
     /**
      * Performs the given job scheduling process on the scheduler, after all the validations already made.
-     * 
+     *
      * @param job to be scheduled
      * @return
      */
@@ -155,7 +161,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler {
 
     /**
      * Check if it should be scheduled (on the current chunk) or saved to be scheduled later.
-     * 
+     *
      * @return
      */
     private boolean isOnCurrentSchedulerChunk(JobDetails job) {
@@ -199,6 +205,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler {
     public PublisherBuilder<JobDetails> handleJobExecutionSuccess(JobDetails futureJob) {
         return ReactiveStreams.of(futureJob)
                 .map(job -> JobDetails.builder().of(job).incrementExecutionCounter().build())
+                //calculate the next programmed fire time if any
                 .peek(job -> job.getTrigger().nextFireTime())
                 .flatMapCompletionStage(jobRepository::save)
                 //check if it is a repeatable job
@@ -215,10 +222,15 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler {
 
     @Override
     public PublisherBuilder<JobDetails> handleJobExecutionSuccess(JobExecutionResponse response) {
-        return ReactiveStreams.of(response)
-                .map(JobExecutionResponse::getJobId)
-                .flatMapCompletionStage(jobRepository::get)
-                .flatMap(this::handleJobExecutionSuccess);
+        return ReactiveStreams.of(response.getJobId())
+                .flatMapCompletionStage(this::readJob)
+                .flatMap(jobDetails -> jobDetails.map(this::handleJobExecutionSuccess)
+                        .orElseThrow(() -> new JobServiceException("Job: " + response.getJobId() + " was not found in database.")));
+    }
+
+    private CompletionStage<Optional<JobDetails>> readJob(String jobId) {
+        return jobRepository.get(jobId)
+                .thenCompose(jobDetails -> CompletableFuture.completedFuture(Optional.ofNullable(jobDetails)));
     }
 
     private boolean isExpired(ZonedDateTime expirationTime, int retries) {
@@ -243,7 +255,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler {
      * between retries and a limit of max interval of {@link BaseTimerJobScheduler#maxIntervalLimitToRetryMillis}
      * to retry, after this interval it the job it the job is not successfully executed it will remain in error
      * state, with no more retries.
-     * 
+     *
      * @param errorResponse
      * @return
      */
@@ -305,7 +317,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler {
         return Uni.createFrom().completionStage(futureJob)
                 .onItem().invoke(job -> LOGGER.debug("Cancel Job Scheduling {}", job))
                 .chain(scheduledJob -> Optional.ofNullable(scheduledJob.getScheduledId())
-                        .map(id -> Uni.createFrom().publisher(this.doCancel(scheduledJob))
+                        .map(id -> Uni.createFrom().publisher(publisher(this.doCancel(scheduledJob)))
                                 .onItem().transform(b -> scheduledJob))
                         .orElse(Uni.createFrom().item(scheduledJob)))
                 //final state, removing the job

@@ -1,16 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`WebApp - JobsManagementContainer tests Snapshot test with default values 1`] = `
-<JobsManagementContainer>
-  <ForwardRef
-    data-ouia-component-type="jobs-management-container"
-    data-ouia-safe={true}
-    driver={null}
-    targetOrigin="*"
-  >
-    <ForwardRef>
-      <div />
-    </ForwardRef>
-  </ForwardRef>
-</JobsManagementContainer>
+<div>
+  <div />
+</div>
 `;

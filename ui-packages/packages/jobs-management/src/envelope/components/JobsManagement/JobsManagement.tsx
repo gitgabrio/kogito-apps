@@ -1,46 +1,59 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 import React, { useState } from 'react';
-import { Button, CardTitle, Divider } from '@patternfly/react-core';
-import { ISortBy } from '@patternfly/react-table';
+import { Button } from '@patternfly/react-core/dist/js/components/Button';
+import { CardTitle } from '@patternfly/react-core/dist/js/components/Card';
+import { Divider } from '@patternfly/react-core/dist/js/components/Divider';
+import { ISortBy } from '@patternfly/react-table/dist/js/components/Table';
+import { LoadMore } from '@kogito-apps/components-common/dist/components/LoadMore';
+import { ServerErrors } from '@kogito-apps/components-common/dist/components/ServerErrors';
 import {
-  ServerErrors,
   KogitoEmptyState,
-  KogitoEmptyStateType,
-  LoadMore
-} from '@kogito-apps/components-common';
-import { componentOuiaProps, OUIAProps } from '@kogito-apps/ouia-tools';
+  KogitoEmptyStateType
+} from '@kogito-apps/components-common/dist/components/KogitoEmptyState';
 import {
-  JobsCancelModal,
-  JobsDetailsModal,
-  JobsRescheduleModal,
-  setTitle,
+  componentOuiaProps,
+  OUIAProps
+} from '@kogito-apps/ouia-tools/dist/utils/OuiaUtils';
+import {
+  Job,
+  JobStatus,
+  JobsSortBy,
+  OrderBy
+} from '@kogito-apps/management-console-shared/dist/types';
+import {
   BulkListType,
   IOperationResults,
   IOperations,
-  OperationType,
-  formatForBulkListJob,
-  Job,
-  JobStatus
-} from '@kogito-apps/management-console-shared';
-import { JobsManagementDriver, OrderBy, SortBy } from '../../../api';
+  OperationType
+} from '@kogito-apps/management-console-shared/dist/components/BulkList';
+import { JobsCancelModal } from '@kogito-apps/management-console-shared/dist/components/JobsCancelModal';
+import { JobsDetailsModal } from '@kogito-apps/management-console-shared/dist/components/JobsDetailsModal';
+import { JobsRescheduleModal } from '@kogito-apps/management-console-shared/dist/components/JobsRescheduleModal';
+import { JobsManagementDriver } from '../../../api';
 import JobsManagementTable from '../JobsManagementTable/JobsManagementTable';
 import JobsManagementToolbar from '../JobsManagementToolbar/JobsManagementToolbar';
 import '../styles.css';
+import {
+  setTitle,
+  formatForBulkListJob
+} from '@kogito-apps/management-console-shared/dist/utils/Utils';
 
 interface JobsManagementProps {
   isEnvelopeConnectedToChannel: boolean;
@@ -57,7 +70,7 @@ const JobsManagement: React.FC<JobsManagementProps & OUIAProps> = ({
   const defaultStatus: JobStatus[] = [JobStatus.Scheduled];
   const defaultChip: JobStatus[] = [JobStatus.Scheduled];
   const defaultSortBy: ISortBy = { index: 6, direction: 'asc' };
-  const defaultOrderBy: SortBy = {
+  const defaultOrderBy: JobsSortBy = {
     lastUpdate: OrderBy.ASC
   };
   const [chips, setChips] = useState(defaultChip);
@@ -72,7 +85,7 @@ const JobsManagement: React.FC<JobsManagementProps & OUIAProps> = ({
   const [modalTitle, setModalTitle] = useState<JSX.Element>(null);
   const [modalContent, setModalContent] = useState<string>('');
   const [sortBy, setSortBy] = useState<ISortBy>(defaultSortBy);
-  const [orderBy, setOrderBy] = useState<SortBy>(defaultOrderBy);
+  const [orderBy, setOrderBy] = useState<JobsSortBy>(defaultOrderBy);
   const [limit, setLimit] = useState<number>(defaultPageSize);
   const [offset, setOffset] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);

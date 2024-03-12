@@ -1,25 +1,28 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
-import { MessageBusClientApi } from '@kogito-tooling/envelope-bus/dist/api';
+import { MessageBusClientApi } from '@kie-tools-core/envelope-bus/dist/api';
 import {
   ProcessDefinition,
   ProcessFormChannelApi,
   ProcessFormDriver
 } from '../api';
+import { Form } from '@kogito-apps/components-common/dist/types';
 
 /**
  * Implementation of ProcessFormDriver to be used on ProcessFormEnvelopeView
@@ -33,6 +36,12 @@ export class ProcessFormEnvelopeViewDriver implements ProcessFormDriver {
     processDefinitionData: ProcessDefinition
   ): Promise<Record<string, any>> {
     return this.channelApi.requests.processForm__getProcessFormSchema(
+      processDefinitionData
+    );
+  }
+
+  getCustomForm(processDefinitionData: ProcessDefinition): Promise<Form> {
+    return this.channelApi.requests.processForm__getCustomForm(
       processDefinitionData
     );
   }

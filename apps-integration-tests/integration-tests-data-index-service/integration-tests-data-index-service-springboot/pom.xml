@@ -152,7 +152,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.basedir}/src/main/resources</outputDirectory>
+              <outputDirectory>${project.basedir}/target/generated-resources</outputDirectory>
               <resources>
                 <resource>
                   <directory>${project.parent.basedir}/integration-tests-data-index-service-common/src/main/resources</directory>
@@ -172,20 +172,6 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>${project.basedir}/src/main/resources/</directory>
-              <includes>
-                <include>**/*.bpmn</include>
-                <include>*create.sql</include>
-              </includes>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${version.org.springframework.boot}</version>
@@ -201,7 +187,14 @@
         <groupId>org.kie.kogito</groupId>
         <artifactId>kogito-maven-plugin</artifactId>
         <version>${project.version}</version>
-        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>generateModel</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

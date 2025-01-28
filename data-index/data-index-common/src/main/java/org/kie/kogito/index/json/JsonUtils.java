@@ -18,17 +18,14 @@
  */
 package org.kie.kogito.index.json;
 
-import org.kie.kogito.event.process.ProcessInstanceDataEvent;
-import org.kie.kogito.event.usertask.UserTaskInstanceDataEvent;
 import org.kie.kogito.jackson.utils.JsonObjectUtils;
 import org.kie.kogito.jackson.utils.MergeUtils;
 import org.kie.kogito.jackson.utils.ObjectMapperFactory;
+import org.kie.kogito.persistence.api.query.AttributeFilter;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.cloudevents.jackson.JsonFormat;
 
@@ -44,15 +41,7 @@ public final class JsonUtils {
     }
 
     public static ObjectMapper configure(ObjectMapper objectMapper) {
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.registerModule(JsonFormat.getCloudEventJacksonModule());
-        objectMapper.registerModule(new JavaTimeModule());
-
-        SimpleModule module = new SimpleModule("Kogito Cloud Events");
-        module.addDeserializer(ProcessInstanceDataEvent.class, new JsonProcessInstanceDataEventDeserializer());
-        module.addDeserializer(UserTaskInstanceDataEvent.class, new JsonUserTaskInstanceDataEventDeserializer());
-        objectMapper.registerModule(module);
-        return objectMapper;
+        return objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).registerModule(JsonFormat.getCloudEventJacksonModule()).findAndRegisterModules();
     }
 
     public static ObjectNode mergeVariable(String variableName, Object variableValue, ObjectNode variables) {
@@ -69,5 +58,12 @@ public final class JsonUtils {
             result.set(name, createObjectNode(variableName.substring(indexOf + 1), variableValue));
         }
         return result;
+    }
+
+    public static <T> AttributeFilter<T> jsonFilter(AttributeFilter<T> filter) {
+        if (filter != null) {
+            filter.setJson(true);
+        }
+        return filter;
     }
 }

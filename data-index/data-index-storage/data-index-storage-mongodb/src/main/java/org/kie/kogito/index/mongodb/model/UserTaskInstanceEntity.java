@@ -76,6 +76,10 @@ public class UserTaskInstanceEntity {
 
     List<AttachmentEntity> attachments;
 
+    private String externalReferenceId;
+
+    private Long slaDueDate;
+
     public String getId() {
         return id;
     }
@@ -268,6 +272,22 @@ public class UserTaskInstanceEntity {
         this.attachments = attachments;
     }
 
+    public void setExternalReferenceId(String externalReferenceId) {
+        this.externalReferenceId = externalReferenceId;
+    }
+
+    public String getExternalReferenceId() {
+        return externalReferenceId;
+    }
+
+    public Long getSlaDueDate() {
+        return slaDueDate;
+    }
+
+    public void setSlaDueDate(Long slaDueDate) {
+        this.slaDueDate = slaDueDate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -312,6 +332,7 @@ public class UserTaskInstanceEntity {
                 ", endpoint='" + endpoint + '\'' +
                 ", comments='" + comments + '\'' +
                 ", attachments='" + attachments + '\'' +
+                ", slaDueDate=" + slaDueDate +
                 '}';
     }
 
@@ -435,4 +456,5 @@ public class UserTaskInstanceEntity {
             return Objects.hash(id);
         }
     }
+
 }

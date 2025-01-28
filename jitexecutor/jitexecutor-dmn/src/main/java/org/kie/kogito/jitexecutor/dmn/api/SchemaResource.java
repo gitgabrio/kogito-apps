@@ -21,6 +21,7 @@ package org.kie.kogito.jitexecutor.dmn.api;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -33,6 +34,8 @@ import org.kie.dmn.openapi.DMNOASGeneratorFactory;
 import org.kie.dmn.openapi.model.DMNOASResult;
 import org.kie.kogito.jitexecutor.common.requests.MultipleResourcesPayload;
 import org.kie.kogito.jitexecutor.dmn.DMNEvaluator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -46,8 +49,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import static org.kie.kogito.jitexecutor.common.Constants.LINEBREAK;
+
 @Path("jitdmn/schema")
 public class SchemaResource {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SchemaResource.class);
 
     // trick for resolver/implementation for NI
     static final OpenAPI x;
@@ -65,9 +72,16 @@ public class SchemaResource {
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
     public Response schema(String payload) {
-        DMNModel dmnModel = DMNEvaluator.fromXML(payload).getDmnModel();
-        DMNOASResult oasResult = DMNOASGeneratorFactory.generator(Collections.singletonList(dmnModel)).build();
-        return fullSchema(dmnModel, oasResult, true);
+        LOGGER.debug(LINEBREAK);
+        LOGGER.debug("jitdmn/validate");
+        LOGGER.debug(payload);
+        LOGGER.debug(LINEBREAK);
+        Supplier<Response> supplier = () -> {
+            DMNModel dmnModel = DMNEvaluator.fromXML(payload).getDmnModel();
+            DMNOASResult oasResult = DMNOASGeneratorFactory.generator(Collections.singletonList(dmnModel)).build();
+            return fullSchema(dmnModel, oasResult, true);
+        };
+        return DMNResourceHelper.manageResponse(supplier);
     }
 
     private Response fullSchema(DMNModel dmnModel, DMNOASResult oasResult, final boolean singleModel) {
@@ -101,10 +115,13 @@ public class SchemaResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response schema(MultipleResourcesPayload payload) {
-        DMNEvaluator dmnEvaluator = DMNEvaluator.fromMultiple(payload);
-        DMNModel dmnModel = dmnEvaluator.getDmnModel();
-        DMNOASResult oasResult = DMNOASGeneratorFactory.generator(dmnEvaluator.getAllDMNModels()).build();
-        return fullSchema(dmnModel, oasResult, false);
+        Supplier<Response> supplier = () -> {
+            DMNEvaluator dmnEvaluator = DMNEvaluator.fromMultiple(payload);
+            DMNModel dmnModel = dmnEvaluator.getDmnModel();
+            DMNOASResult oasResult = DMNOASGeneratorFactory.generator(dmnEvaluator.getAllDMNModels()).build();
+            return fullSchema(dmnModel, oasResult, false);
+        };
+        return DMNResourceHelper.manageResponse(supplier);
     }
 
     @POST
@@ -112,9 +129,12 @@ public class SchemaResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("form")
     public Response form(String payload) {
-        DMNModel dmnModel = DMNEvaluator.fromXML(payload).getDmnModel();
-        DMNOASResult oasResult = DMNOASGeneratorFactory.generator(Collections.singletonList(dmnModel)).build();
-        return formSchema(dmnModel, oasResult);
+        Supplier<Response> supplier = () -> {
+            DMNModel dmnModel = DMNEvaluator.fromXML(payload).getDmnModel();
+            DMNOASResult oasResult = DMNOASGeneratorFactory.generator(Collections.singletonList(dmnModel)).build();
+            return formSchema(dmnModel, oasResult);
+        };
+        return DMNResourceHelper.manageResponse(supplier);
     }
 
     @POST
@@ -122,10 +142,13 @@ public class SchemaResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("form")
     public Response form(MultipleResourcesPayload payload) {
-        DMNEvaluator dmnEvaluator = DMNEvaluator.fromMultiple(payload);
-        DMNModel dmnModel = dmnEvaluator.getDmnModel();
-        DMNOASResult oasResult = DMNOASGeneratorFactory.generator(dmnEvaluator.getAllDMNModels()).build();
-        return formSchema(dmnModel, oasResult);
+        Supplier<Response> supplier = () -> {
+            DMNEvaluator dmnEvaluator = DMNEvaluator.fromMultiple(payload);
+            DMNModel dmnModel = dmnEvaluator.getDmnModel();
+            DMNOASResult oasResult = DMNOASGeneratorFactory.generator(dmnEvaluator.getAllDMNModels()).build();
+            return formSchema(dmnModel, oasResult);
+        };
+        return DMNResourceHelper.manageResponse(supplier);
     }
 
     private Response formSchema(DMNModel dmnModel, DMNOASResult oasResult) {

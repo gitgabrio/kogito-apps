@@ -22,6 +22,7 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
+
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -36,9 +37,59 @@
   <name>Kogito Apps</name>
   <description>Kogito Apps</description>
 
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>https://apache.org/</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:https://github.com/apache/incubator-kie-kogito-apps.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/incubator-kie-kogito-apps.git</developerConnection>
+    <url>https://github.com/apache/incubator-kie-kogito-apps</url>
+  </scm>
+  <developers>
+    <developer>
+      <name>The Apache KIE Team</name>
+      <email>dev@kie.apache.org</email>
+      <url>https://kie.apache.org</url>
+      <organization>Apache Software Foundation</organization>
+      <organizationUrl>http://apache.org/</organizationUrl>
+    </developer>
+  </developers>
+
+  <mailingLists>
+    <mailingList>
+      <name>Development List</name>
+      <subscribe>dev-subscribe@kie.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@kie.apache.org</unsubscribe>
+      <post>dev@kie.apache.org</post>
+      <archive>https://lists.apache.org/list.html?dev@kie.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>User List</name>
+      <subscribe>users-subscribe@kie.apache.org</subscribe>
+      <unsubscribe>users-unsubscribe@kie.apache.org</unsubscribe>
+      <post>users@kie.apache.org</post>
+      <archive>https://lists.apache.org/list.html?users@kie.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>Commits List</name>
+      <subscribe>commits-subscribe@kie.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@kie.apache.org</unsubscribe>
+      <post>commits@kie.apache.org</post>
+      <archive>https://lists.apache.org/list.html?commits@kie.apache.org</archive>
+    </mailingList>
+  </mailingLists>
+
   <properties>
     <project.build.outputTimestamp>2024-01-16T00:00:00Z</project.build.outputTimestamp>
-    <version.maven.artifact.plugin>3.4.1</version.maven.artifact.plugin>
   </properties>
 
   <build>
@@ -47,9 +98,10 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-artifact-plugin</artifactId>
-          <version>${version.maven.artifact.plugin}</version>
           <configuration>
             <outputTimestamp>${project.build.outputTimestamp}</outputTimestamp>
+            <!-- Generated images in zip format are not reproducible-->
+            <ignore>image-build.zip</ignore>
           </configuration>
         </plugin>
       </plugins>
@@ -57,20 +109,14 @@
   </build>
 
   <repositories>
-    <!-- Bootstrap repository to locate the parent pom when the parent pom has not been build locally. -->
+    <!-- useful to resolve parent pom when it is a SNAPSHOT -->
     <repository>
-        <id>apache-public-repository-group</id>
-        <name>Apache Public Repository Group</name>
-        <url>https://repository.apache.org/content/groups/public/</url>
-        <layout>default</layout>
-        <releases>
-            <enabled>true</enabled>
-            <updatePolicy>never</updatePolicy>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-            <updatePolicy>daily</updatePolicy>
-        </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <id>apache.snapshots</id>
+      <name>Apache Snapshot Repository</name>
+      <url>https://repository.apache.org/snapshots</url>
     </repository>
   </repositories>
 
@@ -81,20 +127,24 @@
     <module>jobs-service</module>
     <module>data-index</module>
     <module>data-audit</module>
-    <module>ui-packages</module>
     <module>security-commons</module>
-    <module>management-console</module>
-    <module>trusty-ui</module>
-    <module>task-console</module>
     <module>explainability</module>
     <module>trusty</module>
     <module>jitexecutor</module>
-    <module>apps-integration-tests</module>
-    <module>runtime-tools-quarkus-extension-parent</module>
-    <module>kogito-quarkus-serverless-workflow-devui-parent</module>
   </modules>
 
   <profiles>
+    <profile>
+      <id>allSubmodules</id>
+      <activation>
+        <property>
+          <name>!only.reproducible</name>
+        </property>
+      </activation>
+      <modules>
+        <module>apps-integration-tests</module>
+      </modules>
+    </profile>
     <profile>
       <id>optaplanner-downstream</id>
       <activation>
@@ -108,6 +158,48 @@
         <module>explainability</module>
         <module>trusty</module>
       </modules>
+    </profile>
+    <profile>
+      <id>jitexecutor-native</id>
+      <modules>
+        <module>jitexecutor-native</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>reproducible-build</id>
+      <activation>
+        <property>
+          <name>reproducible</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-artifact-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>check-buildplan</id>
+                <goals>
+                  <goal>check-buildplan</goal>
+                </goals>
+                <!-- The execution's configuration is part of the pluginManagement. This piece here only makes sure the
+                     execution is enabled (by specifying a phase) for full profile builds. -->
+                <phase>validate</phase>
+              </execution>
+              <execution>
+                <id>compare</id>
+                <goals>
+                  <goal>compare</goal>
+                </goals>
+                <!-- The execution's configuration is part of the pluginManagement. This piece here only makes sure the
+                     execution is enabled (by specifying a phase) for full profile builds. -->
+                <phase>install</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

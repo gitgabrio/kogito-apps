@@ -1,3 +1,21 @@
+<!---
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
 # Reporting extension 
 
 This module provides a framework to extract discrete values from a JSON column within 
@@ -96,8 +114,8 @@ The following limitations apply:
 All examples assume the following schema:
 ```postgresql
 create table kogito_data_cache (
-   key varchar(255) not null,
-   name varchar(255) not null,
+   var_name varchar(255) not null,
+   cache_name varchar(255) not null,
    json_value jsonb,
    primary key (key, name)
 );
@@ -112,13 +130,13 @@ entities through JPA. There are code examples in `org.kie.kogito:persistence-com
   "sourceTableJsonFieldName": "json_value",
   "sourceTableIdentityFields": [
     {
-      "fieldName":"key",
+      "fieldName":"var_name",
       "fieldType": "STRING"
     }
   ],
   "sourceTablePartitionFields": [
     {
-      "fieldName": "name",
+      "fieldName": "cache_name",
       "fieldType": "STRING",
       "fieldValue": "BasicType"
     }
@@ -168,13 +186,13 @@ Result
   "sourceTableJsonFieldName": "json_value",
   "sourceTableIdentityFields": [
     {
-      "fieldName":"key",
+      "fieldName":"var_name",
       "fieldType": "STRING"
     }
   ],
   "sourceTablePartitionFields": [
     {
-      "fieldName": "name",
+      "fieldName": "cache_name",
       "fieldType": "STRING",
       "fieldValue": "HierarchicalType"
     }
@@ -247,13 +265,13 @@ Result
   "sourceTableJsonFieldName": "json_value",
   "sourceTableIdentityFields": [
     {
-      "fieldName":"key",
+      "fieldName":"var_name",
       "fieldType": "STRING"
     }
   ],
   "sourceTablePartitionFields": [
     {
-      "fieldName": "name",
+      "fieldName": "cache_name",
       "fieldType": "STRING",
       "fieldValue": "ComplexHierarchicalType"
     }

@@ -40,8 +40,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.kie.kogito</groupId>
-      <artifactId>kogito-ddl-runtimes</artifactId>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-ddl-runtimes</artifactId>
       <version>${project.version}</version>
       <classifier>db-scripts</classifier>
       <type>zip</type>
@@ -72,17 +72,4 @@
       </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>productized</id>
-      <activation>
-        <property>
-          <name>productized</name>
-        </property>
-      </activation>
-      <properties>
-        <db.scripts.descriptor>src/assembly/productized-multi-repo-zip.xml</db.scripts.descriptor>
-      </properties>
-    </profile>
-  </profiles>
 </project>

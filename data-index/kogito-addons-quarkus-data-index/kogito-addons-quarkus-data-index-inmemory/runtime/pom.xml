@@ -46,6 +46,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx-graphql</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-flyway</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -62,7 +66,7 @@
             <configuration>
               <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}</deployment>
               <capabilities>
-                <provides>org.kie.kogito.data-index.in-memory</provides>
+                <provides>org.kie.kogito.data-index</provides>
               </capabilities>
             </configuration>
           </execution>

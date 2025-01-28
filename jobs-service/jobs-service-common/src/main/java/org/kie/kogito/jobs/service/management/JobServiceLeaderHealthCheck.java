@@ -32,7 +32,7 @@ import jakarta.enterprise.event.Observes;
 @ApplicationScoped
 public class JobServiceLeaderHealthCheck implements HealthCheck {
 
-    private AtomicBoolean enabled = new AtomicBoolean(false);
+    private final AtomicBoolean enabled = new AtomicBoolean(false);
 
     protected void onMessagingStatusChange(@Observes MessagingChangeEvent event) {
         this.enabled.set(event.isEnabled());

@@ -19,13 +19,8 @@
 package org.kie.kogito.jobs.service.stream;
 
 import org.kie.kogito.jobs.service.model.JobDetails;
-import org.kie.kogito.jobs.service.model.JobExecutionResponse;
 
 public interface JobEventPublisher {
-
-    JobExecutionResponse publishJobError(JobExecutionResponse response);
-
-    JobExecutionResponse publishJobSuccess(JobExecutionResponse response);
 
     JobDetails publishJobStatusChange(JobDetails scheduledJob);
 }

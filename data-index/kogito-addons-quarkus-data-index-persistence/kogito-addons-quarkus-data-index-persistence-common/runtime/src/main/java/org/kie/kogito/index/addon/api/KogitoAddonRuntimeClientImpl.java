@@ -29,13 +29,17 @@ import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.kie.kogito.Application;
+import org.kie.kogito.Model;
+import org.kie.kogito.index.api.ExecuteArgs;
 import org.kie.kogito.index.api.KogitoRuntimeClient;
 import org.kie.kogito.index.api.KogitoRuntimeCommonClient;
 import org.kie.kogito.index.model.Node;
+import org.kie.kogito.index.model.ProcessDefinition;
 import org.kie.kogito.index.model.ProcessInstance;
 import org.kie.kogito.index.model.UserTaskInstance;
 import org.kie.kogito.index.service.DataIndexServiceException;
 import org.kie.kogito.internal.process.runtime.KogitoWorkflowProcess;
+import org.kie.kogito.jackson.utils.JsonObjectUtils;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.process.ProcessInstanceExecutionException;
 import org.kie.kogito.process.Processes;
@@ -130,7 +134,8 @@ public class KogitoAddonRuntimeClientImpl extends KogitoRuntimeCommonClient impl
         if (processSvgService == null) {
             return CompletableFuture.completedFuture(null);
         } else {
-            return CompletableFuture.supplyAsync(() -> processSvgService.getProcessInstanceSvg(processInstance.getProcessId(), processInstance.getId(), null).orElse(null), managedExecutor);
+            return CompletableFuture.supplyAsync(() -> processSvgService.getProcessInstanceSvg(processInstance.getProcessId(), processInstance.getId(), this.getAuthHeader()).orElse(null),
+                    managedExecutor);
         }
     }
 
@@ -157,7 +162,7 @@ public class KogitoAddonRuntimeClientImpl extends KogitoRuntimeCommonClient impl
             List<org.kie.api.definition.process.Node> nodes = ((KogitoWorkflowProcess) ((AbstractProcess<?>) process).get()).getNodesRecursively();
             List<Node> list = nodes.stream().map(n -> {
                 Node data = new Node();
-                data.setId(String.valueOf(n.getId()));
+                data.setId(n.getId().toExternalFormat());
                 data.setUniqueId(((org.jbpm.workflow.core.Node) n).getUniqueId());
                 data.setMetadata(n.getMetaData() == null ? null : mapMetadata(n));
                 data.setType(n.getClass().getSimpleName());
@@ -271,5 +276,19 @@ public class KogitoAddonRuntimeClientImpl extends KogitoRuntimeCommonClient impl
                 throw new DataIndexServiceException(String.format("Process instance with id %s doesn't allow the operation requested", processInstanceId));
             }
         });
+    }
+
+    @Override
+    public CompletableFuture<String> executeProcessInstance(ProcessDefinition definition, ExecuteArgs args) {
+        Process<?> process = processes != null ? processes.processById(definition.getId()) : null;
+        if (process == null) {
+            throw new DataIndexServiceException(String.format("Unable to find Process  with id %s to perform the operation requested", definition.getId()));
+        }
+        Model m = (Model) process.createModel();
+        m.update(JsonObjectUtils.convertValue(args.input(), Map.class));
+        org.kie.kogito.process.ProcessInstance<? extends Model> pi = process.createInstance(m);
+        pi.start();
+        return CompletableFuture.completedFuture(
+                String.format(SUCCESSFULLY_OPERATION_MESSAGE, "Started Process Instance with id: " + pi.id()));
     }
 }

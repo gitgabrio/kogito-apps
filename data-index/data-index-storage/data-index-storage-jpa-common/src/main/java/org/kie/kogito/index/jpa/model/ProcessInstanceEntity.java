@@ -53,7 +53,6 @@ public class ProcessInstanceEntity extends AbstractEntity {
     private String businessKey;
     private String endpoint;
     @ElementCollection
-    @JoinColumn(name = "process_id")
     @CollectionTable(name = "processes_roles", joinColumns = @JoinColumn(name = "process_id", foreignKey = @ForeignKey(name = "fk_processes_roles_processes")))
     @Column(name = "role", nullable = false)
     private Set<String> roles;
@@ -69,6 +68,9 @@ public class ProcessInstanceEntity extends AbstractEntity {
     private String createdBy;
 
     private String updatedBy;
+
+    private ZonedDateTime slaDueDate;
+
     @Convert(converter = JsonBinaryConverter.class)
     @Column(columnDefinition = "jsonb")
     private ObjectNode variables;
@@ -77,7 +79,6 @@ public class ProcessInstanceEntity extends AbstractEntity {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "processInstance")
     private List<MilestoneEntity> milestones;
     @ElementCollection
-    @JoinColumn(name = "process_id")
     @CollectionTable(name = "processes_addons", joinColumns = @JoinColumn(name = "process_id", foreignKey = @ForeignKey(name = "fk_processes_addons_processes")))
     @Column(name = "addon", nullable = false)
     private Set<String> addons;
@@ -205,6 +206,14 @@ public class ProcessInstanceEntity extends AbstractEntity {
         this.updatedBy = updatedBy;
     }
 
+    public ZonedDateTime getSlaDueDate() {
+        return slaDueDate;
+    }
+
+    public void setSlaDueDate(ZonedDateTime slaDueDate) {
+        this.slaDueDate = slaDueDate;
+    }
+
     public ObjectNode getVariables() {
         return variables;
     }
@@ -288,6 +297,7 @@ public class ProcessInstanceEntity extends AbstractEntity {
                 ", lastUpdate=" + lastUpdate +
                 ", createdBy=" + createdBy +
                 ", updatedBy=" + updatedBy +
+                ", slaDueDate=" + slaDueDate +
                 ", variables=" + variables +
                 ", nodes=" + nodes +
                 ", milestones=" + milestones +

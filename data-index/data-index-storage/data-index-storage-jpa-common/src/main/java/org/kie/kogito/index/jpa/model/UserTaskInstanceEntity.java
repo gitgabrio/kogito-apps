@@ -53,29 +53,24 @@ public class UserTaskInstanceEntity extends AbstractEntity {
     private String state;
     private String actualOwner;
     @ElementCollection
-    @JoinColumn(name = "task_id")
     @CollectionTable(name = "tasks_admin_groups", joinColumns = @JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "fk_tasks_admin_groups_tasks")))
     @Column(name = "group_id", nullable = false)
     private Set<String> adminGroups;
     @ElementCollection
-    @JoinColumn(name = "task_id")
     @CollectionTable(name = "tasks_admin_users", joinColumns = @JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "fk_tasks_admin_users_tasks")))
     @Column(name = "user_id", nullable = false)
     private Set<String> adminUsers;
     private ZonedDateTime completed;
     private ZonedDateTime started;
     @ElementCollection
-    @JoinColumn(name = "task_id")
     @CollectionTable(name = "tasks_excluded_users", joinColumns = @JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "fk_tasks_excluded_users_tasks")))
     @Column(name = "user_id", nullable = false)
     private Set<String> excludedUsers;
     @ElementCollection
-    @JoinColumn(name = "task_id")
     @CollectionTable(name = "tasks_potential_groups", joinColumns = @JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "fk_tasks_potential_groups_tasks")))
     @Column(name = "group_id", nullable = false)
     private Set<String> potentialGroups;
     @ElementCollection
-    @JoinColumn(name = "task_id")
     @CollectionTable(name = "tasks_potential_users", joinColumns = @JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "fk_tasks_potential_users_tasks")))
     @Column(name = "user_id", nullable = false)
     private Set<String> potentialUsers;
@@ -95,6 +90,16 @@ public class UserTaskInstanceEntity extends AbstractEntity {
     private List<CommentEntity> comments;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "userTask", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AttachmentEntity> attachments;
+    private String externalReferenceId;
+    private ZonedDateTime slaDueDate;
+
+    public String getExternalReferenceId() {
+        return externalReferenceId;
+    }
+
+    public void setExternalReferenceId(String externalReferenceId) {
+        this.externalReferenceId = externalReferenceId;
+    }
 
     @Override
     public String getId() {
@@ -289,6 +294,14 @@ public class UserTaskInstanceEntity extends AbstractEntity {
         this.attachments = attachments;
     }
 
+    public ZonedDateTime getSlaDueDate() {
+        return slaDueDate;
+    }
+
+    public void setSlaDueDate(ZonedDateTime slaDueDate) {
+        this.slaDueDate = slaDueDate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -333,6 +346,7 @@ public class UserTaskInstanceEntity extends AbstractEntity {
                 ", endpoint='" + endpoint + '\'' +
                 ", comments='" + comments + '\'' +
                 ", attachments='" + attachments + '\'' +
+                ", slaDueDate=" + slaDueDate +
                 '}';
     }
 }

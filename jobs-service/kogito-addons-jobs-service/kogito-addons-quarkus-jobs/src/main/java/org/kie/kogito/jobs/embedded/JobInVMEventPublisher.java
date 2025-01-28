@@ -20,22 +20,19 @@
 package org.kie.kogito.jobs.embedded;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.kie.kogito.event.EventPublisher;
 import org.kie.kogito.event.job.JobInstanceDataEvent;
-import org.kie.kogito.jobs.ProcessInstanceJobDescription;
+import org.kie.kogito.jobs.JobDescription;
+import org.kie.kogito.jobs.descriptors.ProcessInstanceJobDescription;
 import org.kie.kogito.jobs.service.adapter.ScheduledJobAdapter;
 import org.kie.kogito.jobs.service.api.Recipient;
 import org.kie.kogito.jobs.service.model.JobDetails;
-import org.kie.kogito.jobs.service.model.JobExecutionResponse;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
 import org.kie.kogito.jobs.service.resource.RestApiConstants;
-import org.kie.kogito.jobs.service.scheduler.ReactiveJobScheduler;
 import org.kie.kogito.jobs.service.stream.JobEventPublisher;
-import org.kie.kogito.jobs.service.utils.ErrorHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +61,6 @@ public class JobInVMEventPublisher implements JobEventPublisher {
     private final ObjectMapper objectMapper;
 
     @Inject
-    ReactiveJobScheduler scheduler;
-
-    @Inject
     Event<EmbeddedJobServiceEvent> bus;
 
     public JobInVMEventPublisher(
@@ -77,47 +71,6 @@ public class JobInVMEventPublisher implements JobEventPublisher {
         this.eventPublishers = eventPublishers.stream().collect(toList());
         this.objectMapper = objectMapper;
         LOGGER.info("JobInVMEventPublisher Started with url {}", url);
-    }
-
-    @Override
-    public JobExecutionResponse publishJobError(JobExecutionResponse response) {
-        try {
-            LOGGER.debug("publishJobError {}", response);
-
-            ErrorHandling.skipErrorPublisherBuilder(scheduler::handleJobExecutionError, response)
-                    .findFirst()
-                    .run()
-                    .thenApply(Optional::isPresent)
-                    .exceptionally(e -> {
-                        LOGGER.error("Error handling error {}", response, e);
-                        return false;
-                    }).toCompletableFuture().get();
-
-            return response;
-        } catch (Exception e) {
-            LOGGER.error("error in publishJobError", e);
-            return response;
-        }
-    }
-
-    @Override
-    public JobExecutionResponse publishJobSuccess(JobExecutionResponse response) {
-        try {
-            LOGGER.debug("publishJobSuccess {}", response);
-            ErrorHandling.skipErrorPublisherBuilder(scheduler::handleJobExecutionSuccess, response)
-                    .findFirst()
-                    .run()
-                    .thenApply(Optional::isPresent)
-                    .exceptionally(e -> {
-                        LOGGER.error("Error handling error {}", response, e);
-                        return false;
-                    }).toCompletableFuture().get();
-
-            return response;
-        } catch (Exception e) {
-            LOGGER.error("error in publishJobSuccess", e);
-            return response;
-        }
     }
 
     @Override
@@ -141,13 +94,15 @@ public class JobInVMEventPublisher implements JobEventPublisher {
         try {
             ScheduledJob scheduledJob = ScheduledJobAdapter.of(jobDetails);
             Recipient<InVMPayloadData> recipient = jobDetails.getRecipient().getRecipient();
-            ProcessInstanceJobDescription jobDescription = recipient.getPayload().getJobDescription();
+            JobDescription jobDescription = recipient.getPayload().getJobDescription();
 
-            scheduledJob.setProcessInstanceId(jobDescription.processInstanceId());
-            scheduledJob.setProcessId(jobDescription.processId());
-            scheduledJob.setRootProcessInstanceId(jobDescription.rootProcessInstanceId());
-            scheduledJob.setRootProcessId(jobDescription.rootProcessId());
-            scheduledJob.setNodeInstanceId(jobDescription.nodeInstanceId());
+            if (jobDescription instanceof ProcessInstanceJobDescription processInstanceJobDescription) {
+                scheduledJob.setProcessInstanceId(processInstanceJobDescription.processInstanceId());
+                scheduledJob.setProcessId(processInstanceJobDescription.processId());
+                scheduledJob.setRootProcessInstanceId(processInstanceJobDescription.rootProcessInstanceId());
+                scheduledJob.setRootProcessId(processInstanceJobDescription.rootProcessId());
+                scheduledJob.setNodeInstanceId(processInstanceJobDescription.nodeInstanceId());
+            }
 
             byte[] jsonContent = objectMapper.writeValueAsBytes(scheduledJob);
             JobInstanceDataEvent event = new JobInstanceDataEvent(JOB_EVENT_TYPE,

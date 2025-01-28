@@ -20,7 +20,6 @@ package org.kie.kogito.jitexecutor.dmn.api;
 
 import java.io.IOException;
 
-import org.drools.util.IoUtils;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,13 +27,14 @@ import io.restassured.http.ContentType;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.kie.kogito.jitexecutor.dmn.TestingUtils.getModelFromIoUtils;
 
 @QuarkusTest
 public class SchemaResourceTest {
 
     @Test
     public void test() throws IOException {
-        final String MODEL = new String(IoUtils.readBytesFromInputStream(JITDMNResourceTest.class.getResourceAsStream("/test.dmn")));
+        final String MODEL = getModelFromIoUtils("invalid_models/DMNv1_x/test.dmn");
         given()
                 .contentType(ContentType.XML)
                 .body(MODEL)
@@ -42,5 +42,18 @@ public class SchemaResourceTest {
                 .then()
                 .statusCode(200)
                 .body(containsString("InputSet"), containsString("x-dmn-type"));
+    }
+
+    @Test
+    public void testJitDmnValidate() throws IOException {
+        final String MODEL = getModelFromIoUtils("invalid_models/DMNv1_5/DMN-Invalid.dmn");
+        given()
+                .contentType(ContentType.XML)
+                .body(MODEL)
+                .when().post("/jitdmn/schema")
+                .then()
+                .statusCode(400)
+                .body(containsString("Error compiling FEEL expression 'Person Age >= 18' for name 'Can Drive?' on node 'Can Drive?': syntax error near 'Age'"));
+
     }
 }

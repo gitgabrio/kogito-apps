@@ -109,7 +109,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>src/main/resources</outputDirectory>
+              <outputDirectory>${project.basedir}/target/generated-resources</outputDirectory>
               <resources>
                 <resource>
                   <directory>${common.test.resources.dir}</directory>
@@ -139,7 +139,14 @@
         <groupId>org.kie.kogito</groupId>
         <artifactId>kogito-maven-plugin</artifactId>
         <version>${project.version}</version>
-        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>generateModel</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>

@@ -44,6 +44,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -56,7 +58,7 @@ public abstract class AbstractJobStreamsTest<T extends AbstractJobStreams> {
     protected static final String URL = "http://localhost:8180";
     private static final String SERIALIZED_MESSAGE = "SERIALIZED_MESSAGE";
 
-    private static final String JOB_ID = "JOB_ID";
+    protected static final String JOB_ID = "JOB_ID";
     private static final String CORRELATION_ID = "CORRELATION_ID";
     private static final JobStatus STATUS = JobStatus.SCHEDULED;
     private static final ZonedDateTime LAST_UPDATE = ZonedDateTime.parse("2022-08-03T18:00:15.001+01:00");
@@ -94,7 +96,7 @@ public abstract class AbstractJobStreamsTest<T extends AbstractJobStreams> {
         doReturn(SERIALIZED_MESSAGE).when(objectMapper).writeValueAsString(any());
         Message<String> message = executeStatusChange(job);
         message.ack();
-        verify(jobStreams).onAck(job);
+        verify(jobStreams).onAck(anyString(), eq(job));
     }
 
     @Test
@@ -141,14 +143,14 @@ public abstract class AbstractJobStreamsTest<T extends AbstractJobStreams> {
         assertThat(message.getPayload()).isEqualTo(SERIALIZED_MESSAGE);
         assertExpectedMetadata(message);
         message.ack();
-        verify(jobStreams).onAck(job);
+        verify(jobStreams).onAck(anyString(), eq(job));
     }
 
     private void executeStatusChangeWithUnexpectedError(JobDetails job) throws Exception {
         doThrow(new RuntimeException("Unexpected error")).when(objectMapper).writeValueAsString(any());
         jobStreams.jobStatusChange(job);
 
-        verify(jobStreams, never()).onAck(any());
+        verify(jobStreams, never()).onAck(any(), any());
         verify(jobStreams, never()).onNack(any(), any());
     }
 
@@ -168,7 +170,7 @@ public abstract class AbstractJobStreamsTest<T extends AbstractJobStreams> {
 
     }
 
-    private void assertExpectedEvent(JobDataEvent event) {
+    protected void assertExpectedEvent(JobDataEvent event) {
         assertThat(event.getId()).isNotNull();
         assertThat(event.getType()).isEqualTo(JobDataEvent.JOB_EVENT_TYPE);
         assertThat(event.getSource()).hasToString(URL + "/jobs");

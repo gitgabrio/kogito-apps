@@ -173,9 +173,9 @@ public class JobServiceInstanceManager {
     }
 
     protected Uni<Void> release(JobServiceManagementInfo info) {
-        return repository.set(new JobServiceManagementInfo(info.getId(), null, null))
+        leader.set(false);
+        return repository.release(info)
                 .onItem().invoke(this::disableCommunication)
-                .onItem().invoke(i -> leader.set(false))
                 .onItem().invoke(i -> LOGGER.info("Leader instance released"))
                 .onFailure().invoke(ex -> LOGGER.error("Error releasing leader"))
                 .replaceWithVoid();

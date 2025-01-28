@@ -47,6 +47,7 @@ import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarsha
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.DESCRIPTION;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.ENDPOINT;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.EXCLUDED_USERS;
+import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.EXTERNAL_REFERENCE_ID;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.ID;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.INPUTS;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.LAST_UPDATE;
@@ -60,6 +61,7 @@ import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarsha
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.REFERENCE_NAME;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.ROOT_PROCESS_ID;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.ROOT_PROCESS_INSTANCE_ID;
+import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.SLA_DUE_DATE;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.STARTED;
 import static org.kie.kogito.index.infinispan.protostream.UserTaskInstanceMarshaller.STATE;
 import static org.mockito.ArgumentMatchers.any;
@@ -100,6 +102,8 @@ class UserTaskInstanceMarshallerTest {
         TASK.setReferenceName("referenceName");
         TASK.setLastUpdate(ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS));
         TASK.setEndpoint("endpoint");
+        TASK.setExternalReferenceId("externalReferenceId");
+        TASK.setSlaDueDate(time);
         TASK.setComments(List.of(Comment.builder()
                 .id("attId")
                 .content("Text comment")
@@ -144,6 +148,8 @@ class UserTaskInstanceMarshallerTest {
         when(reader.readString(ENDPOINT)).thenReturn(TASK.getEndpoint());
         when(reader.readCollection(eq(COMMENTS), any(), eq(Comment.class))).thenReturn(TASK.getComments());
         when(reader.readCollection(eq(ATTACHMENTS), any(), eq(Attachment.class))).thenReturn(TASK.getAttachments());
+        when(reader.readString(EXTERNAL_REFERENCE_ID)).thenReturn(TASK.getExternalReferenceId());
+        when(reader.readDate(SLA_DUE_DATE)).thenReturn(marshaller.zonedDateTimeToDate(TASK.getSlaDueDate()));
 
         UserTaskInstance task = marshaller.readFrom(reader);
 
@@ -174,6 +180,8 @@ class UserTaskInstanceMarshallerTest {
         inOrder.verify(reader).readString(ENDPOINT);
         inOrder.verify(reader).readCollection(COMMENTS, new ArrayList<>(), Comment.class);
         inOrder.verify(reader).readCollection(ATTACHMENTS, new ArrayList<>(), Attachment.class);
+        inOrder.verify(reader).readString(EXTERNAL_REFERENCE_ID);
+        inOrder.verify(reader).readDate(SLA_DUE_DATE);
         verifyNoMoreInteractions(reader);
     }
 
@@ -209,6 +217,8 @@ class UserTaskInstanceMarshallerTest {
         inOrder.verify(writer).writeString(ENDPOINT, TASK.getEndpoint());
         inOrder.verify(writer).writeCollection(COMMENTS, TASK.getComments(), Comment.class);
         inOrder.verify(writer).writeCollection(ATTACHMENTS, TASK.getAttachments(), Attachment.class);
+        inOrder.verify(writer).writeString(EXTERNAL_REFERENCE_ID, TASK.getExternalReferenceId());
+        inOrder.verify(writer).writeDate(SLA_DUE_DATE, marshaller.zonedDateTimeToDate(TASK.getSlaDueDate()));
         verifyNoMoreInteractions(writer);
     }
 

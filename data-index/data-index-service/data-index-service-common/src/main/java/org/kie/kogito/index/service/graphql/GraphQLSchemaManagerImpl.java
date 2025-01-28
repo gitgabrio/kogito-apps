@@ -74,8 +74,10 @@ public class GraphQLSchemaManagerImpl extends AbstractGraphQLSchemaManager {
         TypeDefinitionRegistry typeDefinitionRegistry = new TypeDefinitionRegistry();
         typeDefinitionRegistry.merge(loadSchemaDefinitionFile("basic.schema.graphqls"));
         typeDefinitionRegistry.merge(loadSchemaDefinitionFile("domain.schema.graphqls"));
+        loadAdditionalMutations(typeDefinitionRegistry);
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .scalar(ExtendedScalars.Json)
                 .type("Query", builder -> {
                     builder.dataFetcher("ProcessDefinitions", this::getProcessDefinitionsValues);
                     builder.dataFetcher("ProcessInstances", this::getProcessInstancesValues);
@@ -100,6 +102,7 @@ public class GraphQLSchemaManagerImpl extends AbstractGraphQLSchemaManager {
                     builder.dataFetcher("UserTaskInstanceCommentDelete", this::deleteUserTaskComment);
                     builder.dataFetcher("UserTaskInstanceAttachmentUpdate", this::updateUserTaskAttachment);
                     builder.dataFetcher("UserTaskInstanceAttachmentDelete", this::deleteUserTaskAttachment);
+                    loadAdditionalMutations(builder);
                     return builder;
                 })
                 .type("ProcessDefinition", builder -> {

@@ -1,6 +1,5 @@
 module jitexecutor.bpmn {
     requires jitexecutor.common;
-    requires java.ws.rs;
     requires jakarta.inject;
     requires org.slf4j;
     requires java.xml;

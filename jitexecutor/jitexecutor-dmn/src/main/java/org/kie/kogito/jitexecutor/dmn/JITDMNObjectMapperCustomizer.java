@@ -22,8 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.inject.Singleton;
 
-import jakarta.inject.Singleton;
-
 @Singleton
 public class JITDMNObjectMapperCustomizer implements ObjectMapperCustomizer {
 

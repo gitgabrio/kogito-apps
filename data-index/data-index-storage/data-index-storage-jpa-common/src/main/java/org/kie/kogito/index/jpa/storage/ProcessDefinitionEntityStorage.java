@@ -24,11 +24,14 @@ import org.kie.kogito.index.jpa.model.ProcessDefinitionEntityRepository;
 import org.kie.kogito.index.model.ProcessDefinition;
 import org.kie.kogito.index.model.ProcessDefinitionKey;
 
+import io.quarkus.arc.DefaultBean;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 @ApplicationScoped
+@DefaultBean
 public class ProcessDefinitionEntityStorage extends AbstractStorage<ProcessDefinitionKey, ProcessDefinitionEntity, ProcessDefinition> {
 
     protected ProcessDefinitionEntityStorage() {

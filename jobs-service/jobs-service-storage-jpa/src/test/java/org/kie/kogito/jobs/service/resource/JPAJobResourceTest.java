@@ -18,12 +18,16 @@
  */
 package org.kie.kogito.jobs.service.resource;
 
+import org.kie.kogito.jobs.service.profiles.H2QuarkusTestProfile;
+
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.h2.H2DatabaseTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 
 @QuarkusTest
-@QuarkusTestResource(H2DatabaseTestResource.class)
+@QuarkusTestResource(value = H2DatabaseTestResource.class, restrictToAnnotatedClass = true)
+@TestProfile(H2QuarkusTestProfile.class)
 public class JPAJobResourceTest extends BaseJobResourceTest {
 
 }

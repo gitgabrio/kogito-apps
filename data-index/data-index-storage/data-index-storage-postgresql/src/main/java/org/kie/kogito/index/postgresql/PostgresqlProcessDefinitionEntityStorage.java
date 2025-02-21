@@ -16,33 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.kie.kogito.jobs.service.repository.jpa;
+package org.kie.kogito.index.postgresql;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
-import org.kie.kogito.jobs.service.repository.impl.BaseJobRepositoryTest;
+import org.kie.kogito.index.jpa.mapper.ProcessDefinitionEntityMapper;
+import org.kie.kogito.index.jpa.model.ProcessDefinitionEntityRepository;
+import org.kie.kogito.index.jpa.storage.ProcessDefinitionEntityStorage;
+import org.kie.kogito.index.model.ProcessDefinition;
+import org.kie.kogito.persistence.api.query.Query;
 
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.h2.H2DatabaseTestResource;
-import io.quarkus.test.junit.QuarkusTest;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-@QuarkusTest
-@QuarkusTestResource(H2DatabaseTestResource.class)
-public class JPAReactiveJobRepositoryTest extends BaseJobRepositoryTest {
+@ApplicationScoped
+public class PostgresqlProcessDefinitionEntityStorage extends ProcessDefinitionEntityStorage {
 
     @Inject
-    JPAReactiveJobRepository tested;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-
-        super.setUp();
+    public PostgresqlProcessDefinitionEntityStorage(ProcessDefinitionEntityRepository repository, ProcessDefinitionEntityMapper mapper) {
+        super(repository, mapper);
     }
 
     @Override
-    public ReactiveJobRepository tested() {
-        return tested;
+    public Query<ProcessDefinition> query() {
+        return new PostgresqlJsonJPAQuery<>(repository, mapToModel, entityClass);
     }
 }

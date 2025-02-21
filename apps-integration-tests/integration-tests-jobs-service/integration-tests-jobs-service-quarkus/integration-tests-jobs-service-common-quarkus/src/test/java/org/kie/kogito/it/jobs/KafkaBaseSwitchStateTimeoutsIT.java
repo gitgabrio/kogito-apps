@@ -18,6 +18,9 @@
  */
 package org.kie.kogito.it.jobs;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +28,6 @@ import org.kie.kogito.test.quarkus.kafka.KafkaTestClient;
 import org.kie.kogito.testcontainers.quarkus.KafkaQuarkusTestResource;
 
 import io.restassured.path.json.JsonPath;
-
-import static org.kie.kogito.test.TestUtils.waitForEvent;
 
 public class KafkaBaseSwitchStateTimeoutsIT extends BaseSwitchStateTimeoutsIT {
 
@@ -42,6 +43,12 @@ public class KafkaBaseSwitchStateTimeoutsIT extends BaseSwitchStateTimeoutsIT {
     @AfterEach
     void cleanUp() {
         kafkaClient.shutdown();
+    }
+
+    private static JsonPath waitForEvent(KafkaTestClient kafkaClient, String topic, long seconds) throws Exception {
+        CompletableFuture<String> cloudEvent = new CompletableFuture<>();
+        kafkaClient.consume(topic, cloudEvent::complete);
+        return new JsonPath(cloudEvent.orTimeout(seconds, TimeUnit.SECONDS).get());
     }
 
     @Override

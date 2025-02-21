@@ -71,6 +71,7 @@ public class DMNEvaluator {
                 .buildConfiguration()
                 .fromResources(resources.values())
                 .getOrElseThrow(RuntimeException::new);
+        dmnRuntime.addListener(new JITDMNListener());
         DMNModel mainModel = null;
         for (DMNModel m : dmnRuntime.getModels()) {
             if (m.getResource().getSourcePath().equals(payload.getMainURI())) {
@@ -120,12 +121,13 @@ public class DMNEvaluator {
         DMNContext dmnContext =
                 new DynamicDMNContextBuilder(dmnRuntime.newContext(), dmnModel).populateContextWith(context);
         DMNResult dmnResult = dmnRuntime.evaluateAll(dmnModel, dmnContext);
-        Optional<Map<String, Integer>> evaluationHitIds = dmnRuntime.getListeners().stream()
+        Optional<Map<String, Map<String, Integer>>> decisionEvaluationHitIdsMap = dmnRuntime.getListeners().stream()
                 .filter(JITDMNListener.class::isInstance)
                 .findFirst()
                 .map(JITDMNListener.class::cast)
-                .map(JITDMNListener::getEvaluationHitIds);
-        return new JITDMNResult(getNamespace(), getName(), dmnResult, evaluationHitIds.orElse(Collections.emptyMap()));
+                .map(JITDMNListener::getDecisionEvaluationHitIdsMap);
+        return JITDMNResult.of(getNamespace(), getName(), dmnResult,
+                decisionEvaluationHitIdsMap.orElse(Collections.emptyMap()));
     }
 
 }

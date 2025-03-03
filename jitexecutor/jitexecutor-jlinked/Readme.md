@@ -1,4 +1,58 @@
-Using jLink
+# Using Jlink with maven-jlink-plugin
+
+### Project structure
+jitexecutor
+├── jitexecutor-bpmn
+│├── pom.xml
+│└── src
+│    ├── main
+│    │├── filtered-resources
+│    │├── java
+│    ││└── module-info.java
+│    │└── resources
+│    └── test
+│        ├── java
+│        └── resources
+├── jitexecutor-common
+│├── pom.xml
+│└── src
+│    └── main
+│        └── java
+│            └── module-info.java
+├── jitexecutor-dmn
+│├── pom.xml
+│└── src
+│    ├── main
+│    │├── filtered-resources
+│    │├── java
+│    ││├── module-info.java
+│    │└── resources
+│    └── test
+│        ├── java
+│        └── resources
+├── jitexecutor-jlinked
+│├── pom.xml
+│└── src
+│    ├── main
+│    │├── java
+│    ││└── module-info.java
+│    │└── resources
+│    └── test
+│        └── java
+├── jitexecutor-runner
+│├── pom.xml
+│└── src
+│    ├── assembly
+│    ├── main
+│    │├── docker
+│    │├── java
+│    ││├── module-info.java
+│    │└── resources
+│    └── test
+│        └── java
+└── pom.xml
+
+91 directories, 89 files
 
 
 1. move to root directory

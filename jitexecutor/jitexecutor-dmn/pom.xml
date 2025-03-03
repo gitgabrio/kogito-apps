@@ -165,10 +165,18 @@
          <source>9</source>
          <target>9</target>
          <compilerArgs>
-           <arg>--module-path</arg>
-           <arg>microprofile.openapi.api</arg>
            <arg>--add-modules</arg>
-           <arg>org.slf4j</arg>
+           <arg>org.kie.kogito.trusty.service</arg>
+           <arg>--add-modules</arg>
+           <arg>org.kie.kogito.explainability.api</arg>
+<!--           <arg>&#45;&#45;add-modules</arg>-->
+<!--           <arg>microprofile.openapi.api</arg>-->
+<!--         </compilerArgs>-->
+<!--         <compilerArgs>-->
+<!--           <arg>&#45;&#45;module-path</arg>-->
+<!--           <arg>microprofile.openapi.api</arg>-->
+<!--           <arg>&#45;&#45;add-modules</arg>-->
+<!--           <arg>org.slf4j</arg>-->
          </compilerArgs>
        </configuration>
      </plugin>

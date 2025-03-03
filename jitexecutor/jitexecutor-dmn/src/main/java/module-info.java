@@ -4,6 +4,7 @@ module jitexecutor.dmn {
     requires org.slf4j;
     requires java.xml;
     requires jakarta.cdi;
+    requires jakarta.ws.rs;
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.datatype.jsr310;
@@ -15,4 +16,7 @@ module jitexecutor.dmn {
     requires org.kie.dmn.openapi;
     requires org.kie.dmn.validation;
     requires org.kie.kogito.kogito.dmn;
+
+    requires org.kie.kogito.trusty.service;
+    requires org.kie.kogito.explainability.api;
 }

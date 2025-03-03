@@ -4,6 +4,7 @@ module jitexecutor.bpmn {
     requires org.slf4j;
     requires java.xml;
     requires jakarta.cdi;
+    requires jakarta.ws.rs;
     requires org.kie.api;
     requires org.drools.io;
     requires org.kie.kogito.jbpm.flow.builder;
